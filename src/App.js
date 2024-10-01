@@ -16,6 +16,7 @@ const TravelPlannerApp = () => {
   const [finalPlan, setFinalPlan] = useState('');
   const [estimatedCost, setEstimatedCost] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
 
   const aspects = [
     "time to visit",
@@ -82,7 +83,8 @@ const TravelPlannerApp = () => {
     });
     setCoveredAspects(newCoveredAspects);
 
-    moveToNextAspect();
+    // Remove the call to moveToNextAspect here
+    // moveToNextAspect();
   };
 
   const moveToNextAspect = () => {
@@ -91,6 +93,7 @@ const TravelPlannerApp = () => {
       setCurrentAspect(nextAspect);
       setOptions([]);
     } else {
+      setIsSummarizing(true);
       finalizePlan();
     }
   };
@@ -103,6 +106,7 @@ const TravelPlannerApp = () => {
     const finalPrompt = "Summarize the complete travel plan based on all the information collected. Be concise and use bullet points.";
     const finalPlanResponse = await getLLMResponse(finalPrompt);
     setFinalPlan(finalPlanResponse);
+    setIsSummarizing(false);
   };
 
   useEffect(() => {
@@ -163,6 +167,10 @@ const TravelPlannerApp = () => {
             <Button onClick={moveToNextAspect}>Skip</Button>
           </CardActions>
         </Card>
+      )}
+
+      {isSummarizing && (
+        <Typography variant="body1">Generating your travel summary...</Typography>
       )}
 
       {finalPlan && (
