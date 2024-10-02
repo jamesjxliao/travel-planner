@@ -19,15 +19,15 @@ const TravelPlannerApp = () => {
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [budget, setBudget] = useState('any');
   const [homeLocation, setHomeLocation] = useState('San Francisco');
-  const [selectedAspects, setSelectedAspects] = useState(['time to visit', 'food']);
+  const [selectedAspects, setSelectedAspects] = useState(['Time to visit', 'Food']);
   const [customAspect, setCustomAspect] = useState('');
 
   const predefinedAspects = [
-    "time to visit",
-    "transportation method",
-    "lodging",
-    "food",
-    "attractions"
+    "Time to visit",
+    "Transportation method",
+    "Lodging",
+    "Food",
+    "Attractions"
   ];
 
   const [coveredAspects, setCoveredAspects] = useState(new Set());
