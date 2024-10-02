@@ -43,6 +43,13 @@ const translations = {
     enterCustomAspect: "Enter custom aspect",
     selectAtLeastOneAspect: "Please select at least one aspect to consider for your trip.",
     preferencesFor: "Preferences for",
+    timetovisit: "Time to visit",
+    transportation: "Transportation",
+    accommodations: "Accommodations",
+    food: "Food",
+    attractions: "Attractions",
+    activities: "Activities",
+    budget: "Budget",
   },
   zh: {
     title: "AI旅行规划器",
@@ -76,6 +83,13 @@ const translations = {
     enterCustomAspect: "输入自定义方面",
     selectAtLeastOneAspect: "请至少选择一个考虑的旅行方面。",
     preferencesFor: "对于以下方面的偏好",
+    timetovisit: "最佳访问时间",
+    transportation: "交通",
+    accommodations: "住宿",
+    food: "美食",
+    attractions: "景点",
+    activities: "活动",
+    budget: "预算",
   }
 };
 
@@ -325,7 +339,7 @@ const TravelPlannerApp = () => {
           {[...predefinedAspects, ...selectedAspects.filter(aspect => !predefinedAspects.includes(aspect))].map((aspect) => (
             <Chip
               key={aspect}
-              label={aspect}
+              label={t(aspect.toLowerCase().replace(/\s+/g, ''))}
               onClick={() => handleAspectToggle(aspect)}
               color={selectedAspects.includes(aspect) ? "primary" : "default"}
             />
@@ -378,7 +392,7 @@ const TravelPlannerApp = () => {
             {selectedAspects.map((aspect) => (
               <TextField
                 key={aspect}
-                label={`${t('preferencesFor')} ${aspect}`}
+                label={`${t('preferencesFor')} ${t(aspect.toLowerCase().replace(/\s+/g, ''))}`}
                 value={aspectPreferences[aspect] || ''}
                 onChange={(e) => handlePreferenceChange(aspect, e.target.value)}
                 fullWidth
