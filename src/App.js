@@ -106,7 +106,7 @@ const client = new OpenAI({
 });
 
 const TravelPlannerApp = () => {
-  const [destination, setDestination] = useState('Bora Bora');
+  const [destination, setDestination] = useState('Los Angeles');
   const [isPlanningStarted, setIsPlanningStarted] = useState(false);
   const [currentAspect, setCurrentAspect] = useState('');
   const [options, setOptions] = useState([]);
