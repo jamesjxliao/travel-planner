@@ -140,7 +140,9 @@ const TravelPlannerApp = () => {
 
   const getLLMResponse = async (prompt) => {
     setCurrentPrompt(prompt);  // Set the current prompt for debugging
-    const updatedHistory = [...conversationHistory, { role: "user", content: prompt }];
+    const languageInstruction = language === 'zh' ? "Please respond in Chinese. " : "";
+    const updatedPrompt = languageInstruction + prompt;
+    const updatedHistory = [...conversationHistory, { role: "user", content: updatedPrompt }];
     setConversationHistory(updatedHistory);
 
     const response = await client.chat.completions.create({
