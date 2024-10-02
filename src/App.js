@@ -15,10 +15,7 @@ const TravelPlannerApp = () => {
   const [selectedOptions, setSelectedOptions] = useState({});
   const [conversationHistory, setConversationHistory] = useState([]);
   const [finalPlan, setFinalPlan] = useState('');
-  const [estimatedCost, setEstimatedCost] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isSummarizing, setIsSummarizing] = useState(false);
-  const [budget, setBudget] = useState('');
   const [homeLocation, setHomeLocation] = useState('San Francisco');
   const [selectedAspects, setSelectedAspects] = useState(['Food']);
   const [customAspect, setCustomAspect] = useState('');
@@ -26,7 +23,7 @@ const TravelPlannerApp = () => {
   const [isGeneratingOptions, setIsGeneratingOptions] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
   const [currentPrompt, setCurrentPrompt] = useState('');
-  const [travelers, setTravelers] = useState('Solo');
+  const [travelers, setTravelers] = useState('Couple');
   const [groupSize, setGroupSize] = useState('2');
 
   const predefinedAspects = [
