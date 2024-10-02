@@ -29,7 +29,7 @@ const TravelPlannerApp = () => {
     "Time to visit",
     "Who's traveling",
     "Transportation",
-    "Lodging",
+    "Accommodations",
     "Food",
     "Attractions",
     "Activities",
@@ -54,7 +54,7 @@ const TravelPlannerApp = () => {
 
   const handleDestinationSubmit = async (e) => {
     if (e) e.preventDefault();
-    if (!destination.trim()) return;
+    if (!destination.trim() || selectedAspects.length === 0) return;
     
     setIsPlanningStarted(true);
     setCurrentAspect(selectedAspects[0]);
@@ -225,10 +225,15 @@ const TravelPlannerApp = () => {
             <Button 
               type="submit" 
               variant="contained" 
-              disabled={!destination || !homeLocation}
+              disabled={!destination || !homeLocation || selectedAspects.length === 0}
             >
               Start Planning
             </Button>
+            {selectedAspects.length === 0 && (
+              <Typography color="error" style={{ marginTop: '10px' }}>
+                Please select at least one aspect to consider for your trip.
+              </Typography>
+            )}
           </form>
         ) : (
           <>
