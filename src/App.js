@@ -159,7 +159,7 @@ const TravelPlannerApp = () => {
         
         <Typography variant="subtitle1" gutterBottom>Aspects to Consider:</Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-          {predefinedAspects.map((aspect) => (
+          {[...predefinedAspects, ...selectedAspects.filter(aspect => !predefinedAspects.includes(aspect))].map((aspect) => (
             <Chip
               key={aspect}
               label={aspect}
