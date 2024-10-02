@@ -70,7 +70,7 @@ const TravelPlannerApp = () => {
     if (travelers === 'Family' || travelers === 'Group') {
       travelersInfo += `. Group size: ${groupSize}`;
     }
-    const prompt = `For a ${numDays}-day trip to ${destination} from ${homeLocation}, provide 5 distinct options for ${currentAspect}. ${travelersInfo}. User's preference: "${aspectPreference}". Each option should be succinct (no more than 15 words) and represent a different approach or choice, considering the type of travelers and trip duration.`;
+    const prompt = `For a ${numDays}-day trip to ${destination} from ${homeLocation}, provide 5 distinct options for ${currentAspect}. ${travelersInfo}. User's preference: "${aspectPreference}". Each option should be a brief markdown bullet point (no more than 30 words) and represent a different approach or choice, considering the type of travelers and trip duration.`;
     const optionsResponse = await getLLMResponse(prompt);
     setOptions(optionsResponse.split('\n').map(option => option.trim()).filter(option => option));
     setIsGeneratingOptions(false);
@@ -318,7 +318,7 @@ const TravelPlannerApp = () => {
                     <Grid item xs={12} sm={6} md={4} key={index}>
                       <Card>
                         <CardContent>
-                          <Typography>{option}</Typography>
+                          <ReactMarkdown>{option}</ReactMarkdown>
                         </CardContent>
                         <CardActions>
                           <Button 
