@@ -172,7 +172,20 @@ const TravelPlannerApp = () => {
     }
     const prompt = `For a ${numDays}-day trip to ${destination} from ${homeLocation}, provide 5 distinct options for ${currentAspect}. ${travelersInfo}. User's preference: "${aspectPreference}". Each option should be a brief markdown bullet point (no more than 30 words) and represent a different approach or choice, considering the type of travelers and trip duration.`;
     const optionsResponse = await getLLMResponse(prompt);
-    setOptions(optionsResponse.split('\n').map(option => option.trim()).filter(option => option));
+    
+    // Filter and validate the options
+    const validOptions = optionsResponse.split('\n')
+      .map(option => option.trim())
+      .filter(option => option && option.startsWith('- ') && option.length > 5);
+
+    // If we don't have enough valid options, regenerate
+    if (validOptions.length < 3) {
+      setIsGeneratingOptions(false);
+      generateOptions(); // Recursively call to try again
+      return;
+    }
+
+    setOptions(validOptions);
     setIsGeneratingOptions(false);
   };
 
