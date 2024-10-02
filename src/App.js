@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import OpenAI from 'openai';
-import { Button, TextField, Card, CardContent, CardActions, Typography } from '@mui/material';
+import { Button, TextField, Card, CardContent, CardActions, Typography, Grid, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 
 const client = new OpenAI({
   apiKey: process.env.REACT_APP_OPENAI_API_KEY,
@@ -17,6 +17,8 @@ const TravelPlannerApp = () => {
   const [estimatedCost, setEstimatedCost] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
+  const [budget, setBudget] = useState('');
+  const [homeLocation, setHomeLocation] = useState('');
 
   const aspects = [
     "time to visit",
@@ -48,7 +50,7 @@ const TravelPlannerApp = () => {
     
     setIsLoading(true);
     try {
-      await getLLMResponse(`I'm planning a trip to ${destination}.`);
+      await getLLMResponse(`I'm planning a trip from ${homeLocation} to ${destination}. My budget preference is ${budget}.`);
       setIsPlanningStarted(true);
     } catch (error) {
       console.error("Error starting planning:", error);
@@ -116,73 +118,99 @@ const TravelPlannerApp = () => {
   }, [isPlanningStarted, coveredAspects, finalPlan]);
 
   return (
-    <div className="p-4 max-w-2xl mx-auto">
-      <Typography variant="h4" gutterBottom>LLM-powered Travel Planner</Typography>
-      
-      {!isPlanningStarted && (
-        <form onSubmit={handleDestinationSubmit}>
-          <TextField
-            value={destination}
-            onChange={(e) => setDestination(e.target.value)}
-            placeholder="Where would you like to go?"
-            fullWidth
-            margin="normal"
-            disabled={isLoading}
-          />
-          <Button 
-            type="submit" 
-            variant="contained" 
-            disabled={isLoading}
+    <Grid container spacing={2} className="p-4 max-w-6xl mx-auto">
+      <Grid item xs={3}>
+        <Typography variant="h6" gutterBottom>Preferences</Typography>
+        <FormControl fullWidth margin="normal">
+          <InputLabel>Budget</InputLabel>
+          <Select
+            value={budget}
+            onChange={(e) => setBudget(e.target.value)}
+            label="Budget"
           >
-            {isLoading ? 'Planning...' : 'Start Planning'}
-          </Button>
-          {isLoading && <Typography>Preparing your travel plan...</Typography>}
-        </form>
-      )}
+            <MenuItem value="any">Any</MenuItem>
+            <MenuItem value="economy">Economy</MenuItem>
+            <MenuItem value="premium">Regular</MenuItem>
+            <MenuItem value="luxury">Luxury</MenuItem>
+          </Select>
+        </FormControl>
+        <TextField
+          fullWidth
+          margin="normal"
+          label="Home Location"
+          value={homeLocation}
+          onChange={(e) => setHomeLocation(e.target.value)}
+          placeholder="Enter your home city/country"
+        />
+      </Grid>
+      <Grid item xs={9}>
+        <Typography variant="h4" gutterBottom>LLM-powered Travel Planner</Typography>
+        
+        {!isPlanningStarted && (
+          <form onSubmit={handleDestinationSubmit}>
+            <TextField
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
+              placeholder="Where would you like to go?"
+              fullWidth
+              margin="normal"
+              disabled={isLoading}
+            />
+            <Button 
+              type="submit" 
+              variant="contained" 
+              disabled={isLoading || !budget || !homeLocation}
+            >
+              {isLoading ? 'Planning...' : 'Start Planning'}
+            </Button>
+            {isLoading && <Typography>Preparing your travel plan...</Typography>}
+          </form>
+        )}
 
-      {isPlanningStarted && !finalPlan && (
-        <Card>
-          <CardContent>
-            <Typography variant="h5" gutterBottom>{currentAspect}</Typography>
-            {options.length === 0 ? (
-              <TextField
-                fullWidth
-                placeholder={`Enter your preferences for ${currentAspect}`}
-                onKeyPress={(e) => e.key === 'Enter' && handleAspectInput(e.target.value)}
-              />
-            ) : (
-              <ul>
-                {options.map((option, index) => (
-                  <li key={index} className="mb-2">
-                    <Button variant="outlined" onClick={() => handleOptionChoice((index + 1).toString())}>{option}</Button>
+        {isPlanningStarted && !finalPlan && (
+          <Card>
+            <CardContent>
+              <Typography variant="h5" gutterBottom>{currentAspect}</Typography>
+              {options.length === 0 ? (
+                <TextField
+                  fullWidth
+                  placeholder={`Enter your preferences for ${currentAspect}`}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAspectInput(e.target.value)}
+                />
+              ) : (
+                <ul>
+                  {options.map((option, index) => (
+                    <li key={index} className="mb-2">
+                      <Button variant="outlined" onClick={() => handleOptionChoice((index + 1).toString())}>{option}</Button>
+                    </li>
+                  ))}
+                  <li>
+                    <Button variant="outlined" onClick={() => handleOptionChoice('none')}>None of these</Button>
                   </li>
-                ))}
-                <li>
-                  <Button variant="outlined" onClick={() => handleOptionChoice('none')}>None of these</Button>
-                </li>
-              </ul>
-            )}
-          </CardContent>
-          <CardActions>
-            <Button onClick={moveToNextAspect}>Skip</Button>
-          </CardActions>
-        </Card>
-      )}
+                </ul>
+              )}
+            </CardContent>
+            <CardActions>
+              <Button onClick={moveToNextAspect}>Skip</Button>
+            </CardActions>
+          </Card>
+        )}
 
-      {isSummarizing && (
-        <Typography variant="body1">Generating your travel summary...</Typography>
-      )}
+        {isSummarizing && (
+          <Typography variant="body1">Generating your travel summary...</Typography>
+        )}
 
-      {finalPlan && (
-        <Card>
-          <CardContent>
-            <Typography variant="h5" gutterBottom>Your Travel Plan</Typography>
-            <Typography variant="body1" paragraph><strong>Estimated Cost Range:</strong> {estimatedCost}</Typography>
-            <Typography variant="body1" component="div" dangerouslySetInnerHTML={{ __html: finalPlan.replace(/\n/g, '<br>') }} />
-          </CardContent>
-        </Card>
-      )}
-    </div>
+        {finalPlan && (
+          <Card>
+            <CardContent>
+              <Typography variant="h5" gutterBottom>Your Travel Plan</Typography>
+              <Typography variant="body1" paragraph><strong>Estimated Cost Range:</strong> {estimatedCost}</Typography>
+              <Typography variant="body1" component="div" dangerouslySetInnerHTML={{ __html: finalPlan.replace(/\n/g, '<br>') }} />
+            </CardContent>
+          </Card>
+        )}
+      </Grid>
+    </Grid>
   );
 };
 
