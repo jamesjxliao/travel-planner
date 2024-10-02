@@ -26,6 +26,7 @@ const TravelPlannerApp = () => {
   const [currentPrompt, setCurrentPrompt] = useState('');
   const [travelers, setTravelers] = useState('Couple');
   const [groupSize, setGroupSize] = useState('2');
+  const [numDays, setNumDays] = useState('5');
 
   const predefinedAspects = [
     "Time to visit",
@@ -56,7 +57,7 @@ const TravelPlannerApp = () => {
 
   const handleDestinationSubmit = async (e) => {
     if (e) e.preventDefault();
-    if (!destination.trim() || selectedAspects.length === 0) return;
+    if (!destination.trim() || selectedAspects.length === 0 || !numDays) return;
     
     setIsPlanningStarted(true);
     setCurrentAspect(selectedAspects[0]);
@@ -69,7 +70,7 @@ const TravelPlannerApp = () => {
     if (travelers === 'Family' || travelers === 'Group') {
       travelersInfo += `. Group size: ${groupSize}`;
     }
-    const prompt = `For a trip to ${destination} from ${homeLocation}, provide 5 distinct options for ${currentAspect}. ${travelersInfo}. User's preference: "${aspectPreference}". Each option should be succinct (no more than 15 words) and represent a different approach or choice, considering the type of travelers.`;
+    const prompt = `For a ${numDays}-day trip to ${destination} from ${homeLocation}, provide 5 distinct options for ${currentAspect}. ${travelersInfo}. User's preference: "${aspectPreference}". Each option should be succinct (no more than 15 words) and represent a different approach or choice, considering the type of travelers and trip duration.`;
     const optionsResponse = await getLLMResponse(prompt);
     setOptions(optionsResponse.split('\n').map(option => option.trim()).filter(option => option));
     setIsGeneratingOptions(false);
@@ -103,7 +104,7 @@ const TravelPlannerApp = () => {
     if (travelers === 'Family' || travelers === 'Group') {
       travelersInfo += `. Group size: ${groupSize}`;
     }
-    let finalPrompt = `I'm planning a trip from ${homeLocation} to ${destination}. ${travelersInfo}.`;
+    let finalPrompt = `I'm planning a ${numDays}-day trip from ${homeLocation} to ${destination}. ${travelersInfo}.`;
     
     Object.entries(selectedOptions).forEach(([aspect, choices]) => {
       const preference = aspectPreferences[aspect] || '';
@@ -114,7 +115,7 @@ const TravelPlannerApp = () => {
       }
     });
 
-    finalPrompt += ` Please provide a comprehensive travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip.`;
+    finalPrompt += ` Please provide a comprehensive ${numDays}-day travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip.`;
 
     const response = await getLLMResponse(finalPrompt);
     setFinalPlan(response);
@@ -188,7 +189,7 @@ const TravelPlannerApp = () => {
         <Typography variant="h6" gutterBottom>Preferences</Typography>
         
         <FormControl fullWidth margin="normal">
-          <InputLabel id="travelers-label">Who's traveling</InputLabel>
+          <InputLabel id="travelers-label">Who's Traveling</InputLabel>
           <Select
             labelId="travelers-label"
             value={travelers}
@@ -222,6 +223,17 @@ const TravelPlannerApp = () => {
           value={homeLocation}
           onChange={(e) => setHomeLocation(e.target.value)}
           placeholder="Enter your home city/country"
+        />
+        
+        <TextField
+          fullWidth
+          margin="normal"
+          label="Number of Days"
+          value={numDays}
+          onChange={(e) => setNumDays(e.target.value)}
+          placeholder="Enter number of days"
+          type="number"
+          InputProps={{ inputProps: { min: 1 } }}
         />
         
         <Typography variant="subtitle1" gutterBottom>Aspects to Consider:</Typography>
@@ -282,7 +294,7 @@ const TravelPlannerApp = () => {
             <Button 
               type="submit" 
               variant="contained" 
-              disabled={!destination || !homeLocation || selectedAspects.length === 0}
+              disabled={!destination || !homeLocation || selectedAspects.length === 0 || !numDays}
             >
               Start Planning
             </Button>
