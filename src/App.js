@@ -354,7 +354,7 @@ const TravelPlannerApp = () => {
           {[...predefinedAspects, ...selectedAspects.filter(aspect => !predefinedAspects.includes(aspect))].map((aspect) => (
             <Chip
               key={aspect}
-              label={t(aspect.toLowerCase().replace(/\s+/g, ''))}
+              label={predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}
               onClick={() => handleAspectToggle(aspect)}
               color={selectedAspects.includes(aspect) ? "primary" : "default"}
             />
@@ -407,7 +407,7 @@ const TravelPlannerApp = () => {
             {selectedAspects.map((aspect) => (
               <TextField
                 key={aspect}
-                label={`${t('preferencesFor')} ${t(aspect.toLowerCase().replace(/\s+/g, ''))}`}
+                label={`${t('preferencesFor')} ${predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}`}
                 value={aspectPreferences[aspect] || ''}
                 onChange={(e) => handlePreferenceChange(aspect, e.target.value)}
                 fullWidth
@@ -432,7 +432,7 @@ const TravelPlannerApp = () => {
         ) : (
           <>
             <Typography variant="h6" gutterBottom>
-              {t('choosingOptionsFor')} {currentAspect}
+              {t('choosingOptionsFor')} {predefinedAspects.includes(currentAspect) ? t(currentAspect.toLowerCase().replace(/\s+/g, '')) : currentAspect}
             </Typography>
             {isGeneratingOptions ? (
               <Typography>{t('generatingOptions')}</Typography>
