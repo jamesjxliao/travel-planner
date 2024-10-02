@@ -17,8 +17,8 @@ const TravelPlannerApp = () => {
   const [estimatedCost, setEstimatedCost] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
-  const [budget, setBudget] = useState('');
-  const [homeLocation, setHomeLocation] = useState('');
+  const [budget, setBudget] = useState('any');
+  const [homeLocation, setHomeLocation] = useState('San Francisco');
 
   const aspects = [
     "time to visit",
