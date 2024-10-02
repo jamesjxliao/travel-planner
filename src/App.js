@@ -26,10 +26,11 @@ const TravelPlannerApp = () => {
   const [isGeneratingOptions, setIsGeneratingOptions] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
   const [currentPrompt, setCurrentPrompt] = useState('');
+  const [travelers, setTravelers] = useState('Solo');
+  const [groupSize, setGroupSize] = useState('2');
 
   const predefinedAspects = [
     "Time to visit",
-    "Who's traveling",
     "Transportation",
     "Accommodations",
     "Food",
@@ -65,7 +66,8 @@ const TravelPlannerApp = () => {
 
   const generateOptions = async () => {
     setIsGeneratingOptions(true);
-    const prompt = `For a trip to ${destination} from ${homeLocation} with a ${budget} budget, provide 5 distinct options for ${currentAspect}. Each option should be succinct (no more than 15 words) and represent a different approach or choice.`;
+    const aspectPreference = aspectPreferences[currentAspect] || '';
+    const prompt = `For a trip to ${destination} from ${homeLocation} with a ${budget} budget, provide 5 distinct options for ${currentAspect}. User's preference: "${aspectPreference}". Each option should be succinct (no more than 15 words) and represent a different approach or choice.`;
     const optionsResponse = await getLLMResponse(prompt);
     setOptions(optionsResponse.split('\n').map(option => option.trim()).filter(option => option));
     setIsGeneratingOptions(false);
@@ -98,12 +100,15 @@ const TravelPlannerApp = () => {
     let finalPrompt = `I'm planning a trip from ${homeLocation} to ${destination}. My budget preference is ${budget}.`;
     
     Object.entries(selectedOptions).forEach(([aspect, choices]) => {
+      const preference = aspectPreferences[aspect] || '';
       if (choices.length > 0) {
-        finalPrompt += ` For ${aspect}, I've chosen: ${choices.join(', ')}.`;
+        finalPrompt += ` For ${aspect} (preference: "${preference}"), I've chosen: ${choices.join(', ')}.`;
+      } else if (preference) {
+        finalPrompt += ` For ${aspect}, my preference is: "${preference}".`;
       }
     });
 
-    finalPrompt += ` Please provide a comprehensive travel plan based on these choices. Include an estimated cost range for the trip.`;
+    finalPrompt += ` Please provide a comprehensive travel plan based on these choices and preferences. Include an estimated cost range for the trip.`;
 
     const response = await getLLMResponse(finalPrompt);
     setFinalPlan(response);
@@ -155,6 +160,16 @@ const TravelPlannerApp = () => {
     }
   };
 
+  const handleTravelersChange = (event) => {
+    const value = event.target.value;
+    setTravelers(value);
+    if (value === 'Solo') {
+      setGroupSize('1');
+    } else if (value === 'Couple') {
+      setGroupSize('2');
+    }
+  };
+
   useEffect(() => {
     if (currentAspect && options.length === 0) {
       generateOptions();
@@ -165,6 +180,35 @@ const TravelPlannerApp = () => {
     <Grid container spacing={2} className="p-4 max-w-6xl mx-auto">
       <Grid item xs={3}>
         <Typography variant="h6" gutterBottom>Preferences</Typography>
+        
+        <FormControl fullWidth margin="normal">
+          <InputLabel id="travelers-label">Who's traveling</InputLabel>
+          <Select
+            labelId="travelers-label"
+            value={travelers}
+            label="Who's traveling"
+            onChange={handleTravelersChange}
+          >
+            <MenuItem value="Solo">Solo</MenuItem>
+            <MenuItem value="Couple">Couple</MenuItem>
+            <MenuItem value="Family">Family</MenuItem>
+            <MenuItem value="Group">Group</MenuItem>
+          </Select>
+        </FormControl>
+
+        {(travelers === 'Family' || travelers === 'Group') && (
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Group Size"
+            value={groupSize}
+            onChange={(e) => setGroupSize(e.target.value)}
+            placeholder="Enter number of travelers"
+            type="number"
+            InputProps={{ inputProps: { min: 3 } }}
+          />
+        )}
+
         <TextField
           fullWidth
           margin="normal"
