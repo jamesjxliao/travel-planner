@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import OpenAI from 'openai';
-import { Button, TextField, Card, CardContent, CardActions, Typography, Grid, FormControl, InputLabel, Select, MenuItem, Chip, Box } from '@mui/material';
+import { Button, TextField, Card, CardContent, CardActions, Typography, Grid, FormControl, InputLabel, Select, MenuItem, Chip, Box, Switch, FormControlLabel } from '@mui/material';
 
 const client = new OpenAI({
   apiKey: process.env.REACT_APP_OPENAI_API_KEY,
@@ -24,6 +24,8 @@ const TravelPlannerApp = () => {
   const [customAspect, setCustomAspect] = useState('');
   const [aspectPreferences, setAspectPreferences] = useState({});
   const [isGeneratingOptions, setIsGeneratingOptions] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
+  const [currentPrompt, setCurrentPrompt] = useState('');
 
   const predefinedAspects = [
     "Time to visit",
@@ -39,6 +41,7 @@ const TravelPlannerApp = () => {
   const [coveredAspects, setCoveredAspects] = useState(new Set());
 
   const getLLMResponse = async (prompt) => {
+    setCurrentPrompt(prompt);  // Set the current prompt for debugging
     const updatedHistory = [...conversationHistory, { role: "user", content: prompt }];
     setConversationHistory(updatedHistory);
 
@@ -195,6 +198,10 @@ const TravelPlannerApp = () => {
             Add Custom Aspect
           </Button>
         </form>
+        <FormControlLabel
+          control={<Switch checked={showDebug} onChange={(e) => setShowDebug(e.target.checked)} />}
+          label="Show Debug Info"
+        />
       </Grid>
       <Grid item xs={9}>
         <Typography variant="h4" gutterBottom>LLM-powered Travel Planner</Typography>
@@ -274,6 +281,17 @@ const TravelPlannerApp = () => {
               </>
             )}
           </>
+        )}
+
+        {showDebug && currentPrompt && (
+          <Card style={{ marginTop: '20px', backgroundColor: '#f0f0f0' }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>Current LLM Prompt:</Typography>
+              <Typography variant="body2" component="pre" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                {currentPrompt}
+              </Typography>
+            </CardContent>
+          </Card>
         )}
 
         {isLoading && <Typography>Generating your travel plan...</Typography>}
