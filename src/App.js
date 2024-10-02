@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import OpenAI from 'openai';
-import { Button, TextField, Card, CardContent, CardActions, Typography, Grid, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Button, TextField, Card, CardContent, CardActions, Typography, Grid, FormControl, InputLabel, Select, MenuItem, Chip, Box } from '@mui/material';
 
 const client = new OpenAI({
   apiKey: process.env.REACT_APP_OPENAI_API_KEY,
@@ -19,13 +19,15 @@ const TravelPlannerApp = () => {
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [budget, setBudget] = useState('any');
   const [homeLocation, setHomeLocation] = useState('San Francisco');
+  const [selectedAspects, setSelectedAspects] = useState(['time to visit', 'food']);
+  const [customAspect, setCustomAspect] = useState('');
 
-  const aspects = [
+  const predefinedAspects = [
     "time to visit",
-    // "transportation method",
-    // "lodging",
-    "food to eat",
-    // "attractions to visit",
+    "transportation method",
+    "lodging",
+    "food",
+    "attractions"
   ];
 
   const [coveredAspects, setCoveredAspects] = useState(new Set());
@@ -68,29 +70,25 @@ const TravelPlannerApp = () => {
 
   const handleOptionChoice = async (choice) => {
     if (choice === 'none') {
-      // Reset options and ask for additional input
       setOptions([]);
       return;
     }
 
     const selectedOption = options[parseInt(choice) - 1].split('. ')[1];
-    const response = await getLLMResponse(`The user chose '${selectedOption}' for ${currentAspect}. Identify any other aspects from ${aspects.join(', ')} that this choice might have covered.`);
+    const response = await getLLMResponse(`The user chose '${selectedOption}' for ${currentAspect}. Identify any other aspects from ${selectedAspects.join(', ')} that this choice might have covered.`);
     
     const newCoveredAspects = new Set(coveredAspects);
     newCoveredAspects.add(currentAspect);
     response.toLowerCase().split(' ').forEach(word => {
-      if (aspects.includes(word.trim())) {
+      if (selectedAspects.includes(word.trim())) {
         newCoveredAspects.add(word.trim());
       }
     });
     setCoveredAspects(newCoveredAspects);
-
-    // Remove the call to moveToNextAspect here
-    // moveToNextAspect();
   };
 
   const moveToNextAspect = () => {
-    const nextAspect = aspects.find(aspect => !coveredAspects.has(aspect));
+    const nextAspect = selectedAspects.find(aspect => !coveredAspects.has(aspect));
     if (nextAspect) {
       setCurrentAspect(nextAspect);
       setOptions([]);
@@ -109,6 +107,22 @@ const TravelPlannerApp = () => {
     const finalPlanResponse = await getLLMResponse(finalPrompt);
     setFinalPlan(finalPlanResponse);
     setIsSummarizing(false);
+  };
+
+  const handleAspectToggle = (aspect) => {
+    setSelectedAspects(prevAspects =>
+      prevAspects.includes(aspect)
+        ? prevAspects.filter(a => a !== aspect)
+        : [...prevAspects, aspect]
+    );
+  };
+
+  const handleAddCustomAspect = (e) => {
+    e.preventDefault();
+    if (customAspect && !selectedAspects.includes(customAspect)) {
+      setSelectedAspects(prevAspects => [...prevAspects, customAspect]);
+      setCustomAspect('');
+    }
   };
 
   useEffect(() => {
@@ -142,6 +156,31 @@ const TravelPlannerApp = () => {
           onChange={(e) => setHomeLocation(e.target.value)}
           placeholder="Enter your home city/country"
         />
+        
+        <Typography variant="subtitle1" gutterBottom>Aspects to Consider:</Typography>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+          {predefinedAspects.map((aspect) => (
+            <Chip
+              key={aspect}
+              label={aspect}
+              onClick={() => handleAspectToggle(aspect)}
+              color={selectedAspects.includes(aspect) ? "primary" : "default"}
+            />
+          ))}
+        </Box>
+        <form onSubmit={handleAddCustomAspect}>
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Add Custom Aspect"
+            value={customAspect}
+            onChange={(e) => setCustomAspect(e.target.value)}
+            placeholder="Enter custom aspect"
+          />
+          <Button type="submit" variant="outlined" size="small">
+            Add Custom Aspect
+          </Button>
+        </form>
       </Grid>
       <Grid item xs={9}>
         <Typography variant="h4" gutterBottom>LLM-powered Travel Planner</Typography>
