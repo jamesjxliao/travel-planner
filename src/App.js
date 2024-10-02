@@ -1,7 +1,90 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, createContext, useContext } from 'react';
 import OpenAI from 'openai';
 import ReactMarkdown from 'react-markdown';
 import { Button, TextField, Card, CardContent, CardActions, Typography, Grid, FormControl, InputLabel, Select, MenuItem, Chip, Box, Switch, FormControlLabel } from '@mui/material';
+
+// Create a language context
+const LanguageContext = createContext();
+
+// Create a custom hook to use the language context
+const useLanguage = () => useContext(LanguageContext);
+
+// Add translations
+const translations = {
+  en: {
+    title: "AI Travel Planner",
+    destination: "Destination",
+    startPlanning: "Start Planning",
+    preferences: "Preferences",
+    whosTraveling: "Who's Traveling",
+    solo: "Solo",
+    couple: "Couple",
+    family: "Family",
+    group: "Group",
+    groupSize: "Group Size",
+    homeLocation: "Home Location",
+    numberOfDays: "Number of Days",
+    aspectsToConsider: "Aspects to Consider:",
+    addCustomAspect: "Add Custom Aspect",
+    showDebugInfo: "Show Debug Info",
+    language: "Language",
+    choosingOptionsFor: "Choosing options for:",
+    generatingOptions: "Generating options...",
+    selected: "Selected",
+    select: "Select",
+    nextAspect: "Next Aspect",
+    finalizePlan: "Finalize Plan",
+    currentLLMPrompt: "Current LLM Prompt:",
+    generatingTravelPlan: "Generating your travel plan...",
+    yourTravelPlan: "Your Travel Plan",
+    enterNumberOfTravelers: "Enter number of travelers",
+    enterYourHomeCity: "Enter your home city/country",
+    enterNumberOfDays: "Enter number of days",
+    enterCustomAspect: "Enter custom aspect",
+    selectAtLeastOneAspect: "Please select at least one aspect to consider for your trip.",
+    preferencesFor: "Preferences for",
+  },
+  zh: {
+    title: "AI旅行规划器",
+    destination: "目的地",
+    startPlanning: "开始规划",
+    preferences: "偏好设置",
+    whosTraveling: "谁在旅行",
+    solo: "单人",
+    couple: "情侣",
+    family: "家庭",
+    group: "团体",
+    groupSize: "团体人数",
+    homeLocation: "出发地",
+    numberOfDays: "旅行天数",
+    aspectsToConsider: "考虑的方面：",
+    addCustomAspect: "添加自定义方面",
+    showDebugInfo: "显示调试信息",
+    language: "语言",
+    choosingOptionsFor: "正在为以下方面选择选项：",
+    generatingOptions: "正在生成选项...",
+    selected: "已选择",
+    select: "选择",
+    nextAspect: "下一个方面",
+    finalizePlan: "完成计划",
+    currentLLMPrompt: "当前LLM提示：",
+    generatingTravelPlan: "正在生成您的旅行计划...",
+    yourTravelPlan: "您的旅行计划",
+    enterNumberOfTravelers: "输入旅行者人数",
+    enterYourHomeCity: "输入您的出发城市/国家",
+    enterNumberOfDays: "输入旅行天数",
+    enterCustomAspect: "输入自定义方面",
+    selectAtLeastOneAspect: "请至少选择一个考虑的旅行方面。",
+    preferencesFor: "对于以下方面的偏好",
+  }
+};
+
+// Create a LanguageProvider component
+const LanguageProvider = ({ children }) => {
+  const [language, setLanguage] = useState('en');
+  const value = { language, setLanguage, t: (key) => translations[language][key] };
+  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
+};
 
 const client = new OpenAI({
   apiKey: process.env.REACT_APP_OPENAI_API_KEY,
@@ -27,6 +110,7 @@ const TravelPlannerApp = () => {
   const [travelers, setTravelers] = useState('Couple');
   const [groupSize, setGroupSize] = useState('2');
   const [numDays, setNumDays] = useState('5');
+  const { language, setLanguage, t } = useLanguage();
 
   const predefinedAspects = [
     "Time to visit",
@@ -186,20 +270,20 @@ const TravelPlannerApp = () => {
   return (
     <Grid container spacing={2} className="p-4 max-w-6xl mx-auto">
       <Grid item xs={3}>
-        <Typography variant="h6" gutterBottom>Preferences</Typography>
+        <Typography variant="h6" gutterBottom>{t('preferences')}</Typography>
         
         <FormControl fullWidth margin="normal">
-          <InputLabel id="travelers-label">Who's Traveling</InputLabel>
+          <InputLabel id="travelers-label">{t('whosTraveling')}</InputLabel>
           <Select
             labelId="travelers-label"
             value={travelers}
-            label="Who's traveling"
+            label={t('whosTraveling')}
             onChange={handleTravelersChange}
           >
-            <MenuItem value="Solo">Solo</MenuItem>
-            <MenuItem value="Couple">Couple</MenuItem>
-            <MenuItem value="Family">Family</MenuItem>
-            <MenuItem value="Group">Group</MenuItem>
+            <MenuItem value="Solo">{t('solo')}</MenuItem>
+            <MenuItem value="Couple">{t('couple')}</MenuItem>
+            <MenuItem value="Family">{t('family')}</MenuItem>
+            <MenuItem value="Group">{t('group')}</MenuItem>
           </Select>
         </FormControl>
 
@@ -207,10 +291,10 @@ const TravelPlannerApp = () => {
           <TextField
             fullWidth
             margin="normal"
-            label="Group Size"
+            label={t('groupSize')}
             value={groupSize}
             onChange={(e) => setGroupSize(e.target.value)}
-            placeholder="Enter number of travelers"
+            placeholder={t('enterNumberOfTravelers')}
             type="number"
             InputProps={{ inputProps: { min: 3 } }}
           />
@@ -219,24 +303,24 @@ const TravelPlannerApp = () => {
         <TextField
           fullWidth
           margin="normal"
-          label="Home Location"
+          label={t('homeLocation')}
           value={homeLocation}
           onChange={(e) => setHomeLocation(e.target.value)}
-          placeholder="Enter your home city/country"
+          placeholder={t('enterYourHomeCity')}
         />
         
         <TextField
           fullWidth
           margin="normal"
-          label="Number of Days"
+          label={t('numberOfDays')}
           value={numDays}
           onChange={(e) => setNumDays(e.target.value)}
-          placeholder="Enter number of days"
+          placeholder={t('enterNumberOfDays')}
           type="number"
           InputProps={{ inputProps: { min: 1 } }}
         />
         
-        <Typography variant="subtitle1" gutterBottom>Aspects to Consider:</Typography>
+        <Typography variant="subtitle1" gutterBottom>{t('aspectsToConsider')}</Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
           {[...predefinedAspects, ...selectedAspects.filter(aspect => !predefinedAspects.includes(aspect))].map((aspect) => (
             <Chip
@@ -251,27 +335,39 @@ const TravelPlannerApp = () => {
           <TextField
             fullWidth
             margin="normal"
-            label="Add Custom Aspect"
+            label={t('addCustomAspect')}
             value={customAspect}
             onChange={(e) => setCustomAspect(e.target.value)}
-            placeholder="Enter custom aspect"
+            placeholder={t('enterCustomAspect')}
           />
           <Button type="submit" variant="outlined" size="small">
-            Add Custom Aspect
+            {t('addCustomAspect')}
           </Button>
         </form>
         <FormControlLabel
           control={<Switch checked={showDebug} onChange={(e) => setShowDebug(e.target.checked)} />}
-          label="Show Debug Info"
+          label={t('showDebugInfo')}
         />
+        <FormControl fullWidth margin="normal">
+          <InputLabel id="language-label">{t('language')}</InputLabel>
+          <Select
+            labelId="language-label"
+            value={language}
+            label={t('language')}
+            onChange={(e) => setLanguage(e.target.value)}
+          >
+            <MenuItem value="en">English</MenuItem>
+            <MenuItem value="zh">中文</MenuItem>
+          </Select>
+        </FormControl>
       </Grid>
       <Grid item xs={9}>
-        <Typography variant="h4" gutterBottom>LLM-powered Travel Planner</Typography>
+        <Typography variant="h4" gutterBottom>{t('title')}</Typography>
         
         {!isPlanningStarted ? (
           <form onSubmit={handleDestinationSubmit}>
             <TextField
-              label="Destination"
+              label={t('destination')}
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
               fullWidth
@@ -282,7 +378,7 @@ const TravelPlannerApp = () => {
             {selectedAspects.map((aspect) => (
               <TextField
                 key={aspect}
-                label={`Preferences for ${aspect}`}
+                label={`${t('preferencesFor')} ${aspect}`}
                 value={aspectPreferences[aspect] || ''}
                 onChange={(e) => handlePreferenceChange(aspect, e.target.value)}
                 fullWidth
@@ -296,21 +392,21 @@ const TravelPlannerApp = () => {
               variant="contained" 
               disabled={!destination || !homeLocation || selectedAspects.length === 0 || !numDays}
             >
-              Start Planning
+              {t('startPlanning')}
             </Button>
             {selectedAspects.length === 0 && (
               <Typography color="error" style={{ marginTop: '10px' }}>
-                Please select at least one aspect to consider for your trip.
+                {t('selectAtLeastOneAspect')}
               </Typography>
             )}
           </form>
         ) : (
           <>
             <Typography variant="h6" gutterBottom>
-              Choosing options for: {currentAspect}
+              {t('choosingOptionsFor')} {currentAspect}
             </Typography>
             {isGeneratingOptions ? (
-              <Typography>Generating options...</Typography>
+              <Typography>{t('generatingOptions')}</Typography>
             ) : (
               <>
                 <Grid container spacing={2}>
@@ -326,7 +422,7 @@ const TravelPlannerApp = () => {
                             onClick={() => handleOptionToggle(option)}
                             variant={selectedOptions[currentAspect]?.includes(option) ? "contained" : "outlined"}
                           >
-                            {selectedOptions[currentAspect]?.includes(option) ? "Selected" : "Select"}
+                            {selectedOptions[currentAspect]?.includes(option) ? t('selected') : t('select')}
                           </Button>
                         </CardActions>
                       </Card>
@@ -338,7 +434,7 @@ const TravelPlannerApp = () => {
                   onClick={moveToNextAspect}
                   style={{ marginTop: '20px' }}
                 >
-                  {currentAspect === selectedAspects[selectedAspects.length - 1] ? "Finalize Plan" : "Next Aspect"}
+                  {currentAspect === selectedAspects[selectedAspects.length - 1] ? t('finalizePlan') : t('nextAspect')}
                 </Button>
               </>
             )}
@@ -348,7 +444,7 @@ const TravelPlannerApp = () => {
         {showDebug && currentPrompt && (
           <Card style={{ marginTop: '20px', backgroundColor: '#f0f0f0' }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom>Current LLM Prompt:</Typography>
+              <Typography variant="h6" gutterBottom>{t('currentLLMPrompt')}</Typography>
               <Typography variant="body2" component="pre" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                 {currentPrompt}
               </Typography>
@@ -356,12 +452,12 @@ const TravelPlannerApp = () => {
           </Card>
         )}
 
-        {isLoading && <Typography>Generating your travel plan...</Typography>}
+        {isLoading && <Typography>{t('generatingTravelPlan')}</Typography>}
 
         {finalPlan && (
           <Card style={{ marginTop: '20px' }}>
             <CardContent>
-              <Typography variant="h5" gutterBottom>Your Travel Plan</Typography>
+              <Typography variant="h5" gutterBottom>{t('yourTravelPlan')}</Typography>
               <ReactMarkdown>{finalPlan}</ReactMarkdown>
             </CardContent>
           </Card>
@@ -371,4 +467,9 @@ const TravelPlannerApp = () => {
   );
 };
 
-export default TravelPlannerApp;
+// Wrap the exported component with the LanguageProvider
+export default () => (
+  <LanguageProvider>
+    <TravelPlannerApp />
+  </LanguageProvider>
+);
