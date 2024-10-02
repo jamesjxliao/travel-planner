@@ -18,7 +18,7 @@ const TravelPlannerApp = () => {
   const [estimatedCost, setEstimatedCost] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
-  const [budget, setBudget] = useState('any');
+  const [budget, setBudget] = useState('');
   const [homeLocation, setHomeLocation] = useState('San Francisco');
   const [selectedAspects, setSelectedAspects] = useState(['Food']);
   const [customAspect, setCustomAspect] = useState('');
@@ -27,10 +27,13 @@ const TravelPlannerApp = () => {
 
   const predefinedAspects = [
     "Time to visit",
-    "Transportation method",
+    "Who's traveling",
+    "Transportation",
     "Lodging",
     "Food",
-    "Attractions"
+    "Attractions",
+    "Activities",
+    "Budget"
   ];
 
   const [coveredAspects, setCoveredAspects] = useState(new Set());
@@ -159,19 +162,6 @@ const TravelPlannerApp = () => {
     <Grid container spacing={2} className="p-4 max-w-6xl mx-auto">
       <Grid item xs={3}>
         <Typography variant="h6" gutterBottom>Preferences</Typography>
-        <FormControl fullWidth margin="normal">
-          <InputLabel>Budget</InputLabel>
-          <Select
-            value={budget}
-            onChange={(e) => setBudget(e.target.value)}
-            label="Budget"
-          >
-            <MenuItem value="any">Any</MenuItem>
-            <MenuItem value="economy">Economy</MenuItem>
-            <MenuItem value="premium">Regular</MenuItem>
-            <MenuItem value="luxury">Luxury</MenuItem>
-          </Select>
-        </FormControl>
         <TextField
           fullWidth
           margin="normal"
@@ -235,7 +225,7 @@ const TravelPlannerApp = () => {
             <Button 
               type="submit" 
               variant="contained" 
-              disabled={!destination || !budget || !homeLocation}
+              disabled={!destination || !homeLocation}
             >
               Start Planning
             </Button>
