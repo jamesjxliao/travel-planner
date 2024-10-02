@@ -121,8 +121,8 @@ const TravelPlannerApp = () => {
   const [isGeneratingOptions, setIsGeneratingOptions] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
   const [currentPrompt, setCurrentPrompt] = useState('');
-  const [travelers, setTravelers] = useState('Couple');
-  const [groupSize, setGroupSize] = useState('2');
+  const [travelers, setTravelers] = useState('Family');
+  const [groupSize, setGroupSize] = useState('3');
   const [numDays, setNumDays] = useState('5');
   const { language, setLanguage, t } = useLanguage();
 
@@ -287,6 +287,10 @@ const TravelPlannerApp = () => {
       setGroupSize('1');
     } else if (value === 'Couple') {
       setGroupSize('2');
+    } else if (value === 'Family') {
+      setGroupSize('3');
+    } else if (value === 'Group') {
+      setGroupSize('5');
     }
   };
 
@@ -325,7 +329,7 @@ const TravelPlannerApp = () => {
             onChange={(e) => setGroupSize(e.target.value)}
             placeholder={t('enterNumberOfTravelers')}
             type="number"
-            InputProps={{ inputProps: { min: 3 } }}
+            InputProps={{ inputProps: { min: travelers === 'Family' ? 3 : 5 } }}
           />
         )}
 
