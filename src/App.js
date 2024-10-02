@@ -67,7 +67,11 @@ const TravelPlannerApp = () => {
   const generateOptions = async () => {
     setIsGeneratingOptions(true);
     const aspectPreference = aspectPreferences[currentAspect] || '';
-    const prompt = `For a trip to ${destination} from ${homeLocation} with a ${budget} budget, provide 5 distinct options for ${currentAspect}. User's preference: "${aspectPreference}". Each option should be succinct (no more than 15 words) and represent a different approach or choice.`;
+    let travelersInfo = `Who's traveling: ${travelers}`;
+    if (travelers === 'Family' || travelers === 'Group') {
+      travelersInfo += `. Group size: ${groupSize}`;
+    }
+    const prompt = `For a trip to ${destination} from ${homeLocation}, provide 5 distinct options for ${currentAspect}. ${travelersInfo}. User's preference: "${aspectPreference}". Each option should be succinct (no more than 15 words) and represent a different approach or choice, considering the type of travelers.`;
     const optionsResponse = await getLLMResponse(prompt);
     setOptions(optionsResponse.split('\n').map(option => option.trim()).filter(option => option));
     setIsGeneratingOptions(false);
@@ -97,7 +101,11 @@ const TravelPlannerApp = () => {
 
   const finalizePlan = async () => {
     setIsLoading(true);
-    let finalPrompt = `I'm planning a trip from ${homeLocation} to ${destination}. My budget preference is ${budget}.`;
+    let travelersInfo = `Who's traveling: ${travelers}`;
+    if (travelers === 'Family' || travelers === 'Group') {
+      travelersInfo += `. Group size: ${groupSize}`;
+    }
+    let finalPrompt = `I'm planning a trip from ${homeLocation} to ${destination}. ${travelersInfo}.`;
     
     Object.entries(selectedOptions).forEach(([aspect, choices]) => {
       const preference = aspectPreferences[aspect] || '';
@@ -108,7 +116,7 @@ const TravelPlannerApp = () => {
       }
     });
 
-    finalPrompt += ` Please provide a comprehensive travel plan based on these choices and preferences. Include an estimated cost range for the trip.`;
+    finalPrompt += ` Please provide a comprehensive travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip.`;
 
     const response = await getLLMResponse(finalPrompt);
     setFinalPlan(response);
