@@ -8,7 +8,7 @@ const client = new OpenAI({
 });
 
 const TravelPlannerApp = () => {
-  const [destination, setDestination] = useState('');
+  const [destination, setDestination] = useState('Maldives');
   const [isPlanningStarted, setIsPlanningStarted] = useState(false);
   const [currentAspect, setCurrentAspect] = useState('');
   const [options, setOptions] = useState([]);
@@ -19,7 +19,7 @@ const TravelPlannerApp = () => {
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [budget, setBudget] = useState('any');
   const [homeLocation, setHomeLocation] = useState('San Francisco');
-  const [selectedAspects, setSelectedAspects] = useState(['Time to visit', 'Food']);
+  const [selectedAspects, setSelectedAspects] = useState(['Food']);
   const [customAspect, setCustomAspect] = useState('');
   const [aspectPreferences, setAspectPreferences] = useState({});
 
