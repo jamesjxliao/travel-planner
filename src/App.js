@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import OpenAI from 'openai';
+import ReactMarkdown from 'react-markdown';
 import { Button, TextField, Card, CardContent, CardActions, Typography, Grid, FormControl, InputLabel, Select, MenuItem, Chip, Box, Switch, FormControlLabel } from '@mui/material';
 
 const client = new OpenAI({
@@ -44,7 +45,7 @@ const TravelPlannerApp = () => {
     setConversationHistory(updatedHistory);
 
     const response = await client.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o-mini",
       messages: updatedHistory
     });
 
@@ -349,7 +350,7 @@ const TravelPlannerApp = () => {
           <Card style={{ marginTop: '20px' }}>
             <CardContent>
               <Typography variant="h5" gutterBottom>Your Travel Plan</Typography>
-              <Typography variant="body1" component="div" dangerouslySetInnerHTML={{ __html: finalPlan.replace(/\n/g, '<br>') }} />
+              <ReactMarkdown>{finalPlan}</ReactMarkdown>
             </CardContent>
           </Card>
         )}
