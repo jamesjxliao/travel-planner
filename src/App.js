@@ -95,7 +95,7 @@ const translations = {
 
 // Create a LanguageProvider component
 const LanguageProvider = ({ children }) => {
-  const [language, setLanguage] = useState('en');
+  const [language, setLanguage] = useState('zh');  // Changed from 'en' to 'zh'
   const value = { language, setLanguage, t: (key) => translations[language][key] };
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 };
@@ -389,8 +389,8 @@ const TravelPlannerApp = () => {
             label={t('language')}
             onChange={(e) => setLanguage(e.target.value)}
           >
-            <MenuItem value="en">English</MenuItem>
             <MenuItem value="zh">中文</MenuItem>
+            <MenuItem value="en">English</MenuItem>
           </Select>
         </FormControl>
       </Grid>
