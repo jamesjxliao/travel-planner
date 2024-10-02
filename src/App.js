@@ -21,6 +21,7 @@ const TravelPlannerApp = () => {
   const [homeLocation, setHomeLocation] = useState('San Francisco');
   const [selectedAspects, setSelectedAspects] = useState(['Time to visit', 'Food']);
   const [customAspect, setCustomAspect] = useState('');
+  const [aspectPreferences, setAspectPreferences] = useState({});
 
   const predefinedAspects = [
     "Time to visit",
@@ -52,14 +53,26 @@ const TravelPlannerApp = () => {
     
     setIsLoading(true);
     try {
-      await getLLMResponse(`I'm planning a trip from ${homeLocation} to ${destination}. My budget preference is ${budget}.`);
+      let initialPrompt = `I'm planning a trip from ${homeLocation} to ${destination}. My budget preference is ${budget}.`;
+      
+      // Add preferences to the initial prompt
+      Object.entries(aspectPreferences).forEach(([aspect, preference]) => {
+        if (preference.trim()) {
+          initialPrompt += ` For ${aspect}, I prefer: ${preference}.`;
+        }
+      });
+
+      await getLLMResponse(initialPrompt);
       setIsPlanningStarted(true);
     } catch (error) {
       console.error("Error starting planning:", error);
-      // Optionally, show an error message to the user
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handlePreferenceChange = (aspect, value) => {
+    setAspectPreferences(prev => ({ ...prev, [aspect]: value }));
   };
 
   const handleAspectInput = async (input) => {
@@ -188,13 +201,26 @@ const TravelPlannerApp = () => {
         {!isPlanningStarted && (
           <form onSubmit={handleDestinationSubmit}>
             <TextField
+              label="Destination"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
-              placeholder="Where would you like to go?"
               fullWidth
               margin="normal"
               disabled={isLoading}
+              variant="outlined"
             />
+            {selectedAspects.map((aspect) => (
+              <TextField
+                key={aspect}
+                label={`Preferences for ${aspect}`}
+                value={aspectPreferences[aspect] || ''}
+                onChange={(e) => handlePreferenceChange(aspect, e.target.value)}
+                fullWidth
+                margin="normal"
+                disabled={isLoading}
+                variant="outlined"
+              />
+            ))}
             <Button 
               type="submit" 
               variant="contained" 
