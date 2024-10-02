@@ -12,6 +12,7 @@ const TravelPlannerApp = () => {
   const [isPlanningStarted, setIsPlanningStarted] = useState(false);
   const [currentAspect, setCurrentAspect] = useState('');
   const [options, setOptions] = useState([]);
+  const [selectedOptions, setSelectedOptions] = useState({});
   const [conversationHistory, setConversationHistory] = useState([]);
   const [finalPlan, setFinalPlan] = useState('');
   const [estimatedCost, setEstimatedCost] = useState('');
@@ -22,6 +23,7 @@ const TravelPlannerApp = () => {
   const [selectedAspects, setSelectedAspects] = useState(['Food']);
   const [customAspect, setCustomAspect] = useState('');
   const [aspectPreferences, setAspectPreferences] = useState({});
+  const [isGeneratingOptions, setIsGeneratingOptions] = useState(false);
 
   const predefinedAspects = [
     "Time to visit",
@@ -51,24 +53,55 @@ const TravelPlannerApp = () => {
     if (e) e.preventDefault();
     if (!destination.trim()) return;
     
-    setIsLoading(true);
-    try {
-      let initialPrompt = `I'm planning a trip from ${homeLocation} to ${destination}. My budget preference is ${budget}.`;
-      
-      // Add preferences to the initial prompt
-      Object.entries(aspectPreferences).forEach(([aspect, preference]) => {
-        if (preference.trim()) {
-          initialPrompt += ` For ${aspect}, I prefer: ${preference}.`;
-        }
-      });
+    setIsPlanningStarted(true);
+    setCurrentAspect(selectedAspects[0]);
+  };
 
-      await getLLMResponse(initialPrompt);
-      setIsPlanningStarted(true);
-    } catch (error) {
-      console.error("Error starting planning:", error);
-    } finally {
-      setIsLoading(false);
+  const generateOptions = async () => {
+    setIsGeneratingOptions(true);
+    const prompt = `For a trip to ${destination} from ${homeLocation} with a ${budget} budget, provide 5 distinct options for ${currentAspect}. Each option should be succinct (no more than 15 words) and represent a different approach or choice.`;
+    const optionsResponse = await getLLMResponse(prompt);
+    setOptions(optionsResponse.split('\n').map(option => option.trim()).filter(option => option));
+    setIsGeneratingOptions(false);
+  };
+
+  const handleOptionToggle = (option) => {
+    setSelectedOptions(prev => {
+      const current = prev[currentAspect] || [];
+      return {
+        ...prev,
+        [currentAspect]: current.includes(option)
+          ? current.filter(item => item !== option)
+          : [...current, option]
+      };
+    });
+  };
+
+  const moveToNextAspect = () => {
+    const currentIndex = selectedAspects.indexOf(currentAspect);
+    if (currentIndex < selectedAspects.length - 1) {
+      setCurrentAspect(selectedAspects[currentIndex + 1]);
+      setOptions([]);
+    } else {
+      finalizePlan();
     }
+  };
+
+  const finalizePlan = async () => {
+    setIsLoading(true);
+    let finalPrompt = `I'm planning a trip from ${homeLocation} to ${destination}. My budget preference is ${budget}.`;
+    
+    Object.entries(selectedOptions).forEach(([aspect, choices]) => {
+      if (choices.length > 0) {
+        finalPrompt += ` For ${aspect}, I've chosen: ${choices.join(', ')}.`;
+      }
+    });
+
+    finalPrompt += ` Please provide a comprehensive travel plan based on these choices. Include an estimated cost range for the trip.`;
+
+    const response = await getLLMResponse(finalPrompt);
+    setFinalPlan(response);
+    setIsLoading(false);
   };
 
   const handlePreferenceChange = (aspect, value) => {
@@ -100,28 +133,6 @@ const TravelPlannerApp = () => {
     setCoveredAspects(newCoveredAspects);
   };
 
-  const moveToNextAspect = () => {
-    const nextAspect = selectedAspects.find(aspect => !coveredAspects.has(aspect));
-    if (nextAspect) {
-      setCurrentAspect(nextAspect);
-      setOptions([]);
-    } else {
-      setIsSummarizing(true);
-      finalizePlan();
-    }
-  };
-
-  const finalizePlan = async () => {
-    const costPrompt = "Based on all the choices made, provide an estimated total cost range for this trip.";
-    const estimatedCostResponse = await getLLMResponse(costPrompt);
-    setEstimatedCost(estimatedCostResponse);
-
-    const finalPrompt = "Summarize the complete travel plan based on all the information collected. Be concise and use bullet points.";
-    const finalPlanResponse = await getLLMResponse(finalPrompt);
-    setFinalPlan(finalPlanResponse);
-    setIsSummarizing(false);
-  };
-
   const handleAspectToggle = (aspect) => {
     setSelectedAspects(prevAspects =>
       prevAspects.includes(aspect)
@@ -139,10 +150,10 @@ const TravelPlannerApp = () => {
   };
 
   useEffect(() => {
-    if (isPlanningStarted && !finalPlan) {
-      moveToNextAspect();
+    if (currentAspect && options.length === 0) {
+      generateOptions();
     }
-  }, [isPlanningStarted, coveredAspects, finalPlan]);
+  }, [currentAspect]);
 
   return (
     <Grid container spacing={2} className="p-4 max-w-6xl mx-auto">
@@ -198,7 +209,7 @@ const TravelPlannerApp = () => {
       <Grid item xs={9}>
         <Typography variant="h4" gutterBottom>LLM-powered Travel Planner</Typography>
         
-        {!isPlanningStarted && (
+        {!isPlanningStarted ? (
           <form onSubmit={handleDestinationSubmit}>
             <TextField
               label="Destination"
@@ -224,52 +235,58 @@ const TravelPlannerApp = () => {
             <Button 
               type="submit" 
               variant="contained" 
-              disabled={isLoading || !budget || !homeLocation}
+              disabled={!destination || !budget || !homeLocation}
             >
-              {isLoading ? 'Planning...' : 'Start Planning'}
+              Start Planning
             </Button>
-            {isLoading && <Typography>Preparing your travel plan...</Typography>}
           </form>
-        )}
-
-        {isPlanningStarted && !finalPlan && (
-          <Card>
-            <CardContent>
-              <Typography variant="h5" gutterBottom>{currentAspect}</Typography>
-              {options.length === 0 ? (
-                <TextField
-                  fullWidth
-                  placeholder={`Enter your preferences for ${currentAspect}`}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAspectInput(e.target.value)}
-                />
-              ) : (
-                <ul>
+        ) : (
+          <>
+            <Typography variant="h6" gutterBottom>
+              Choosing options for: {currentAspect}
+            </Typography>
+            {isGeneratingOptions ? (
+              <Typography>Generating options...</Typography>
+            ) : (
+              <>
+                <Grid container spacing={2}>
                   {options.map((option, index) => (
-                    <li key={index} className="mb-2">
-                      <Button variant="outlined" onClick={() => handleOptionChoice((index + 1).toString())}>{option}</Button>
-                    </li>
+                    <Grid item xs={12} sm={6} md={4} key={index}>
+                      <Card>
+                        <CardContent>
+                          <Typography>{option}</Typography>
+                        </CardContent>
+                        <CardActions>
+                          <Button 
+                            size="small" 
+                            onClick={() => handleOptionToggle(option)}
+                            variant={selectedOptions[currentAspect]?.includes(option) ? "contained" : "outlined"}
+                          >
+                            {selectedOptions[currentAspect]?.includes(option) ? "Selected" : "Select"}
+                          </Button>
+                        </CardActions>
+                      </Card>
+                    </Grid>
                   ))}
-                  <li>
-                    <Button variant="outlined" onClick={() => handleOptionChoice('none')}>None of these</Button>
-                  </li>
-                </ul>
-              )}
-            </CardContent>
-            <CardActions>
-              <Button onClick={moveToNextAspect}>Skip</Button>
-            </CardActions>
-          </Card>
+                </Grid>
+                <Button 
+                  variant="contained" 
+                  onClick={moveToNextAspect}
+                  style={{ marginTop: '20px' }}
+                >
+                  {currentAspect === selectedAspects[selectedAspects.length - 1] ? "Finalize Plan" : "Next Aspect"}
+                </Button>
+              </>
+            )}
+          </>
         )}
 
-        {isSummarizing && (
-          <Typography variant="body1">Generating your travel summary...</Typography>
-        )}
+        {isLoading && <Typography>Generating your travel plan...</Typography>}
 
         {finalPlan && (
-          <Card>
+          <Card style={{ marginTop: '20px' }}>
             <CardContent>
               <Typography variant="h5" gutterBottom>Your Travel Plan</Typography>
-              <Typography variant="body1" paragraph><strong>Estimated Cost Range:</strong> {estimatedCost}</Typography>
               <Typography variant="body1" component="div" dangerouslySetInnerHTML={{ __html: finalPlan.replace(/\n/g, '<br>') }} />
             </CardContent>
           </Card>
