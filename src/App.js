@@ -98,7 +98,7 @@ const translations = {
     generatingTravelPlan: "正在生成您的旅行计划...",
     yourTravelPlan: "您的旅行计划",
     enterNumberOfTravelers: "输入旅行者人数",
-    enterYourHomeCity: "输入您���出发城市/国家",
+    enterYourHomeCity: "输入您出发城市/国家",
     enterNumberOfDays: "输入旅行天数",
     enterCustomAspect: "输入自定义方面",
     selectAtLeastOneAspect: "请至少选择一个考虑的旅行方面。",
@@ -229,12 +229,25 @@ const TravelPlannerApp = () => {
     "Attractions": ["Museums", "Nature", "Historical sites", "Theme parks", "Shopping"]
   };
 
-  // Add this new function to handle clicking on a common preference
+  // Update this function to toggle preferences
   const handleCommonPreferenceClick = (aspect, preference) => {
-    setAspectPreferences(prev => ({
-      ...prev,
-      [aspect]: prev[aspect] ? `${prev[aspect]}, ${preference}` : preference
-    }));
+    setAspectPreferences(prev => {
+      const currentPreferences = prev[aspect] ? prev[aspect].split(', ') : [];
+      let updatedPreferences;
+      
+      if (currentPreferences.includes(preference)) {
+        // Remove the preference if it's already there
+        updatedPreferences = currentPreferences.filter(pref => pref !== preference);
+      } else {
+        // Add the preference if it's not there
+        updatedPreferences = [...currentPreferences, preference];
+      }
+      
+      return {
+        ...prev,
+        [aspect]: updatedPreferences.join(', ')
+      };
+    });
   };
 
   const getLLMResponse = async (prompt) => {
@@ -795,6 +808,7 @@ Format the response as a JSON object with the following structure:
                         label={pref}
                         size="small"
                         onClick={() => handleCommonPreferenceClick(aspect, pref)}
+                        color={aspectPreferences[aspect]?.includes(pref) ? "primary" : "default"}
                         sx={{ '&:hover': { backgroundColor: 'primary.light', cursor: 'pointer' } }}
                       />
                     ))}
