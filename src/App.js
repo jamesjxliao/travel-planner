@@ -1,7 +1,7 @@
 import React, { useState, useEffect, createContext, useContext, useRef } from 'react';
 import OpenAI from 'openai';
 import ReactMarkdown from 'react-markdown';
-import { Button, TextField, Card, CardContent, CardActions, Typography, Grid, FormControl, InputLabel, Select, MenuItem, Chip, Box, Switch, FormControlLabel } from '@mui/material';
+import { Button, TextField, Card, CardContent, CardActions, Typography, Grid, FormControl, InputLabel, Select, MenuItem, Chip, Box, Switch, FormControlLabel, Paper } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { keyframes } from '@mui/system';
 
@@ -348,80 +348,82 @@ const TravelPlannerApp = () => {
   return (
     <Grid container spacing={2} className="p-4 max-w-6xl mx-auto">
       <Grid item xs={3}>
-        <Typography variant="h6" gutterBottom>{t('preferences')}</Typography>
-        
-        <FormControl fullWidth margin="normal">
-          <InputLabel id="travelers-label">{t('whosTraveling')}</InputLabel>
-          <Select
-            labelId="travelers-label"
-            value={travelers}
-            label={t('whosTraveling')}
-            onChange={handleTravelersChange}
-          >
-            <MenuItem value="Solo">{t('solo')}</MenuItem>
-            <MenuItem value="Couple">{t('couple')}</MenuItem>
-            <MenuItem value="Family">{t('family')}</MenuItem>
-            <MenuItem value="Group">{t('group')}</MenuItem>
-          </Select>
-        </FormControl>
+        <Paper elevation={3} sx={{ p: 2, mb: 3, backgroundColor: '#f0f8ff' }}>
+          <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
+            {t('preferences')}
+          </Typography>
+          
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="travelers-label">{t('whosTraveling')}</InputLabel>
+            <Select
+              labelId="travelers-label"
+              value={travelers}
+              label={t('whosTraveling')}
+              onChange={handleTravelersChange}
+            >
+              <MenuItem value="Solo">{t('solo')}</MenuItem>
+              <MenuItem value="Couple">{t('couple')}</MenuItem>
+              <MenuItem value="Family">{t('family')}</MenuItem>
+              <MenuItem value="Group">{t('group')}</MenuItem>
+            </Select>
+          </FormControl>
 
-        {(travelers === 'Family' || travelers === 'Group') && (
-          <TextField
-            fullWidth
-            margin="normal"
-            label={t('groupSize')}
-            value={groupSize}
-            onChange={(e) => setGroupSize(e.target.value)}
-            placeholder={t('enterNumberOfTravelers')}
-            type="number"
-            InputProps={{ inputProps: { min: travelers === 'Family' ? 3 : 5 } }}
-          />
-        )}
-
-        <TextField
-          fullWidth
-          margin="normal"
-          label={t('homeLocation')}
-          value={homeLocation}
-          onChange={(e) => setHomeLocation(e.target.value)}
-          placeholder={t('enterYourHomeCity')}
-        />
-        
-        <TextField
-          fullWidth
-          margin="normal"
-          label={t('numberOfDays')}
-          value={numDays}
-          onChange={(e) => setNumDays(e.target.value)}
-          placeholder={t('enterNumberOfDays')}
-          type="number"
-          InputProps={{ inputProps: { min: 1 } }}
-        />
-        
-        <Typography variant="subtitle1" gutterBottom>{t('aspectsToConsider')}</Typography>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-          {[...predefinedAspects, ...selectedAspects.filter(aspect => !predefinedAspects.includes(aspect))].map((aspect) => (
-            <Chip
-              key={aspect}
-              label={predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}
-              onClick={() => handleAspectToggle(aspect)}
-              color={selectedAspects.includes(aspect) ? "primary" : "default"}
+          {(travelers === 'Family' || travelers === 'Group') && (
+            <TextField
+              fullWidth
+              margin="normal"
+              label={t('groupSize')}
+              value={groupSize}
+              onChange={(e) => setGroupSize(e.target.value)}
+              placeholder={t('enterNumberOfTravelers')}
+              type="number"
+              InputProps={{ inputProps: { min: travelers === 'Family' ? 3 : 5 } }}
             />
-          ))}
-        </Box>
-        <form onSubmit={handleAddCustomAspect}>
+          )}
+
           <TextField
             fullWidth
             margin="normal"
-            label={t('addCustomAspect')}
-            value={customAspect}
-            onChange={(e) => setCustomAspect(e.target.value)}
-            placeholder={t('enterCustomAspect')}
+            label={t('homeLocation')}
+            value={homeLocation}
+            onChange={(e) => setHomeLocation(e.target.value)}
+            placeholder={t('enterYourHomeCity')}
           />
-          <Button type="submit" variant="outlined" size="small">
-            {t('addCustomAspect')}
-          </Button>
-        </form>
+        </Paper>
+
+        <Paper elevation={3} sx={{ p: 2, mt: 3, backgroundColor: '#f0f8ff' }}>
+          <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
+            {t('aspectsToConsider')}
+          </Typography>
+          <Typography variant="body2" gutterBottom>
+            {t('selectAtLeastOneAspect')}
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+            {[...predefinedAspects, ...selectedAspects.filter(aspect => !predefinedAspects.includes(aspect))].map((aspect) => (
+              <Chip
+                key={aspect}
+                label={predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}
+                onClick={() => handleAspectToggle(aspect)}
+                color={selectedAspects.includes(aspect) ? "primary" : "default"}
+                sx={{ '&:hover': { backgroundColor: 'primary.light', cursor: 'pointer' } }}
+              />
+            ))}
+          </Box>
+          <form onSubmit={handleAddCustomAspect}>
+            <TextField
+              fullWidth
+              margin="normal"
+              label={t('addCustomAspect')}
+              value={customAspect}
+              onChange={(e) => setCustomAspect(e.target.value)}
+              placeholder={t('enterCustomAspect')}
+            />
+            <Button type="submit" variant="contained" size="small" sx={{ mt: 1 }}>
+              {t('addCustomAspect')}
+            </Button>
+          </form>
+        </Paper>
+
         <FormControlLabel
           control={<Switch checked={showDebug} onChange={(e) => setShowDebug(e.target.checked)} />}
           label={t('showDebugInfo')}
@@ -442,15 +444,32 @@ const TravelPlannerApp = () => {
       <Grid item xs={9}>
         <Typography variant="h4" gutterBottom>{t('title')}</Typography>
         
-        <TextField
-          label={t('destination')}
-          value={destination}
-          onChange={(e) => setDestination(e.target.value)}
-          fullWidth
-          margin="normal"
-          disabled={isLoading}
-          variant="outlined"
-        />
+        <Grid container spacing={2}>
+          <Grid item xs={8}>
+            <TextField
+              label={t('destination')}
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
+              fullWidth
+              margin="normal"
+              disabled={isLoading}
+              variant="outlined"
+            />
+          </Grid>
+          <Grid item xs={4}>
+            <TextField
+              label={t('numberOfDays')}
+              value={numDays}
+              onChange={(e) => setNumDays(e.target.value)}
+              fullWidth
+              margin="normal"
+              type="number"
+              InputProps={{ inputProps: { min: 1 } }}
+              disabled={isLoading}
+              variant="outlined"
+            />
+          </Grid>
+        </Grid>
 
         {selectedAspects.map((aspect) => (
           <Card key={aspect} style={{ marginTop: '20px' }}>
