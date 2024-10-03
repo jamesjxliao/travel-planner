@@ -5,6 +5,7 @@ import { styled, useTheme } from '@mui/material/styles';
 import { keyframes } from '@mui/system';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
+import BugReportIcon from '@mui/icons-material/BugReport';
 
 // Create a language context
 const LanguageContext = createContext();
@@ -616,18 +617,6 @@ const TravelPlannerApp = () => {
         control={<Switch checked={showDebug} onChange={(e) => setShowDebug(e.target.checked)} />}
         label={t('showDebugInfo')}
       />
-      <FormControl fullWidth margin="normal">
-        <InputLabel id="language-label">{t('language')}</InputLabel>
-        <Select
-          labelId="language-label"
-          value={language}
-          label={t('language')}
-          onChange={(e) => setLanguage(e.target.value)}
-        >
-          <MenuItem value="zh">中文</MenuItem>
-          <MenuItem value="en">English</MenuItem>
-        </Select>
-      </FormControl>
     </Box>
   );
 
@@ -650,6 +639,29 @@ const TravelPlannerApp = () => {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             {t('title')}
           </Typography>
+          <FormControlLabel
+            control={
+              <Switch 
+                checked={showDebug} 
+                onChange={(e) => setShowDebug(e.target.checked)}
+                color="default"
+              />
+            }
+            label={<BugReportIcon />}
+            sx={{ mr: 2, color: 'white' }}
+          />
+          <FormControl sx={{ minWidth: 120 }} size="small">
+            <Select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              displayEmpty
+              inputProps={{ 'aria-label': 'Without label' }}
+              sx={{ color: 'white', '& .MuiSvgIcon-root': { color: 'white' } }}
+            >
+              <MenuItem value="zh">中文</MenuItem>
+              <MenuItem value="en">English</MenuItem>
+            </Select>
+          </FormControl>
         </Toolbar>
       </AppBar>
       <Grid container spacing={2} sx={{ p: 2 }}>
