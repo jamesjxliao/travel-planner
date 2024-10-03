@@ -53,7 +53,19 @@ const translations = {
     attractions: "Attractions",
     activities: "Activities",
     budget: "Budget",
-    generateOptions: "Generate Options"
+    generateOptions: "Generate Options",
+    roundTrip: "Round Trip",
+    estimatedCostBreakdown: "Estimated Cost Breakdown",
+    totalEstimatedCost: "Total Estimated Cost",
+    accommodation: "Accommodation",
+    transportation: "Transportation",
+    food: "Food",
+    activities: "Activities",
+    other: "Other Expenses",
+    morning: "Morning",
+    afternoon: "Afternoon",
+    evening: "Evening",
+    day: "Day",
   },
   zh: {
     title: "AI旅行规划器",
@@ -94,7 +106,19 @@ const translations = {
     attractions: "景点",
     activities: "活动",
     budget: "预算",
-    generateOptions: "生成选项"
+    generateOptions: "生成选项",
+    roundTrip: "往返",
+    estimatedCostBreakdown: "预估费用明细",
+    totalEstimatedCost: "总预估费用",
+    accommodation: "住宿",
+    transportation: "交通",
+    food: "餐饮",
+    activities: "活动",
+    other: "其他开支",
+    morning: "上午",
+    afternoon: "下午",
+    evening: "晚上",
+    day: "第天",  // This will be used as a template
   }
 };
 
@@ -153,6 +177,7 @@ const TravelPlannerApp = () => {
   const { language, setLanguage, t } = useLanguage();
   const [newOptionIndices, setNewOptionIndices] = useState({});
   const scrollRefs = useRef({});
+  const [isRoundTrip, setIsRoundTrip] = useState(true);
 
   const predefinedAspects = [
     "Time to visit",
@@ -266,7 +291,7 @@ const TravelPlannerApp = () => {
     if (travelers === 'Family' || travelers === 'Group') {
       travelersInfo += `. Group size: ${groupSize}`;
     }
-    let finalPrompt = `I'm planning a ${numDays}-day trip from ${homeLocation} to ${destination}. ${travelersInfo}.`;
+    let finalPrompt = `I'm planning a ${numDays}-day ${isRoundTrip ? 'round trip' : 'one-way trip'} from ${homeLocation} to ${destination}. ${travelersInfo}.`;
     
     Object.entries(selectedOptions).forEach(([aspect, choices]) => {
       const preference = aspectPreferences[aspect] || '';
@@ -277,7 +302,7 @@ const TravelPlannerApp = () => {
       }
     });
 
-    finalPrompt += ` Please provide a comprehensive ${numDays}-day travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip. Format the response as a JSON object with the following structure:
+    finalPrompt += ` Please provide a comprehensive ${numDays}-day travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip, with a breakdown for major categories (e.g., accommodation, transportation, food, activities). Format the response as a JSON object with the following structure:
     {
       "itinerary": [
         {
@@ -288,7 +313,16 @@ const TravelPlannerApp = () => {
         },
         // ... repeat for each day
       ],
-      "estimatedCost": "Cost range for the entire trip"
+      "estimatedCost": {
+        "total": "Total cost range for the entire trip",
+        "breakdown": {
+          "accommodation": "Cost range for accommodation",
+          "transportation": "Cost range for transportation",
+          "food": "Cost range for food",
+          "activities": "Cost range for activities",
+          "other": "Cost range for other expenses"
+        }
+      }
     }`;
 
     try {
@@ -419,14 +453,18 @@ const TravelPlannerApp = () => {
             <Grid item xs={12} key={index}>
               <Card>
                 <CardContent>
-                  <Typography variant="h6" gutterBottom>Day {day.day}</Typography>
+                  <Typography variant="h6" gutterBottom>
+                    {language === 'zh' 
+                      ? t('day').replace('天', `${day.day}天`) 
+                      : `${t('day')} ${day.day}`}
+                  </Typography>
                   <Grid container spacing={2}>
                     {['morning', 'afternoon', 'evening'].map((timeOfDay) => (
                       <Grid item xs={12} sm={4} key={timeOfDay}>
                         <Card variant="outlined">
                           <CardContent>
                             <Typography variant="subtitle1" gutterBottom>
-                              {timeOfDay.charAt(0).toUpperCase() + timeOfDay.slice(1)}
+                              {t(timeOfDay)}
                             </Typography>
                             <Typography variant="body2">{day[timeOfDay]}</Typography>
                           </CardContent>
@@ -439,7 +477,20 @@ const TravelPlannerApp = () => {
             </Grid>
           ))}
         </Grid>
-        <Typography variant="h6" sx={{ mt: 2 }}>Estimated Cost: {finalPlan.estimatedCost}</Typography>
+        <Typography variant="h6" sx={{ mt: 2 }}>{t('estimatedCostBreakdown')}</Typography>
+        <Grid container spacing={2} sx={{ mt: 1 }}>
+          {Object.entries(finalPlan.estimatedCost.breakdown).map(([category, cost]) => (
+            <Grid item xs={12} sm={6} md={4} key={category}>
+              <Paper elevation={2} sx={{ p: 2 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  {t(category)}
+                </Typography>
+                <Typography variant="body1">{cost}</Typography>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
+        <Typography variant="h6" sx={{ mt: 2 }}>{t('totalEstimatedCost')}: {finalPlan.estimatedCost.total}</Typography>
       </Box>
     );
   };
@@ -578,7 +629,7 @@ const TravelPlannerApp = () => {
         )}
         <Grid item xs={12} sm={isMobile ? 12 : 9}>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={8}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 label={t('destination')}
                 value={destination}
@@ -589,7 +640,7 @@ const TravelPlannerApp = () => {
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} sm={3}>
               <TextField
                 label={t('numberOfDays')}
                 value={numDays}
@@ -600,6 +651,19 @@ const TravelPlannerApp = () => {
                 InputProps={{ inputProps: { min: 1 } }}
                 disabled={isLoading}
                 variant="outlined"
+              />
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={isRoundTrip}
+                    onChange={(e) => setIsRoundTrip(e.target.checked)}
+                    disabled={isLoading}
+                  />
+                }
+                label={t('roundTrip')}
+                sx={{ mt: 2 }}
               />
             </Grid>
           </Grid>
