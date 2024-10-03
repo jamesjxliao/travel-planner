@@ -304,9 +304,7 @@ const TravelPlannerApp = () => {
 
   const getLLMResponse = async (prompt) => {
     setCurrentPrompt(prompt);  // Set the current prompt for debugging
-    const languageInstruction = language === 'zh' ? "Please respond in Chinese. " : "";
-    const updatedPrompt = languageInstruction + prompt;
-    const updatedHistory = [...conversationHistory, { role: "user", content: updatedPrompt }];
+    const updatedHistory = [...conversationHistory, { role: "user", content: prompt }];
     setConversationHistory(updatedHistory);
 
     const response = await client.chat.completions.create({
@@ -419,7 +417,8 @@ Ensure each option is unique and provides a different experience or approach.`;
       timeToVisit: timeToVisit
     };
 
-    let finalPrompt = `Plan a ${travelInfo.type} from ${travelInfo.from} to ${travelInfo.to} for ${travelInfo.travelers}`;
+    let finalPrompt = `Please respond in ${language === 'zh' ? 'Chinese' : 'English'}. `;
+    finalPrompt += `Plan a ${travelInfo.type} from ${travelInfo.from} to ${travelInfo.to} for ${travelInfo.travelers}`;
     if (travelInfo.groupSize) finalPrompt += ` (group of ${travelInfo.groupSize})`;
     finalPrompt += `. Budget: ${travelInfo.budget}.`;
     finalPrompt += ` Transportation: ${travelInfo.transportation === 'flexible' ? 'flexible options' : travelInfo.transportation}.`;
