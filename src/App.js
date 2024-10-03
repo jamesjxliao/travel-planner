@@ -119,7 +119,7 @@ const TravelPlannerApp = () => {
   const [selectedAspects, setSelectedAspects] = useState(['Food']);
   const [customAspect, setCustomAspect] = useState('');
   const [aspectPreferences, setAspectPreferences] = useState({});
-  const [isGeneratingOptions, setIsGeneratingOptions] = useState(false);
+  const [isGeneratingOptions, setIsGeneratingOptions] = useState({});
   const [showDebug, setShowDebug] = useState(false);
   const [currentPrompt, setCurrentPrompt] = useState('');
   const [travelers, setTravelers] = useState('Family');
@@ -160,8 +160,7 @@ const TravelPlannerApp = () => {
   };
 
   const generateOptions = async (aspect) => {
-    setIsGeneratingOptions(true);
-    setRegeneratingAspect(aspect);
+    setIsGeneratingOptions(prev => ({ ...prev, [aspect]: true }));
     const aspectPreference = aspectPreferences[aspect] || '';
     let travelersInfo = `Who's traveling: ${travelers}`;
     if (travelers === 'Family' || travelers === 'Group') {
@@ -177,17 +176,20 @@ const TravelPlannerApp = () => {
 
     // If we don't have enough valid options, regenerate
     if (validOptions.length < 3) {
-      setIsGeneratingOptions(false);
+      setIsGeneratingOptions(prev => ({ ...prev, [aspect]: false }));
       generateOptions(aspect); // Recursively call to try again
       return;
     }
 
-    setOptions(prevOptions => ({
-      ...prevOptions,
-      [aspect]: validOptions
-    }));
-    setIsGeneratingOptions(false);
-    setRegeneratingAspect(null);
+    setOptions(prevOptions => {
+      const existingOptions = prevOptions[aspect] || [];
+      const newOptions = [...existingOptions, ...validOptions];
+      return {
+        ...prevOptions,
+        [aspect]: newOptions
+      };
+    });
+    setIsGeneratingOptions(prev => ({ ...prev, [aspect]: false }));
   };
 
   const handleOptionToggle = (aspect, option) => {
@@ -408,41 +410,36 @@ const TravelPlannerApp = () => {
                 disabled={isLoading}
                 variant="outlined"
               />
-              {regeneratingAspect === aspect ? (
-                <Typography>{t('generatingOptions')}</Typography>
-              ) : (
-                <>
-                  {options[aspect] && options[aspect].length > 0 ? (
-                    <Grid container spacing={2} style={{ marginTop: '10px' }}>
-                      {options[aspect].map((option, index) => (
-                        <Grid item xs={12} sm={6} md={4} key={index}>
-                          <Card>
-                            <CardContent>
-                              <ReactMarkdown>{option}</ReactMarkdown>
-                            </CardContent>
-                            <CardActions>
-                              <Button 
-                                size="small" 
-                                onClick={() => handleOptionToggle(aspect, option)}
-                                variant={selectedOptions[aspect]?.includes(option) ? "contained" : "outlined"}
-                              >
-                                {selectedOptions[aspect]?.includes(option) ? t('selected') : t('select')}
-                              </Button>
-                            </CardActions>
-                          </Card>
-                        </Grid>
-                      ))}
+              {options[aspect] && options[aspect].length > 0 && (
+                <Grid container spacing={2} style={{ marginTop: '10px' }}>
+                  {options[aspect].map((option, index) => (
+                    <Grid item xs={12} sm={6} md={4} key={index}>
+                      <Card>
+                        <CardContent>
+                          <ReactMarkdown>{option}</ReactMarkdown>
+                        </CardContent>
+                        <CardActions>
+                          <Button 
+                            size="small" 
+                            onClick={() => handleOptionToggle(aspect, option)}
+                            variant={selectedOptions[aspect]?.includes(option) ? "contained" : "outlined"}
+                          >
+                            {selectedOptions[aspect]?.includes(option) ? t('selected') : t('select')}
+                          </Button>
+                        </CardActions>
+                      </Card>
                     </Grid>
-                  ) : null}
-                  <Button 
-                    variant="outlined" 
-                    onClick={() => generateOptions(aspect)}
-                    style={{ marginTop: '10px' }}
-                  >
-                    {t('generateOptions')}
-                  </Button>
-                </>
+                  ))}
+                </Grid>
               )}
+              <Button 
+                variant="outlined" 
+                onClick={() => generateOptions(aspect)}
+                style={{ marginTop: '10px' }}
+                disabled={isGeneratingOptions[aspect]}
+              >
+                {isGeneratingOptions[aspect] ? t('generatingOptions') : t('generateOptions')}
+              </Button>
             </CardContent>
           </Card>
         ))}
