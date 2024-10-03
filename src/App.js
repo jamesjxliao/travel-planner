@@ -28,7 +28,7 @@ const translations = {
     group: "Group",
     groupSize: "Group Size",
     homeLocation: "Home Location",
-    numberOfDays: "Number of Days",
+    numberOfDays: "Days",
     aspectsToConsider: "Aspects to Consider:",
     addCustomAspect: "Add Custom Aspect",
     showDebugInfo: "Show Debug Info",
@@ -250,12 +250,14 @@ const TravelPlannerApp = () => {
   const [isRoundTrip, setIsRoundTrip] = useState(true);
   const [budget, setBudget] = useState('Mid-range');  // New state for budget
 
-  // Remove Accommodations from predefinedAspects
+  // Remove Time to visit from predefinedAspects
   const predefinedAspects = [
-    "Time to visit",
     "Food",
     "Attractions"
   ];
+
+  // Add a new state for time to visit
+  const [timeToVisit, setTimeToVisit] = useState('flexible');
 
   // Add a new state for accommodation type
   const [accommodationType, setAccommodationType] = useState('flexible');
@@ -413,7 +415,8 @@ Ensure each option is unique and provides a different experience or approach.`;
       groupSize: travelers === 'Family' || travelers === 'Group' ? groupSize : null,
       budget: budget,
       transportation: transportationMode,
-      accommodation: accommodationType
+      accommodation: accommodationType,
+      timeToVisit: timeToVisit // Add this line
     };
 
     let finalPrompt = `Plan a ${travelInfo.type} from ${travelInfo.from} to ${travelInfo.to} for ${travelInfo.travelers}`;
@@ -421,6 +424,7 @@ Ensure each option is unique and provides a different experience or approach.`;
     finalPrompt += `. Budget: ${travelInfo.budget}.`;
     finalPrompt += ` Transportation: ${travelInfo.transportation === 'flexible' ? 'flexible options' : travelInfo.transportation}.`;
     finalPrompt += ` Accommodation: ${travelInfo.accommodation === 'flexible' ? 'flexible options' : t(`accommodations.${travelInfo.accommodation}`)}.`;
+    finalPrompt += ` Time to visit: ${travelInfo.timeToVisit === 'flexible' ? 'flexible' : t(`timetovisit.${travelInfo.timeToVisit}`)}.`; // Add this line
 
     const preferences = Object.entries(selectedOptions).map(([aspect, choices]) => {
       const preference = aspectPreferences[aspect] || '';
@@ -733,9 +737,6 @@ Format the response as a JSON object with the following structure:
         <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
           {t('aspectsToConsider')}
         </Typography>
-        <Typography variant="body2" gutterBottom>
-          {t('selectAtLeastOneAspect')}
-        </Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
           {[...predefinedAspects, ...selectedAspects.filter(aspect => !predefinedAspects.includes(aspect))].map((aspect) => (
             <Chip
@@ -819,7 +820,7 @@ Format the response as a JSON object with the following structure:
         )}
         <Grid item xs={12} sm={isMobile ? 12 : 9}>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} sm={3}>
               <TextField
                 label={t('destination')}
                 value={destination}
@@ -830,7 +831,7 @@ Format the response as a JSON object with the following structure:
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={2}>
+            <Grid item xs={12} sm={1.5}>
               <TextField
                 label={t('numberOfDays')}
                 value={numDays}
@@ -843,7 +844,26 @@ Format the response as a JSON object with the following structure:
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={2}>
+            <Grid item xs={12} sm={1.5}>
+              <FormControl fullWidth margin="normal">
+                <InputLabel id="time-to-visit-label">{t('timetovisit')}</InputLabel>
+                <Select
+                  labelId="time-to-visit-label"
+                  value={timeToVisit}
+                  label={t('timetovisit')}
+                  onChange={(e) => setTimeToVisit(e.target.value)}
+                  disabled={isLoading}
+                >
+                  <MenuItem value="flexible">{t('accommodations.flexible')}</MenuItem>
+                  <MenuItem value="spring">{t('timetovisit.spring')}</MenuItem>
+                  <MenuItem value="summer">{t('timetovisit.summer')}</MenuItem>
+                  <MenuItem value="fall">{t('timetovisit.fall')}</MenuItem>
+                  <MenuItem value="winter">{t('timetovisit.winter')}</MenuItem>
+                  <MenuItem value="holidays">{t('timetovisit.holidays')}</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={1.5}>
               <FormControl fullWidth margin="normal">
                 <InputLabel id="transportation-label">{t('transportation')}</InputLabel>
                 <Select
@@ -859,7 +879,7 @@ Format the response as a JSON object with the following structure:
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} sm={2}>
+            <Grid item xs={12} sm={1.5}>
               <FormControl fullWidth margin="normal">
                 <InputLabel id="accommodation-label">{t('accommodations')}</InputLabel>
                 <Select
@@ -878,7 +898,7 @@ Format the response as a JSON object with the following structure:
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} sm={2}>
+            <Grid item xs={12} sm={1.5}>
               <FormControlLabel
                 control={
                   <Switch
