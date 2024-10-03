@@ -1,9 +1,10 @@
 import React, { useState, useEffect, createContext, useContext, useRef } from 'react';
 import OpenAI from 'openai';
 import ReactMarkdown from 'react-markdown';
-import { Button, TextField, Card, CardContent, CardActions, Typography, Grid, FormControl, InputLabel, Select, MenuItem, Chip, Box, Switch, FormControlLabel, Paper } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { Button, TextField, Card, CardContent, CardActions, Typography, Grid, FormControl, InputLabel, Select, MenuItem, Chip, Box, Switch, FormControlLabel, Paper, useMediaQuery, Drawer, IconButton, AppBar, Toolbar } from '@mui/material';
+import { styled, useTheme } from '@mui/material/styles';
 import { keyframes } from '@mui/system';
+import MenuIcon from '@mui/icons-material/Menu';
 
 // Create a language context
 const LanguageContext = createContext();
@@ -167,6 +168,10 @@ const TravelPlannerApp = () => {
 
   // Add this new state variable
   const [regeneratingAspect, setRegeneratingAspect] = useState(null);
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const getLLMResponse = async (prompt) => {
     setCurrentPrompt(prompt);  // Set the current prompt for debugging
@@ -345,218 +350,261 @@ const TravelPlannerApp = () => {
     }
   };
 
-  return (
-    <Grid container spacing={2} className="p-4 max-w-6xl mx-auto">
-      <Grid item xs={3}>
-        <Paper elevation={3} sx={{ p: 2, mb: 3, backgroundColor: '#f0f8ff' }}>
-          <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
-            {t('travelersInformation')}
-          </Typography>
-          
-          <FormControl fullWidth margin="normal">
-            <InputLabel id="travelers-label">{t('whosTraveling')}</InputLabel>
-            <Select
-              labelId="travelers-label"
-              value={travelers}
-              label={t('whosTraveling')}
-              onChange={handleTravelersChange}
-            >
-              <MenuItem value="Solo">{t('solo')}</MenuItem>
-              <MenuItem value="Couple">{t('couple')}</MenuItem>
-              <MenuItem value="Family">{t('family')}</MenuItem>
-              <MenuItem value="Group">{t('group')}</MenuItem>
-            </Select>
-          </FormControl>
+  const toggleDrawer = (open) => (event) => {
+    if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
+      return;
+    }
+    setDrawerOpen(open);
+  };
 
-          {(travelers === 'Family' || travelers === 'Group') && (
-            <TextField
-              fullWidth
-              margin="normal"
-              label={t('groupSize')}
-              value={groupSize}
-              onChange={(e) => setGroupSize(e.target.value)}
-              placeholder={t('enterNumberOfTravelers')}
-              type="number"
-              InputProps={{ inputProps: { min: travelers === 'Family' ? 3 : 5 } }}
-            />
-          )}
+  const sidebarContent = (
+    <Box sx={{ width: isMobile ? '100vw' : 250, p: 2 }}>
+      <Paper elevation={3} sx={{ p: 2, mb: 3, backgroundColor: '#f0f8ff' }}>
+        <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
+          {t('travelersInformation')}
+        </Typography>
+        
+        <FormControl fullWidth margin="normal">
+          <InputLabel id="travelers-label">{t('whosTraveling')}</InputLabel>
+          <Select
+            labelId="travelers-label"
+            value={travelers}
+            label={t('whosTraveling')}
+            onChange={handleTravelersChange}
+          >
+            <MenuItem value="Solo">{t('solo')}</MenuItem>
+            <MenuItem value="Couple">{t('couple')}</MenuItem>
+            <MenuItem value="Family">{t('family')}</MenuItem>
+            <MenuItem value="Group">{t('group')}</MenuItem>
+          </Select>
+        </FormControl>
 
+        {(travelers === 'Family' || travelers === 'Group') && (
           <TextField
             fullWidth
             margin="normal"
-            label={t('homeLocation')}
-            value={homeLocation}
-            onChange={(e) => setHomeLocation(e.target.value)}
-            placeholder={t('enterYourHomeCity')}
+            label={t('groupSize')}
+            value={groupSize}
+            onChange={(e) => setGroupSize(e.target.value)}
+            placeholder={t('enterNumberOfTravelers')}
+            type="number"
+            InputProps={{ inputProps: { min: travelers === 'Family' ? 3 : 5 } }}
           />
-        </Paper>
+        )}
 
-        <Paper elevation={3} sx={{ p: 2, mt: 3, backgroundColor: '#f0f8ff' }}>
-          <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
-            {t('aspectsToConsider')}
-          </Typography>
-          <Typography variant="body2" gutterBottom>
-            {t('selectAtLeastOneAspect')}
-          </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-            {[...predefinedAspects, ...selectedAspects.filter(aspect => !predefinedAspects.includes(aspect))].map((aspect) => (
-              <Chip
-                key={aspect}
-                label={predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}
-                onClick={() => handleAspectToggle(aspect)}
-                color={selectedAspects.includes(aspect) ? "primary" : "default"}
-                sx={{ '&:hover': { backgroundColor: 'primary.light', cursor: 'pointer' } }}
-              />
-            ))}
-          </Box>
-          <form onSubmit={handleAddCustomAspect}>
-            <TextField
-              fullWidth
-              margin="normal"
-              label={t('addCustomAspect')}
-              value={customAspect}
-              onChange={(e) => setCustomAspect(e.target.value)}
-              placeholder={t('enterCustomAspect')}
-            />
-            <Button type="submit" variant="contained" size="small" sx={{ mt: 1 }}>
-              {t('addCustomAspect')}
-            </Button>
-          </form>
-        </Paper>
-
-        <FormControlLabel
-          control={<Switch checked={showDebug} onChange={(e) => setShowDebug(e.target.checked)} />}
-          label={t('showDebugInfo')}
+        <TextField
+          fullWidth
+          margin="normal"
+          label={t('homeLocation')}
+          value={homeLocation}
+          onChange={(e) => setHomeLocation(e.target.value)}
+          placeholder={t('enterYourHomeCity')}
         />
-        <FormControl fullWidth margin="normal">
-          <InputLabel id="language-label">{t('language')}</InputLabel>
-          <Select
-            labelId="language-label"
-            value={language}
-            label={t('language')}
-            onChange={(e) => setLanguage(e.target.value)}
-          >
-            <MenuItem value="zh">中文</MenuItem>
-            <MenuItem value="en">English</MenuItem>
-          </Select>
-        </FormControl>
-      </Grid>
-      <Grid item xs={9}>
-        <Typography variant="h4" gutterBottom>{t('title')}</Typography>
-        
-        <Grid container spacing={2}>
-          <Grid item xs={8}>
-            <TextField
-              label={t('destination')}
-              value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-              fullWidth
-              margin="normal"
-              disabled={isLoading}
-              variant="outlined"
-            />
-          </Grid>
-          <Grid item xs={4}>
-            <TextField
-              label={t('numberOfDays')}
-              value={numDays}
-              onChange={(e) => setNumDays(e.target.value)}
-              fullWidth
-              margin="normal"
-              type="number"
-              InputProps={{ inputProps: { min: 1 } }}
-              disabled={isLoading}
-              variant="outlined"
-            />
-          </Grid>
-        </Grid>
+      </Paper>
 
-        {selectedAspects.map((aspect) => (
-          <Card key={aspect} style={{ marginTop: '20px' }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                {predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <TextField
-                  label={`${t('preferencesFor')} ${predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}`}
-                  value={aspectPreferences[aspect] || ''}
-                  onChange={(e) => handlePreferenceChange(aspect, e.target.value)}
-                  onKeyPress={(e) => handleKeyPress(aspect, e)}
-                  fullWidth
-                  margin="normal"
-                  disabled={isLoading}
-                  variant="outlined"
-                />
-                <Button 
-                  variant="outlined" 
-                  onClick={() => generateOptions(aspect)}
-                  disabled={isGeneratingOptions[aspect]}
-                  sx={{ height: '56px', whiteSpace: 'nowrap' }}
-                >
-                  {isGeneratingOptions[aspect] ? t('generatingOptions') : t('generateOptions')}
-                </Button>
-              </Box>
-              {options[aspect] && options[aspect].length > 0 && (
-                <ScrollableBox ref={el => scrollRefs.current[aspect] = el}>
-                  <Grid container spacing={2}>
-                    {options[aspect].map((option, index) => (
-                      <Grid item xs={12} sm={6} key={index}>
-                        <HighlightCard isNew={newOptionIndices[aspect]?.[index]}>
-                          <CardContent sx={{ flexGrow: 1, overflow: 'auto' }}>
-                            <ReactMarkdown>{option}</ReactMarkdown>
-                          </CardContent>
-                          <CardActions>
-                            <Button 
-                              size="small" 
-                              onClick={() => handleOptionToggle(aspect, option)}
-                              variant={selectedOptions[aspect]?.includes(option) ? "contained" : "outlined"}
-                            >
-                              {selectedOptions[aspect]?.includes(option) ? t('selected') : t('select')}
-                            </Button>
-                          </CardActions>
-                        </HighlightCard>
-                      </Grid>
-                    ))}
-                  </Grid>
-                </ScrollableBox>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+      <Paper elevation={3} sx={{ p: 2, mt: 3, backgroundColor: '#f0f8ff' }}>
+        <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
+          {t('aspectsToConsider')}
+        </Typography>
+        <Typography variant="body2" gutterBottom>
+          {t('selectAtLeastOneAspect')}
+        </Typography>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+          {[...predefinedAspects, ...selectedAspects.filter(aspect => !predefinedAspects.includes(aspect))].map((aspect) => (
+            <Chip
+              key={aspect}
+              label={predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}
+              onClick={() => handleAspectToggle(aspect)}
+              color={selectedAspects.includes(aspect) ? "primary" : "default"}
+              sx={{ '&:hover': { backgroundColor: 'primary.light', cursor: 'pointer' } }}
+            />
+          ))}
+        </Box>
+        <form onSubmit={handleAddCustomAspect}>
+          <TextField
+            fullWidth
+            margin="normal"
+            label={t('addCustomAspect')}
+            value={customAspect}
+            onChange={(e) => setCustomAspect(e.target.value)}
+            placeholder={t('enterCustomAspect')}
+          />
+          <Button type="submit" variant="contained" size="small" sx={{ mt: 1 }}>
+            {t('addCustomAspect')}
+          </Button>
+        </form>
+      </Paper>
 
-        {/* Always show the Finalize Plan button */}
-        <Button 
-          variant="contained" 
-          onClick={finalizePlan}
-          style={{ marginTop: '20px' }}
+      <FormControlLabel
+        control={<Switch checked={showDebug} onChange={(e) => setShowDebug(e.target.checked)} />}
+        label={t('showDebugInfo')}
+      />
+      <FormControl fullWidth margin="normal">
+        <InputLabel id="language-label">{t('language')}</InputLabel>
+        <Select
+          labelId="language-label"
+          value={language}
+          label={t('language')}
+          onChange={(e) => setLanguage(e.target.value)}
         >
-          {t('finalizePlan')}
-        </Button>
+          <MenuItem value="zh">中文</MenuItem>
+          <MenuItem value="en">English</MenuItem>
+        </Select>
+      </FormControl>
+    </Box>
+  );
 
-        {showDebug && currentPrompt && (
-          <Card style={{ marginTop: '20px', backgroundColor: '#f0f0f0' }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>{t('currentLLMPrompt')}</Typography>
-              <Typography variant="body2" component="pre" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                {currentPrompt}
-              </Typography>
-            </CardContent>
-          </Card>
+  return (
+    <Box sx={{ flexGrow: 1 }}>
+      <AppBar position="static">
+        <Toolbar>
+          {isMobile && (
+            <IconButton
+              size="large"
+              edge="start"
+              color="inherit"
+              aria-label="menu"
+              sx={{ mr: 2 }}
+              onClick={toggleDrawer(true)}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            {t('title')}
+          </Typography>
+        </Toolbar>
+      </AppBar>
+      <Grid container spacing={2} sx={{ p: 2 }}>
+        {!isMobile && (
+          <Grid item xs={12} sm={3}>
+            {sidebarContent}
+          </Grid>
         )}
+        <Grid item xs={12} sm={isMobile ? 12 : 9}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={8}>
+              <TextField
+                label={t('destination')}
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                fullWidth
+                margin="normal"
+                disabled={isLoading}
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                label={t('numberOfDays')}
+                value={numDays}
+                onChange={(e) => setNumDays(e.target.value)}
+                fullWidth
+                margin="normal"
+                type="number"
+                InputProps={{ inputProps: { min: 1 } }}
+                disabled={isLoading}
+                variant="outlined"
+              />
+            </Grid>
+          </Grid>
 
-        {isLoading && <Typography>{t('generatingTravelPlan')}</Typography>}
+          {selectedAspects.map((aspect) => (
+            <Card key={aspect} sx={{ mt: 2 }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  {predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', gap: 2 }}>
+                  <TextField
+                    label={`${t('preferencesFor')} ${predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}`}
+                    value={aspectPreferences[aspect] || ''}
+                    onChange={(e) => handlePreferenceChange(aspect, e.target.value)}
+                    onKeyPress={(e) => handleKeyPress(aspect, e)}
+                    fullWidth
+                    margin="normal"
+                    disabled={isLoading}
+                    variant="outlined"
+                  />
+                  <Button 
+                    variant="outlined" 
+                    onClick={() => generateOptions(aspect)}
+                    disabled={isGeneratingOptions[aspect]}
+                    sx={{ height: '56px', whiteSpace: 'nowrap', width: isMobile ? '100%' : 'auto' }}
+                  >
+                    {isGeneratingOptions[aspect] ? t('generatingOptions') : t('generateOptions')}
+                  </Button>
+                </Box>
+                {options[aspect] && options[aspect].length > 0 && (
+                  <ScrollableBox ref={el => scrollRefs.current[aspect] = el}>
+                    <Grid container spacing={2}>
+                      {options[aspect].map((option, index) => (
+                        <Grid item xs={12} sm={6} key={index}>
+                          <HighlightCard isNew={newOptionIndices[aspect]?.[index]}>
+                            <CardContent sx={{ flexGrow: 1, overflow: 'auto' }}>
+                              <ReactMarkdown>{option}</ReactMarkdown>
+                            </CardContent>
+                            <CardActions>
+                              <Button 
+                                size="small" 
+                                onClick={() => handleOptionToggle(aspect, option)}
+                                variant={selectedOptions[aspect]?.includes(option) ? "contained" : "outlined"}
+                                fullWidth
+                              >
+                                {selectedOptions[aspect]?.includes(option) ? t('selected') : t('select')}
+                              </Button>
+                            </CardActions>
+                          </HighlightCard>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </ScrollableBox>
+                )}
+              </CardContent>
+            </Card>
+          ))}
 
-        {finalPlan && (
-          <Card style={{ marginTop: '20px' }}>
-            <CardContent>
-              <Typography variant="h5" gutterBottom>{t('yourTravelPlan')}</Typography>
-              <ReactMarkdown>{finalPlan}</ReactMarkdown>
-            </CardContent>
-          </Card>
-        )}
+          <Button 
+            variant="contained" 
+            onClick={finalizePlan}
+            sx={{ mt: 2, width: '100%' }}
+          >
+            {t('finalizePlan')}
+          </Button>
+
+          {showDebug && currentPrompt && (
+            <Card sx={{ mt: 2, backgroundColor: '#f0f0f0' }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>{t('currentLLMPrompt')}</Typography>
+                <Typography variant="body2" component="pre" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                  {currentPrompt}
+                </Typography>
+              </CardContent>
+            </Card>
+          )}
+
+          {isLoading && <Typography sx={{ mt: 2 }}>{t('generatingTravelPlan')}</Typography>}
+
+          {finalPlan && (
+            <Card sx={{ mt: 2 }}>
+              <CardContent>
+                <Typography variant="h5" gutterBottom>{t('yourTravelPlan')}</Typography>
+                <ReactMarkdown>{finalPlan}</ReactMarkdown>
+              </CardContent>
+            </Card>
+          )}
+        </Grid>
       </Grid>
-    </Grid>
+      {isMobile && (
+        <Drawer
+          anchor="left"
+          open={drawerOpen}
+          onClose={toggleDrawer(false)}
+        >
+          {sidebarContent}
+        </Drawer>
+      )}
+    </Box>
   );
 };
 
