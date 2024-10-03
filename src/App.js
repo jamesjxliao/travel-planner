@@ -156,6 +156,22 @@ const HighlightCard = styled(Card)(({ theme, isNew }) => ({
   animation: isNew ? `${highlightAnimation} 2s ease-in-out` : 'none',
 }));
 
+const createGoogleSearchLink = (text) => {
+  const searchQuery = encodeURIComponent(text);
+  return `https://www.google.com/search?q=${searchQuery}`;
+};
+
+const StyledContent = styled('div')(({ theme }) => ({
+  '& a': {
+    color: theme.palette.primary.main,
+    textDecoration: 'underline',
+    fontWeight: 'bold',
+    '&:hover': {
+      color: theme.palette.primary.dark,
+    },
+  },
+}));
+
 const TravelPlannerApp = () => {
   const [destination, setDestination] = useState('Los Angeles');
   const [currentAspect, setCurrentAspect] = useState('');
@@ -302,14 +318,14 @@ const TravelPlannerApp = () => {
       }
     });
 
-    finalPrompt += ` Please provide a comprehensive ${numDays}-day travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip, with a breakdown for major categories (e.g., accommodation, transportation, food, activities). Format the response as a JSON object with the following structure:
+    finalPrompt += ` Please provide a comprehensive ${numDays}-day travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip, with a breakdown for major categories (e.g., accommodation, transportation, food, activities). For each activity or attraction mentioned, please enclose it in square brackets [like this] to mark it as an important entity. Format the response as a JSON object with the following structure:
     {
       "itinerary": [
         {
           "day": 1,
-          "morning": "Description of morning activities",
-          "afternoon": "Description of afternoon activities",
-          "evening": "Description of evening activities"
+          "morning": "Description of morning activities with [important entities] marked",
+          "afternoon": "Description of afternoon activities with [important entities] marked",
+          "evening": "Description of evening activities with [important entities] marked"
         },
         // ... repeat for each day
       ],
@@ -327,7 +343,7 @@ const TravelPlannerApp = () => {
 
     try {
       const response = await getLLMResponse(finalPrompt);
-      console.log("Raw LLM response:", response);  // Log the raw response
+      console.log("Raw LLM response:", response);
 
       let parsedResponse;
       try {
@@ -348,6 +364,15 @@ const TravelPlannerApp = () => {
       }
 
       if (parsedResponse && parsedResponse.itinerary) {
+        // Process each day's activities to wrap entities with links
+        for (let day of parsedResponse.itinerary) {
+          ['morning', 'afternoon', 'evening'].forEach(timeOfDay => {
+            day[timeOfDay] = day[timeOfDay].replace(/\[([^\]]+)\]/g, (_, entity) => {
+              return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer">${entity}</a>`;
+            });
+          });
+        }
+
         console.log("Parsed response:", parsedResponse);
         setFinalPlan(parsedResponse);
       } else {
@@ -466,7 +491,13 @@ const TravelPlannerApp = () => {
                             <Typography variant="subtitle1" gutterBottom>
                               {t(timeOfDay)}
                             </Typography>
-                            <Typography variant="body2">{day[timeOfDay]}</Typography>
+                            <StyledContent>
+                              <Typography 
+                                variant="body2" 
+                                component="div"
+                                dangerouslySetInnerHTML={{ __html: day[timeOfDay] }}
+                              />
+                            </StyledContent>
                           </CardContent>
                         </Card>
                       </Grid>
