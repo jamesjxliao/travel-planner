@@ -181,7 +181,7 @@ const TravelPlannerApp = () => {
   const [conversationHistory, setConversationHistory] = useState([]);
   const [finalPlan, setFinalPlan] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [homeLocation, setHomeLocation] = useState('San Francisco');
+  const [homeLocation, setHomeLocation] = useState('San Carlos');
   const [selectedAspects, setSelectedAspects] = useState(['Food']);
   const [customAspect, setCustomAspect] = useState('');
   const [aspectPreferences, setAspectPreferences] = useState({});
@@ -319,14 +319,14 @@ const TravelPlannerApp = () => {
       }
     });
 
-    finalPrompt += ` Please provide a comprehensive ${numDays}-day travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip, with a breakdown for major categories (e.g., accommodation, transportation, food, activities). For each activity or attraction mentioned, please enclose it in square brackets [like this] to mark it as an important entity. Format the response as a JSON object with the following structure:
+    finalPrompt += ` Please provide a comprehensive ${numDays}-day travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip, with a breakdown for major categories (e.g., accommodation, transportation, food, activities). Only enclose specific attractions, landmarks, or unique experiences in square brackets [like this]. Do not mark general activities or common nouns. Format the response as a JSON object with the following structure:
     {
       "itinerary": [
         {
           "day": 1,
-          "morning": "Description of morning activities with [important entities] marked",
-          "afternoon": "Description of afternoon activities with [important entities] marked",
-          "evening": "Description of evening activities with [important entities] marked"
+          "morning": "Description of morning activities with [specific attractions] marked",
+          "afternoon": "Description of afternoon activities with [specific landmarks] marked",
+          "evening": "Description of evening activities with [unique experiences] marked"
         },
         // ... repeat for each day
       ],
