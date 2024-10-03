@@ -6,6 +6,7 @@ import { keyframes } from '@mui/system';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import BugReportIcon from '@mui/icons-material/BugReport';
+import ReactMarkdown from 'react-markdown';
 
 // Create a language context
 const LanguageContext = createContext();
@@ -239,13 +240,19 @@ const TravelPlannerApp = () => {
     if (travelers === 'Family' || travelers === 'Group') {
       travelersInfo += `. Group size: ${groupSize}`;
     }
-    const prompt = `For a ${numDays}-day trip to ${destination} from ${homeLocation}, provide 4 distinct options for ${aspect}. ${travelersInfo}. User's preference: "${aspectPreference}". Each option should be a brief markdown bullet point (no more than 30 words) and represent a different approach or choice, considering the type of travelers and trip duration.`;
+    const prompt = `For a ${numDays}-day trip to ${destination} from ${homeLocation}, provide 4 distinct options for ${aspect}. ${travelersInfo}. User's preference: "${aspectPreference}". Each option should be a brief markdown bullet point (no more than 30 words) and represent a different approach or choice, considering the type of travelers and trip duration. Enclose specific attractions, landmarks, or unique experiences in square brackets [like this].`;
     const optionsResponse = await getLLMResponse(prompt);
     
     // Filter and validate the options
     const validOptions = optionsResponse.split('\n')
       .map(option => option.trim())
-      .filter(option => option && option.startsWith('- ') && option.length > 5);
+      .filter(option => option && option.startsWith('- ') && option.length > 5)
+      .map(option => {
+        // Process each option to wrap entities with links
+        return option.replace(/\[([^\]]+)\]/g, (_, entity) => {
+          return `[${entity}](${createGoogleSearchLink(entity)})`;
+        });
+      });
 
     // If we don't have enough valid options, regenerate
     if (validOptions.length < 3) {
@@ -527,6 +534,20 @@ const TravelPlannerApp = () => {
     );
   };
 
+  const renderMarkdownWithLinks = (content) => {
+    return (
+      <ReactMarkdown
+        components={{
+          a: ({ node, ...props }) => (
+            <a target="_blank" rel="noopener noreferrer" {...props} />
+          ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    );
+  };
+
   const sidebarContent = (
     <Box sx={{ width: isMobile ? '100vw' : 250, p: 2 }}>
       {isMobile && (
@@ -741,7 +762,9 @@ const TravelPlannerApp = () => {
                         <Grid item xs={12} sm={6} key={index}>
                           <HighlightCard isNew={newOptionIndices[aspect]?.[index]}>
                             <CardContent sx={{ flexGrow: 1, overflow: 'auto' }}>
-                              <Typography variant="body2">{option}</Typography>
+                              <StyledContent>
+                                {renderMarkdownWithLinks(option)}
+                              </StyledContent>
                             </CardContent>
                             <CardActions>
                               <Button 
