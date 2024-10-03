@@ -1,6 +1,5 @@
 import React, { useState, useEffect, createContext, useContext, useRef } from 'react';
 import OpenAI from 'openai';
-import ReactMarkdown from 'react-markdown';
 import { Button, TextField, Card, CardContent, CardActions, Typography, Grid, FormControl, InputLabel, Select, MenuItem, Chip, Box, Switch, FormControlLabel, Paper, useMediaQuery, Drawer, IconButton, AppBar, Toolbar } from '@mui/material';
 import { styled, useTheme } from '@mui/material/styles';
 import { keyframes } from '@mui/system';
@@ -278,11 +277,55 @@ const TravelPlannerApp = () => {
       }
     });
 
-    finalPrompt += ` Please provide a comprehensive ${numDays}-day travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip.`;
+    finalPrompt += ` Please provide a comprehensive ${numDays}-day travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip. Format the response as a JSON object with the following structure:
+    {
+      "itinerary": [
+        {
+          "day": 1,
+          "morning": "Description of morning activities",
+          "afternoon": "Description of afternoon activities",
+          "evening": "Description of evening activities"
+        },
+        // ... repeat for each day
+      ],
+      "estimatedCost": "Cost range for the entire trip"
+    }`;
 
-    const response = await getLLMResponse(finalPrompt);
-    setFinalPlan(response);
-    setIsLoading(false);
+    try {
+      const response = await getLLMResponse(finalPrompt);
+      console.log("Raw LLM response:", response);  // Log the raw response
+
+      let parsedResponse;
+      try {
+        parsedResponse = JSON.parse(response);
+      } catch (parseError) {
+        console.error("Failed to parse LLM response:", parseError);
+        console.log("Attempting to extract JSON from response...");
+        
+        // Attempt to extract JSON from the response
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            parsedResponse = JSON.parse(jsonMatch[0]);
+          } catch (extractError) {
+            console.error("Failed to extract and parse JSON:", extractError);
+          }
+        }
+      }
+
+      if (parsedResponse && parsedResponse.itinerary) {
+        console.log("Parsed response:", parsedResponse);
+        setFinalPlan(parsedResponse);
+      } else {
+        console.error("Invalid response structure:", parsedResponse);
+        setFinalPlan({ error: "Failed to generate a valid itinerary. Please try again." });
+      }
+    } catch (error) {
+      console.error("Error in finalizePlan:", error);
+      setFinalPlan({ error: "An error occurred while generating the travel plan. Please try again." });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handlePreferenceChange = (aspect, value) => {
@@ -363,6 +406,42 @@ const TravelPlannerApp = () => {
       return;
     }
     setDrawerOpen(open);
+  };
+
+  const renderItinerary = () => {
+    if (!finalPlan || !finalPlan.itinerary) return null;
+
+    return (
+      <Box sx={{ mt: 2 }}>
+        <Typography variant="h5" gutterBottom>{t('yourTravelPlan')}</Typography>
+        <Grid container spacing={2}>
+          {finalPlan.itinerary.map((day, index) => (
+            <Grid item xs={12} key={index}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>Day {day.day}</Typography>
+                  <Grid container spacing={2}>
+                    {['morning', 'afternoon', 'evening'].map((timeOfDay) => (
+                      <Grid item xs={12} sm={4} key={timeOfDay}>
+                        <Card variant="outlined">
+                          <CardContent>
+                            <Typography variant="subtitle1" gutterBottom>
+                              {timeOfDay.charAt(0).toUpperCase() + timeOfDay.slice(1)}
+                            </Typography>
+                            <Typography variant="body2">{day[timeOfDay]}</Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+        <Typography variant="h6" sx={{ mt: 2 }}>Estimated Cost: {finalPlan.estimatedCost}</Typography>
+      </Box>
+    );
   };
 
   const sidebarContent = (
@@ -558,7 +637,7 @@ const TravelPlannerApp = () => {
                         <Grid item xs={12} sm={6} key={index}>
                           <HighlightCard isNew={newOptionIndices[aspect]?.[index]}>
                             <CardContent sx={{ flexGrow: 1, overflow: 'auto' }}>
-                              <ReactMarkdown>{option}</ReactMarkdown>
+                              <Typography variant="body2">{option}</Typography>
                             </CardContent>
                             <CardActions>
                               <Button 
@@ -601,14 +680,7 @@ const TravelPlannerApp = () => {
 
           {isLoading && <Typography sx={{ mt: 2 }}>{t('generatingTravelPlan')}</Typography>}
 
-          {finalPlan && (
-            <Card sx={{ mt: 2 }}>
-              <CardContent>
-                <Typography variant="h5" gutterBottom>{t('yourTravelPlan')}</Typography>
-                <ReactMarkdown>{finalPlan}</ReactMarkdown>
-              </CardContent>
-            </Card>
-          )}
+          {finalPlan && renderItinerary()}
         </Grid>
       </Grid>
       {isMobile && (
