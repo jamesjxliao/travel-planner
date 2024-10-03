@@ -83,6 +83,7 @@ const translations = {
     "accommodations.resort": "Resort",
     "accommodations.hostel": "Hostel",
     "accommodations.camping": "Camping",
+    "accommodations.flexible": "Flexible",
     "food.localcuisine": "Local cuisine",
     "food.finedining": "Fine dining",
     "food.streetfood": "Street food",
@@ -123,7 +124,7 @@ const translations = {
     enterNumberOfTravelers: "输入旅行者人数",
     enterYourHomeCity: "输入您出发城市/国家",
     enterNumberOfDays: "输入旅行天数",
-    enterCustomAspect: "输入自定义方面",
+    enterCustomAspect: "添加自定义方面",
     selectAtLeastOneAspect: "请至少选择一个考虑的旅行方面。",
     preferencesFor: "对于以下方面的偏好",
     timetovisit: "访问时间",
@@ -161,6 +162,7 @@ const translations = {
     "accommodations.resort": "度假村",
     "accommodations.hostel": "青年旅舍",
     "accommodations.camping": "露营",
+    "accommodations.flexible": "任意",
     "food.localcuisine": "当地美食",
     "food.finedining": "高档餐厅",
     "food.streetfood": "街头小吃",
@@ -248,13 +250,15 @@ const TravelPlannerApp = () => {
   const [isRoundTrip, setIsRoundTrip] = useState(true);
   const [budget, setBudget] = useState('Mid-range');  // New state for budget
 
-  // Remove Transportation from predefinedAspects
+  // Remove Accommodations from predefinedAspects
   const predefinedAspects = [
     "Time to visit",
-    "Accommodations",
     "Food",
     "Attractions"
   ];
+
+  // Add a new state for accommodation type
+  const [accommodationType, setAccommodationType] = useState('flexible');
 
   // Add a new state for transportation mode
   const [transportationMode, setTransportationMode] = useState('flexible');
@@ -807,7 +811,7 @@ Format the response as a JSON object with the following structure:
         )}
         <Grid item xs={12} sm={isMobile ? 12 : 9}>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
               <TextField
                 label={t('destination')}
                 value={destination}
@@ -844,6 +848,25 @@ Format the response as a JSON object with the following structure:
                   <MenuItem value="flexible">{t('transportation.flexible')}</MenuItem>
                   <MenuItem value="flight">{t('transportation.flight')}</MenuItem>
                   <MenuItem value="driving">{t('transportation.driving')}</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <FormControl fullWidth margin="normal">
+                <InputLabel id="accommodation-label">{t('accommodations')}</InputLabel>
+                <Select
+                  labelId="accommodation-label"
+                  value={accommodationType}
+                  label={t('accommodations')}
+                  onChange={(e) => setAccommodationType(e.target.value)}
+                  disabled={isLoading}
+                >
+                  <MenuItem value="flexible">{t('accommodations.flexible')}</MenuItem>
+                  <MenuItem value="hotel">{t('accommodations.hotel')}</MenuItem>
+                  <MenuItem value="airbnb">{t('accommodations.airbnb')}</MenuItem>
+                  <MenuItem value="resort">{t('accommodations.resort')}</MenuItem>
+                  <MenuItem value="hostel">{t('accommodations.hostel')}</MenuItem>
+                  <MenuItem value="camping">{t('accommodations.camping')}</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
