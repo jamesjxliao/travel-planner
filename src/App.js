@@ -190,14 +190,15 @@ const TravelPlannerApp = () => {
     setRegeneratingAspect(null);
   };
 
-  const handleOptionToggle = (option) => {
+  const handleOptionToggle = (aspect, option) => {
     setSelectedOptions(prev => {
-      const current = prev[currentAspect] || [];
+      const current = prev[aspect] || [];
+      const updated = current.includes(option)
+        ? current.filter(item => item !== option)
+        : [...current, option];
       return {
         ...prev,
-        [currentAspect]: current.includes(option)
-          ? current.filter(item => item !== option)
-          : [...current, option]
+        [aspect]: updated
       };
     });
   };
@@ -422,7 +423,7 @@ const TravelPlannerApp = () => {
                             <CardActions>
                               <Button 
                                 size="small" 
-                                onClick={() => handleOptionToggle(option)}
+                                onClick={() => handleOptionToggle(aspect, option)}
                                 variant={selectedOptions[aspect]?.includes(option) ? "contained" : "outlined"}
                               >
                                 {selectedOptions[aspect]?.includes(option) ? t('selected') : t('select')}
