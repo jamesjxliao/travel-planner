@@ -416,7 +416,7 @@ Ensure each option is unique and provides a different experience or approach.`;
       budget: budget,
       transportation: transportationMode,
       accommodation: accommodationType,
-      timeToVisit: timeToVisit // Add this line
+      timeToVisit: timeToVisit
     };
 
     let finalPrompt = `Plan a ${travelInfo.type} from ${travelInfo.from} to ${travelInfo.to} for ${travelInfo.travelers}`;
@@ -424,7 +424,7 @@ Ensure each option is unique and provides a different experience or approach.`;
     finalPrompt += `. Budget: ${travelInfo.budget}.`;
     finalPrompt += ` Transportation: ${travelInfo.transportation === 'flexible' ? 'flexible options' : travelInfo.transportation}.`;
     finalPrompt += ` Accommodation: ${travelInfo.accommodation === 'flexible' ? 'flexible options' : t(`accommodations.${travelInfo.accommodation}`)}.`;
-    finalPrompt += ` Time to visit: ${travelInfo.timeToVisit === 'flexible' ? 'flexible' : t(`timetovisit.${travelInfo.timeToVisit}`)}.`; // Add this line
+    finalPrompt += ` Time to visit: ${travelInfo.timeToVisit === 'flexible' ? 'flexible' : t(`timetovisit.${travelInfo.timeToVisit}`)}.`;
 
     const preferences = Object.entries(selectedOptions).map(([aspect, choices]) => {
       const preference = aspectPreferences[aspect] || '';
@@ -820,7 +820,7 @@ Format the response as a JSON object with the following structure:
         )}
         <Grid item xs={12} sm={isMobile ? 12 : 9}>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={3}>
+            <Grid item xs={12} sm={6} md={4}>
               <TextField
                 label={t('destination')}
                 value={destination}
@@ -831,7 +831,7 @@ Format the response as a JSON object with the following structure:
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={1.5}>
+            <Grid item xs={6} sm={3} md={2}>
               <TextField
                 label={t('numberOfDays')}
                 value={numDays}
@@ -844,8 +844,24 @@ Format the response as a JSON object with the following structure:
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={1.5}>
-              <FormControl fullWidth margin="normal">
+            <Grid item xs={6} sm={3} md={2}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={isRoundTrip}
+                    onChange={(e) => setIsRoundTrip(e.target.checked)}
+                    disabled={isLoading}
+                  />
+                }
+                label={t('roundTrip')}
+                sx={{ mt: 2 }}
+              />
+            </Grid>
+          </Grid>
+
+          <Grid container spacing={2} sx={{ mt: 2 }}>
+            <Grid item xs={12} sm={4}>
+              <FormControl fullWidth>
                 <InputLabel id="time-to-visit-label">{t('timetovisit')}</InputLabel>
                 <Select
                   labelId="time-to-visit-label"
@@ -863,8 +879,8 @@ Format the response as a JSON object with the following structure:
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} sm={1.5}>
-              <FormControl fullWidth margin="normal">
+            <Grid item xs={12} sm={4}>
+              <FormControl fullWidth>
                 <InputLabel id="transportation-label">{t('transportation')}</InputLabel>
                 <Select
                   labelId="transportation-label"
@@ -879,8 +895,8 @@ Format the response as a JSON object with the following structure:
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} sm={1.5}>
-              <FormControl fullWidth margin="normal">
+            <Grid item xs={12} sm={4}>
+              <FormControl fullWidth>
                 <InputLabel id="accommodation-label">{t('accommodations')}</InputLabel>
                 <Select
                   labelId="accommodation-label"
@@ -897,19 +913,6 @@ Format the response as a JSON object with the following structure:
                   <MenuItem value="camping">{t('accommodations.camping')}</MenuItem>
                 </Select>
               </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={1.5}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={isRoundTrip}
-                    onChange={(e) => setIsRoundTrip(e.target.checked)}
-                    disabled={isLoading}
-                  />
-                }
-                label={t('roundTrip')}
-                sx={{ mt: 2 }}
-              />
             </Grid>
           </Grid>
 
