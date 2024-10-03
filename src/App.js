@@ -5,6 +5,7 @@ import { Button, TextField, Card, CardContent, CardActions, Typography, Grid, Fo
 import { styled, useTheme } from '@mui/material/styles';
 import { keyframes } from '@mui/system';
 import MenuIcon from '@mui/icons-material/Menu';
+import CloseIcon from '@mui/icons-material/Close';
 
 // Create a language context
 const LanguageContext = createContext();
@@ -79,7 +80,7 @@ const translations = {
     nextAspect: "下一个方面",
     finalizePlan: "完成计划",
     currentLLMPrompt: "当前LLM提示：",
-    generatingTravelPlan: "正在生成您的旅行计划...",
+    generatingTravelPlan: "正在生成您的旅��计划...",
     yourTravelPlan: "您的旅行计划",
     enterNumberOfTravelers: "输入旅行者人数",
     enterYourHomeCity: "输入您的出发城市/国家",
@@ -320,12 +321,17 @@ const TravelPlannerApp = () => {
     setCoveredAspects(newCoveredAspects);
   };
 
+  const handleDrawerClose = () => {
+    setDrawerOpen(false);
+  };
+
   const handleAspectToggle = (aspect) => {
     setSelectedAspects(prevAspects =>
       prevAspects.includes(aspect)
         ? prevAspects.filter(a => a !== aspect)
         : [...prevAspects, aspect]
     );
+    if (isMobile) handleDrawerClose();
   };
 
   const handleAddCustomAspect = (e) => {
@@ -334,6 +340,7 @@ const TravelPlannerApp = () => {
       setSelectedAspects(prevAspects => [...prevAspects, customAspect]);
       setCustomAspect('');
     }
+    if (isMobile) handleDrawerClose();
   };
 
   const handleTravelersChange = (event) => {
@@ -348,6 +355,7 @@ const TravelPlannerApp = () => {
     } else if (value === 'Group') {
       setGroupSize('5');
     }
+    if (isMobile) handleDrawerClose();
   };
 
   const toggleDrawer = (open) => (event) => {
@@ -359,6 +367,14 @@ const TravelPlannerApp = () => {
 
   const sidebarContent = (
     <Box sx={{ width: isMobile ? '100vw' : 250, p: 2 }}>
+      {isMobile && (
+        <IconButton
+          onClick={handleDrawerClose}
+          sx={{ position: 'absolute', right: 8, top: 8 }}
+        >
+          <CloseIcon />
+        </IconButton>
+      )}
       <Paper elevation={3} sx={{ p: 2, mb: 3, backgroundColor: '#f0f8ff' }}>
         <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
           {t('travelersInformation')}
@@ -599,7 +615,10 @@ const TravelPlannerApp = () => {
         <Drawer
           anchor="left"
           open={drawerOpen}
-          onClose={toggleDrawer(false)}
+          onClose={handleDrawerClose}
+          ModalProps={{
+            keepMounted: true, // Better open performance on mobile
+          }}
         >
           {sidebarContent}
         </Drawer>
