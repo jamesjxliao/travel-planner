@@ -75,11 +75,9 @@ const translations = {
     "timetovisit.fall": "Fall",
     "timetovisit.winter": "Winter",
     "timetovisit.holidays": "Holidays",
-    "transportation.publictransit": "Public transit",
-    "transportation.rentalcar": "Rental car",
-    "transportation.walking": "Walking",
-    "transportation.biking": "Biking",
-    "transportation.taxi": "Taxi",
+    "transportation.flight": "Flight",
+    "transportation.driving": "Driving",
+    "transportation.flexible": "Flexible",
     "accommodations.hotel": "Hotel",
     "accommodations.airbnb": "Airbnb",
     "accommodations.resort": "Resort",
@@ -151,15 +149,13 @@ const translations = {
     midRange: "中档",
     luxury: "豪华",
     "timetovisit.spring": "春季",
-    "timetovisit.summer": "夏季",
+    "timetovisit.summer": "夏��",
     "timetovisit.fall": "秋季",
     "timetovisit.winter": "冬季",
     "timetovisit.holidays": "节假日",
-    "transportation.publictransit": "公共交通",
-    "transportation.rentalcar": "租车",
-    "transportation.walking": "步行",
-    "transportation.biking": "骑行",
-    "transportation.taxi": "出租车",
+    "transportation.flight": "飞机",
+    "transportation.driving": "自驾",
+    "transportation.flexible": "任意",
     "accommodations.hotel": "酒店",
     "accommodations.airbnb": "Airbnb",
     "accommodations.resort": "度假村",
@@ -252,14 +248,16 @@ const TravelPlannerApp = () => {
   const [isRoundTrip, setIsRoundTrip] = useState(true);
   const [budget, setBudget] = useState('Mid-range');  // New state for budget
 
+  // Remove Transportation from predefinedAspects
   const predefinedAspects = [
     "Time to visit",
-    "Transportation",
     "Accommodations",
     "Food",
     "Attractions"
-    // "Activities" removed from here
   ];
+
+  // Add a new state for transportation mode
+  const [transportationMode, setTransportationMode] = useState('flexible');
 
   const [coveredAspects, setCoveredAspects] = useState(new Set());
 
@@ -273,7 +271,6 @@ const TravelPlannerApp = () => {
   // Update the commonPreferences object to use translation keys
   const commonPreferences = {
     "Time to visit": ["timetovisit.spring", "timetovisit.summer", "timetovisit.fall", "timetovisit.winter", "timetovisit.holidays"],
-    "Transportation": ["transportation.publictransit", "transportation.rentalcar", "transportation.walking", "transportation.biking", "transportation.taxi"],
     "Accommodations": ["accommodations.hotel", "accommodations.airbnb", "accommodations.resort", "accommodations.hostel", "accommodations.camping"],
     "Food": ["food.localcuisine", "food.finedining", "food.streetfood", "food.vegetarian", "food.familyfriendly"],
     "Attractions": ["attractions.museums", "attractions.nature", "attractions.historicalsites", "attractions.themeparks", "attractions.shopping"]
@@ -410,7 +407,13 @@ Ensure each option is unique and provides a different experience or approach.`;
       travelersInfo += `. Group size: ${groupSize}`;
     }
     travelersInfo += `. Budget: ${budget}`;  // Add budget to travelers info
-    let finalPrompt = `I'm planning a ${numDays}-day ${isRoundTrip ? 'round trip' : 'one-way trip'} from ${homeLocation} to ${destination}. ${travelersInfo}.`;
+    let finalPrompt = `I'm planning a ${numDays}-day ${isRoundTrip ? 'round trip' : 'one-way trip'} from ${homeLocation} to ${destination}`;
+    if (transportationMode !== 'flexible') {
+      finalPrompt += ` by ${transportationMode}`;
+    } else {
+      finalPrompt += ` with flexible transportation options`;
+    }
+    finalPrompt += `. ${travelersInfo}.`;
     
     Object.entries(selectedOptions).forEach(([aspect, choices]) => {
       const preference = aspectPreferences[aspect] || '';
@@ -815,7 +818,7 @@ Format the response as a JSON object with the following structure:
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={3}>
+            <Grid item xs={12} sm={2}>
               <TextField
                 label={t('numberOfDays')}
                 value={numDays}
@@ -828,7 +831,23 @@ Format the response as a JSON object with the following structure:
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={3}>
+            <Grid item xs={12} sm={2}>
+              <FormControl fullWidth margin="normal">
+                <InputLabel id="transportation-label">{t('transportation')}</InputLabel>
+                <Select
+                  labelId="transportation-label"
+                  value={transportationMode}
+                  label={t('transportation')}
+                  onChange={(e) => setTransportationMode(e.target.value)}
+                  disabled={isLoading}
+                >
+                  <MenuItem value="flexible">{t('transportation.flexible')}</MenuItem>
+                  <MenuItem value="flight">{t('transportation.flight')}</MenuItem>
+                  <MenuItem value="driving">{t('transportation.driving')}</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={2}>
               <FormControlLabel
                 control={
                   <Switch
