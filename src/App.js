@@ -149,7 +149,7 @@ const translations = {
     midRange: "中档",
     luxury: "豪华",
     "timetovisit.spring": "春季",
-    "timetovisit.summer": "夏��",
+    "timetovisit.summer": "夏季",
     "timetovisit.fall": "秋季",
     "timetovisit.winter": "冬季",
     "timetovisit.holidays": "节假日",
