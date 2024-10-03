@@ -69,7 +69,32 @@ const translations = {
     evening: "Evening",
     day: "Day",
     midRange: "Mid-range",
-    luxury: "Luxury"
+    luxury: "Luxury",
+    "timetovisit.spring": "Spring",
+    "timetovisit.summer": "Summer",
+    "timetovisit.fall": "Fall",
+    "timetovisit.winter": "Winter",
+    "timetovisit.holidays": "Holidays",
+    "transportation.publictransit": "Public transit",
+    "transportation.rentalcar": "Rental car",
+    "transportation.walking": "Walking",
+    "transportation.biking": "Biking",
+    "transportation.taxi": "Taxi",
+    "accommodations.hotel": "Hotel",
+    "accommodations.airbnb": "Airbnb",
+    "accommodations.resort": "Resort",
+    "accommodations.hostel": "Hostel",
+    "accommodations.camping": "Camping",
+    "food.localcuisine": "Local cuisine",
+    "food.finedining": "Fine dining",
+    "food.streetfood": "Street food",
+    "food.vegetarian": "Vegetarian",
+    "food.familyfriendly": "Family-friendly",
+    "attractions.museums": "Museums",
+    "attractions.nature": "Nature",
+    "attractions.historicalsites": "Historical sites",
+    "attractions.themeparks": "Theme parks",
+    "attractions.shopping": "Shopping"
   },
   zh: {
     title: "AI旅行规划器",
@@ -124,7 +149,32 @@ const translations = {
     evening: "晚上",
     day: "第天",  // This will be used as a template
     midRange: "中档",
-    luxury: "豪华"
+    luxury: "豪华",
+    "timetovisit.spring": "春季",
+    "timetovisit.summer": "夏季",
+    "timetovisit.fall": "秋季",
+    "timetovisit.winter": "冬季",
+    "timetovisit.holidays": "节假日",
+    "transportation.publictransit": "公共交通",
+    "transportation.rentalcar": "租车",
+    "transportation.walking": "步行",
+    "transportation.biking": "骑行",
+    "transportation.taxi": "出租车",
+    "accommodations.hotel": "酒店",
+    "accommodations.airbnb": "Airbnb",
+    "accommodations.resort": "度假村",
+    "accommodations.hostel": "青年旅舍",
+    "accommodations.camping": "露营",
+    "food.localcuisine": "当地美食",
+    "food.finedining": "高档餐厅",
+    "food.streetfood": "街头小吃",
+    "food.vegetarian": "素食",
+    "food.familyfriendly": "适合家庭",
+    "attractions.museums": "博物馆",
+    "attractions.nature": "自然景观",
+    "attractions.historicalsites": "历史遗迹",
+    "attractions.themeparks": "主题公园",
+    "attractions.shopping": "购物"
   }
 };
 
@@ -220,27 +270,26 @@ const TravelPlannerApp = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Add this new object with common preferences for each aspect
+  // Update the commonPreferences object to use translation keys
   const commonPreferences = {
-    "Time to visit": ["Spring", "Summer", "Fall", "Winter", "Holidays"],
-    "Transportation": ["Public transit", "Rental car", "Walking", "Biking", "Taxi"],
-    "Accommodations": ["Hotel", "Airbnb", "Resort", "Hostel", "Camping"],
-    "Food": ["Local cuisine", "Fine dining", "Street food", "Vegetarian", "Family-friendly"],
-    "Attractions": ["Museums", "Nature", "Historical sites", "Theme parks", "Shopping"]
+    "Time to visit": ["timetovisit.spring", "timetovisit.summer", "timetovisit.fall", "timetovisit.winter", "timetovisit.holidays"],
+    "Transportation": ["transportation.publictransit", "transportation.rentalcar", "transportation.walking", "transportation.biking", "transportation.taxi"],
+    "Accommodations": ["accommodations.hotel", "accommodations.airbnb", "accommodations.resort", "accommodations.hostel", "accommodations.camping"],
+    "Food": ["food.localcuisine", "food.finedining", "food.streetfood", "food.vegetarian", "food.familyfriendly"],
+    "Attractions": ["attractions.museums", "attractions.nature", "attractions.historicalsites", "attractions.themeparks", "attractions.shopping"]
   };
 
-  // Update this function to toggle preferences
-  const handleCommonPreferenceClick = (aspect, preference) => {
+  // Update this function to use translated preferences
+  const handleCommonPreferenceClick = (aspect, preferenceKey) => {
+    const translatedPreference = t(preferenceKey);
     setAspectPreferences(prev => {
       const currentPreferences = prev[aspect] ? prev[aspect].split(', ') : [];
       let updatedPreferences;
       
-      if (currentPreferences.includes(preference)) {
-        // Remove the preference if it's already there
-        updatedPreferences = currentPreferences.filter(pref => pref !== preference);
+      if (currentPreferences.includes(translatedPreference)) {
+        updatedPreferences = currentPreferences.filter(pref => pref !== translatedPreference);
       } else {
-        // Add the preference if it's not there
-        updatedPreferences = [...currentPreferences, preference];
+        updatedPreferences = [...currentPreferences, translatedPreference];
       }
       
       return {
@@ -802,13 +851,13 @@ Format the response as a JSON object with the following structure:
                     <Typography variant="h6" sx={{ mr: 2 }}>
                       {predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}
                     </Typography>
-                    {commonPreferences[aspect] && commonPreferences[aspect].map((pref, index) => (
+                    {commonPreferences[aspect] && commonPreferences[aspect].map((prefKey, index) => (
                       <Chip
                         key={index}
-                        label={pref}
+                        label={t(prefKey)}
                         size="small"
-                        onClick={() => handleCommonPreferenceClick(aspect, pref)}
-                        color={aspectPreferences[aspect]?.includes(pref) ? "primary" : "default"}
+                        onClick={() => handleCommonPreferenceClick(aspect, prefKey)}
+                        color={aspectPreferences[aspect]?.includes(t(prefKey)) ? "primary" : "default"}
                         sx={{ '&:hover': { backgroundColor: 'primary.light', cursor: 'pointer' } }}
                       />
                     ))}
