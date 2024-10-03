@@ -98,7 +98,7 @@ const translations = {
     generatingTravelPlan: "正在生成您的旅行计划...",
     yourTravelPlan: "您的旅行计划",
     enterNumberOfTravelers: "输入旅行者人数",
-    enterYourHomeCity: "输入您的出发城市/国家",
+    enterYourHomeCity: "输入您���出发城市/国家",
     enterNumberOfDays: "输入旅行天数",
     enterCustomAspect: "输入自定义方面",
     selectAtLeastOneAspect: "请至少选择一个考虑的旅行方面。",
@@ -219,6 +219,23 @@ const TravelPlannerApp = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Add this new object with common preferences for each aspect
+  const commonPreferences = {
+    "Time to visit": ["Spring", "Summer", "Fall", "Winter", "Holidays"],
+    "Transportation": ["Public transit", "Rental car", "Walking", "Biking", "Taxi"],
+    "Accommodations": ["Hotel", "Airbnb", "Resort", "Hostel", "Camping"],
+    "Food": ["Local cuisine", "Fine dining", "Street food", "Vegetarian", "Family-friendly"],
+    "Attractions": ["Museums", "Nature", "Historical sites", "Theme parks", "Shopping"]
+  };
+
+  // Add this new function to handle clicking on a common preference
+  const handleCommonPreferenceClick = (aspect, preference) => {
+    setAspectPreferences(prev => ({
+      ...prev,
+      [aspect]: prev[aspect] ? `${prev[aspect]}, ${preference}` : preference
+    }));
+  };
 
   const getLLMResponse = async (prompt) => {
     setCurrentPrompt(prompt);  // Set the current prompt for debugging
@@ -767,28 +784,41 @@ Format the response as a JSON object with the following structure:
           {selectedAspects.map((aspect) => (
             <Card key={aspect} sx={{ mt: 2 }}>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  {predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}
-                </Typography>
-                <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', gap: 2 }}>
-                  <TextField
-                    label={`${t('preferencesFor')} ${predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}`}
-                    value={aspectPreferences[aspect] || ''}
-                    onChange={(e) => handlePreferenceChange(aspect, e.target.value)}
-                    onKeyPress={(e) => handleKeyPress(aspect, e)}
-                    fullWidth
-                    margin="normal"
-                    disabled={isLoading}
-                    variant="outlined"
-                  />
-                  <Button 
-                    variant="outlined" 
-                    onClick={() => generateOptions(aspect)}
-                    disabled={isGeneratingOptions[aspect]}
-                    sx={{ height: '56px', whiteSpace: 'nowrap', width: isMobile ? '100%' : 'auto' }}
-                  >
-                    {isGeneratingOptions[aspect] ? t('generatingOptions') : t('generateOptions')}
-                  </Button>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                    <Typography variant="h6" sx={{ mr: 2 }}>
+                      {predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}
+                    </Typography>
+                    {commonPreferences[aspect] && commonPreferences[aspect].map((pref, index) => (
+                      <Chip
+                        key={index}
+                        label={pref}
+                        size="small"
+                        onClick={() => handleCommonPreferenceClick(aspect, pref)}
+                        sx={{ '&:hover': { backgroundColor: 'primary.light', cursor: 'pointer' } }}
+                      />
+                    ))}
+                  </Box>
+                  <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', gap: 2 }}>
+                    <TextField
+                      label={`${t('preferencesFor')} ${predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}`}
+                      value={aspectPreferences[aspect] || ''}
+                      onChange={(e) => handlePreferenceChange(aspect, e.target.value)}
+                      onKeyPress={(e) => handleKeyPress(aspect, e)}
+                      fullWidth
+                      margin="normal"
+                      disabled={isLoading}
+                      variant="outlined"
+                    />
+                    <Button 
+                      variant="outlined" 
+                      onClick={() => generateOptions(aspect)}
+                      disabled={isGeneratingOptions[aspect]}
+                      sx={{ height: '56px', whiteSpace: 'nowrap', width: isMobile ? '100%' : 'auto' }}
+                    >
+                      {isGeneratingOptions[aspect] ? t('generatingOptions') : t('generateOptions')}
+                    </Button>
+                  </Box>
                 </Box>
                 {options[aspect] && options[aspect].length > 0 && (
                   <ScrollableBox ref={el => scrollRefs.current[aspect] = el}>
