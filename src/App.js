@@ -233,6 +233,13 @@ const TravelPlannerApp = () => {
     setAspectPreferences(prev => ({ ...prev, [aspect]: value }));
   };
 
+  const handleKeyPress = (aspect, event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      generateOptions(aspect);
+    }
+  };
+
   const handleAspectInput = async (input) => {
     const prompt = `Based on the user's input about ${currentAspect}: '${input}', provide 5 distinct and mutually exclusive options for their trip to ${destination}. Each option should be succinct (no more than 15 words) and represent a different approach or choice.`;
     const optionsResponse = await getLLMResponse(prompt);
@@ -406,6 +413,7 @@ const TravelPlannerApp = () => {
                   label={`${t('preferencesFor')} ${predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}`}
                   value={aspectPreferences[aspect] || ''}
                   onChange={(e) => handlePreferenceChange(aspect, e.target.value)}
+                  onKeyPress={(e) => handleKeyPress(aspect, e)}
                   fullWidth
                   margin="normal"
                   disabled={isLoading}
