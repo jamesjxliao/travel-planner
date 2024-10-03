@@ -80,7 +80,7 @@ const translations = {
     nextAspect: "下一个方面",
     finalizePlan: "完成计划",
     currentLLMPrompt: "当前LLM提示：",
-    generatingTravelPlan: "正在生成您的旅��计划...",
+    generatingTravelPlan: "正在生成您的旅行计划...",
     yourTravelPlan: "您的旅行计划",
     enterNumberOfTravelers: "输入旅行者人数",
     enterYourHomeCity: "输入您的出发城市/国家",
