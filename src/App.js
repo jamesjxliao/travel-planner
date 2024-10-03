@@ -86,7 +86,7 @@ const translations = {
     enterCustomAspect: "输入自定义方面",
     selectAtLeastOneAspect: "请至少选择一个考虑的旅行方面。",
     preferencesFor: "对于以下方面的偏好",
-    timetovisit: "最佳访问时间",
+    timetovisit: "访问时间",
     transportation: "交通",
     accommodations: "住宿",
     food: "美食",
@@ -148,7 +148,7 @@ const TravelPlannerApp = () => {
   const [currentPrompt, setCurrentPrompt] = useState('');
   const [travelers, setTravelers] = useState('Family');
   const [groupSize, setGroupSize] = useState('3');
-  const [numDays, setNumDays] = useState('5');
+  const [numDays, setNumDays] = useState('3');
   const { language, setLanguage, t } = useLanguage();
   const [newOptionIndices, setNewOptionIndices] = useState({});
   const scrollRefs = useRef({});
