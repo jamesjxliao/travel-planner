@@ -411,26 +411,28 @@ const TravelPlannerApp = () => {
                 variant="outlined"
               />
               {options[aspect] && options[aspect].length > 0 && (
-                <Grid container spacing={2} style={{ marginTop: '10px' }}>
-                  {options[aspect].map((option, index) => (
-                    <Grid item xs={12} sm={6} md={4} key={index}>
-                      <Card>
-                        <CardContent>
-                          <ReactMarkdown>{option}</ReactMarkdown>
-                        </CardContent>
-                        <CardActions>
-                          <Button 
-                            size="small" 
-                            onClick={() => handleOptionToggle(aspect, option)}
-                            variant={selectedOptions[aspect]?.includes(option) ? "contained" : "outlined"}
-                          >
-                            {selectedOptions[aspect]?.includes(option) ? t('selected') : t('select')}
-                          </Button>
-                        </CardActions>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
+                <Box sx={{ height: '300px', overflowY: 'auto', marginTop: '10px' }}>
+                  <Grid container spacing={2}>
+                    {options[aspect].map((option, index) => (
+                      <Grid item xs={12} sm={6} key={index}>
+                        <Card>
+                          <CardContent>
+                            <ReactMarkdown>{option}</ReactMarkdown>
+                          </CardContent>
+                          <CardActions>
+                            <Button 
+                              size="small" 
+                              onClick={() => handleOptionToggle(aspect, option)}
+                              variant={selectedOptions[aspect]?.includes(option) ? "contained" : "outlined"}
+                            >
+                              {selectedOptions[aspect]?.includes(option) ? t('selected') : t('select')}
+                            </Button>
+                          </CardActions>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Box>
               )}
               <Button 
                 variant="outlined" 
