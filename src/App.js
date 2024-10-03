@@ -17,7 +17,7 @@ const translations = {
     title: "AI Travel Planner",
     destination: "Destination",
     startPlanning: "Start Planning",
-    preferences: "Preferences",
+    travelersInformation: "Traveler's Information",
     whosTraveling: "Who's Traveling",
     solo: "Solo",
     couple: "Couple",
@@ -58,7 +58,7 @@ const translations = {
     title: "AI旅行规划器",
     destination: "目的地",
     startPlanning: "开始规划",
-    preferences: "偏好设置",
+    travelersInformation: "旅行者信息",
     whosTraveling: "谁在旅行",
     solo: "单人",
     couple: "情侣",
@@ -350,7 +350,7 @@ const TravelPlannerApp = () => {
       <Grid item xs={3}>
         <Paper elevation={3} sx={{ p: 2, mb: 3, backgroundColor: '#f0f8ff' }}>
           <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
-            {t('preferences')}
+            {t('travelersInformation')}
           </Typography>
           
           <FormControl fullWidth margin="normal">
