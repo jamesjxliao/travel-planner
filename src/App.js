@@ -1,7 +1,9 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect, createContext, useContext, useRef } from 'react';
 import OpenAI from 'openai';
 import ReactMarkdown from 'react-markdown';
 import { Button, TextField, Card, CardContent, CardActions, Typography, Grid, FormControl, InputLabel, Select, MenuItem, Chip, Box, Switch, FormControlLabel } from '@mui/material';
+import { styled } from '@mui/material/styles';
+import { keyframes } from '@mui/system';
 
 // Create a language context
 const LanguageContext = createContext();
@@ -107,6 +109,28 @@ const client = new OpenAI({
   dangerouslyAllowBrowser: true // This is not recommended for production use
 });
 
+// Define a highlight animation
+const highlightAnimation = keyframes`
+  0% { background-color: #fff9c4; }
+  100% { background-color: transparent; }
+`;
+
+// Custom styled component for the scrollable box
+const ScrollableBox = styled(Box)(({ theme }) => ({
+  height: '375px',
+  overflowY: 'auto',
+  marginTop: '10px',
+  // ... existing scrollbar styles ...
+}));
+
+// Styled component for highlighting new options
+const HighlightCard = styled(Card)(({ theme, isNew }) => ({
+  height: '170px',
+  display: 'flex',
+  flexDirection: 'column',
+  animation: isNew ? `${highlightAnimation} 2s ease-in-out` : 'none',
+}));
+
 const TravelPlannerApp = () => {
   const [destination, setDestination] = useState('Los Angeles');
   const [currentAspect, setCurrentAspect] = useState('');
@@ -126,6 +150,8 @@ const TravelPlannerApp = () => {
   const [groupSize, setGroupSize] = useState('3');
   const [numDays, setNumDays] = useState('5');
   const { language, setLanguage, t } = useLanguage();
+  const [newOptionIndices, setNewOptionIndices] = useState({});
+  const scrollRefs = useRef({});
 
   const predefinedAspects = [
     "Time to visit",
@@ -183,14 +209,38 @@ const TravelPlannerApp = () => {
 
     setOptions(prevOptions => {
       const existingOptions = prevOptions[aspect] || [];
-      const newOptions = [...existingOptions, ...validOptions];
+      const newOptions = [...validOptions];
+      const updatedOptions = [...existingOptions, ...newOptions];
+      
+      // Set the indices of new options
+      setNewOptionIndices(prev => ({
+        ...prev,
+        [aspect]: updatedOptions.map((_, index) => index >= existingOptions.length)
+      }));
+
       return {
         ...prevOptions,
-        [aspect]: newOptions
+        [aspect]: updatedOptions
       };
     });
     setIsGeneratingOptions(prev => ({ ...prev, [aspect]: false }));
   };
+
+  useEffect(() => {
+    // Scroll to new options when they are generated
+    Object.keys(newOptionIndices).forEach(aspect => {
+      if (scrollRefs.current[aspect]) {
+        scrollRefs.current[aspect].scrollTop = scrollRefs.current[aspect].scrollHeight;
+      }
+    });
+
+    // Clear new option indices after a delay
+    const timer = setTimeout(() => {
+      setNewOptionIndices({});
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [newOptionIndices]);
 
   const handleOptionToggle = (aspect, option) => {
     setSelectedOptions(prev => {
@@ -429,12 +479,12 @@ const TravelPlannerApp = () => {
                 </Button>
               </Box>
               {options[aspect] && options[aspect].length > 0 && (
-                <Box sx={{ height: '300px', overflowY: 'auto', marginTop: '10px' }}>
+                <ScrollableBox ref={el => scrollRefs.current[aspect] = el}>
                   <Grid container spacing={2}>
                     {options[aspect].map((option, index) => (
                       <Grid item xs={12} sm={6} key={index}>
-                        <Card>
-                          <CardContent>
+                        <HighlightCard isNew={newOptionIndices[aspect]?.[index]}>
+                          <CardContent sx={{ flexGrow: 1, overflow: 'auto' }}>
                             <ReactMarkdown>{option}</ReactMarkdown>
                           </CardContent>
                           <CardActions>
@@ -446,11 +496,11 @@ const TravelPlannerApp = () => {
                               {selectedOptions[aspect]?.includes(option) ? t('selected') : t('select')}
                             </Button>
                           </CardActions>
-                        </Card>
+                        </HighlightCard>
                       </Grid>
                     ))}
                   </Grid>
-                </Box>
+                </ScrollableBox>
               )}
             </CardContent>
           </Card>
