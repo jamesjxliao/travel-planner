@@ -166,7 +166,7 @@ const TravelPlannerApp = () => {
     if (travelers === 'Family' || travelers === 'Group') {
       travelersInfo += `. Group size: ${groupSize}`;
     }
-    const prompt = `For a ${numDays}-day trip to ${destination} from ${homeLocation}, provide 5 distinct options for ${aspect}. ${travelersInfo}. User's preference: "${aspectPreference}". Each option should be a brief markdown bullet point (no more than 30 words) and represent a different approach or choice, considering the type of travelers and trip duration.`;
+    const prompt = `For a ${numDays}-day trip to ${destination} from ${homeLocation}, provide 4 distinct options for ${aspect}. ${travelersInfo}. User's preference: "${aspectPreference}". Each option should be a brief markdown bullet point (no more than 30 words) and represent a different approach or choice, considering the type of travelers and trip duration.`;
     const optionsResponse = await getLLMResponse(prompt);
     
     // Filter and validate the options
@@ -401,15 +401,25 @@ const TravelPlannerApp = () => {
               <Typography variant="h6" gutterBottom>
                 {predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}
               </Typography>
-              <TextField
-                label={`${t('preferencesFor')} ${predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}`}
-                value={aspectPreferences[aspect] || ''}
-                onChange={(e) => handlePreferenceChange(aspect, e.target.value)}
-                fullWidth
-                margin="normal"
-                disabled={isLoading}
-                variant="outlined"
-              />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <TextField
+                  label={`${t('preferencesFor')} ${predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}`}
+                  value={aspectPreferences[aspect] || ''}
+                  onChange={(e) => handlePreferenceChange(aspect, e.target.value)}
+                  fullWidth
+                  margin="normal"
+                  disabled={isLoading}
+                  variant="outlined"
+                />
+                <Button 
+                  variant="outlined" 
+                  onClick={() => generateOptions(aspect)}
+                  disabled={isGeneratingOptions[aspect]}
+                  sx={{ height: '56px', whiteSpace: 'nowrap' }}
+                >
+                  {isGeneratingOptions[aspect] ? t('generatingOptions') : t('generateOptions')}
+                </Button>
+              </Box>
               {options[aspect] && options[aspect].length > 0 && (
                 <Box sx={{ height: '300px', overflowY: 'auto', marginTop: '10px' }}>
                   <Grid container spacing={2}>
@@ -434,14 +444,6 @@ const TravelPlannerApp = () => {
                   </Grid>
                 </Box>
               )}
-              <Button 
-                variant="outlined" 
-                onClick={() => generateOptions(aspect)}
-                style={{ marginTop: '10px' }}
-                disabled={isGeneratingOptions[aspect]}
-              >
-                {isGeneratingOptions[aspect] ? t('generatingOptions') : t('generateOptions')}
-              </Button>
             </CardContent>
           </Card>
         ))}
