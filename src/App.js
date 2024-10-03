@@ -403,30 +403,38 @@ Ensure each option is unique and provides a different experience or approach.`;
     if (isMobile) handleDrawerClose();
   };
 
-  // Update finalizePlan function to include budget
   const finalizePlan = async () => {
     setIsLoading(true);
-    let travelersInfo = `Who's traveling: ${travelers}`;
-    if (travelers === 'Family' || travelers === 'Group') {
-      travelersInfo += `. Group size: ${groupSize}`;
-    }
-    travelersInfo += `. Budget: ${budget}`;  // Add budget to travelers info
-    let finalPrompt = `I'm planning a ${numDays}-day ${isRoundTrip ? 'round trip' : 'one-way trip'} from ${homeLocation} to ${destination}`;
-    if (transportationMode !== 'flexible') {
-      finalPrompt += ` by ${transportationMode}`;
-    } else {
-      finalPrompt += ` with flexible transportation options`;
-    }
-    finalPrompt += `. ${travelersInfo}.`;
-    
-    Object.entries(selectedOptions).forEach(([aspect, choices]) => {
+    const travelInfo = {
+      type: `${numDays}-day ${isRoundTrip ? 'round trip' : 'one-way trip'}`,
+      from: homeLocation,
+      to: destination,
+      travelers: travelers,
+      groupSize: travelers === 'Family' || travelers === 'Group' ? groupSize : null,
+      budget: budget,
+      transportation: transportationMode,
+      accommodation: accommodationType
+    };
+
+    let finalPrompt = `Plan a ${travelInfo.type} from ${travelInfo.from} to ${travelInfo.to} for ${travelInfo.travelers}`;
+    if (travelInfo.groupSize) finalPrompt += ` (group of ${travelInfo.groupSize})`;
+    finalPrompt += `. Budget: ${travelInfo.budget}.`;
+    finalPrompt += ` Transportation: ${travelInfo.transportation === 'flexible' ? 'flexible options' : travelInfo.transportation}.`;
+    finalPrompt += ` Accommodation: ${travelInfo.accommodation === 'flexible' ? 'flexible options' : t(`accommodations.${travelInfo.accommodation}`)}.`;
+
+    const preferences = Object.entries(selectedOptions).map(([aspect, choices]) => {
       const preference = aspectPreferences[aspect] || '';
       if (choices.length > 0) {
-        finalPrompt += ` For ${aspect} (preference: "${preference}"), I've chosen: ${choices.join(', ')}.`;
+        return `${aspect} (preference: "${preference}"): ${choices.join(', ')}`;
       } else if (preference) {
-        finalPrompt += ` For ${aspect}, my preference is: "${preference}".`;
+        return `${aspect}: "${preference}"`;
       }
-    });
+      return null;
+    }).filter(Boolean);
+
+    if (preferences.length > 0) {
+      finalPrompt += ` Preferences: ${preferences.join('. ')}.`;
+    }
 
     finalPrompt += ` Please provide a comprehensive ${numDays}-day travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip, with a breakdown for major categories (e.g., accommodation, transportation, food, activities). 
 
