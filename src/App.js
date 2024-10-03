@@ -50,6 +50,7 @@ const translations = {
     attractions: "Attractions",
     activities: "Activities",
     budget: "Budget",
+    generateOptions: "Generate Options"
   },
   zh: {
     title: "AI旅行规划器",
@@ -90,6 +91,7 @@ const translations = {
     attractions: "景点",
     activities: "活动",
     budget: "预算",
+    generateOptions: "生成选项"
   }
 };
 
@@ -109,7 +111,7 @@ const TravelPlannerApp = () => {
   const [destination, setDestination] = useState('Los Angeles');
   const [isPlanningStarted, setIsPlanningStarted] = useState(false);
   const [currentAspect, setCurrentAspect] = useState('');
-  const [options, setOptions] = useState([]);
+  const [options, setOptions] = useState({});
   const [selectedOptions, setSelectedOptions] = useState({});
   const [conversationHistory, setConversationHistory] = useState([]);
   const [finalPlan, setFinalPlan] = useState('');
@@ -138,6 +140,9 @@ const TravelPlannerApp = () => {
 
   const [coveredAspects, setCoveredAspects] = useState(new Set());
 
+  // Add this new state variable
+  const [regeneratingAspect, setRegeneratingAspect] = useState(null);
+
   const getLLMResponse = async (prompt) => {
     setCurrentPrompt(prompt);  // Set the current prompt for debugging
     const languageInstruction = language === 'zh' ? "Please respond in Chinese. " : "";
@@ -163,14 +168,15 @@ const TravelPlannerApp = () => {
     setCurrentAspect(selectedAspects[0]);
   };
 
-  const generateOptions = async () => {
+  const generateOptions = async (aspect = currentAspect) => {
     setIsGeneratingOptions(true);
-    const aspectPreference = aspectPreferences[currentAspect] || '';
+    setRegeneratingAspect(aspect);
+    const aspectPreference = aspectPreferences[aspect] || '';
     let travelersInfo = `Who's traveling: ${travelers}`;
     if (travelers === 'Family' || travelers === 'Group') {
       travelersInfo += `. Group size: ${groupSize}`;
     }
-    const prompt = `For a ${numDays}-day trip to ${destination} from ${homeLocation}, provide 5 distinct options for ${currentAspect}. ${travelersInfo}. User's preference: "${aspectPreference}". Each option should be a brief markdown bullet point (no more than 30 words) and represent a different approach or choice, considering the type of travelers and trip duration.`;
+    const prompt = `For a ${numDays}-day trip to ${destination} from ${homeLocation}, provide 5 distinct options for ${aspect}. ${travelersInfo}. User's preference: "${aspectPreference}". Each option should be a brief markdown bullet point (no more than 30 words) and represent a different approach or choice, considering the type of travelers and trip duration.`;
     const optionsResponse = await getLLMResponse(prompt);
     
     // Filter and validate the options
@@ -181,12 +187,16 @@ const TravelPlannerApp = () => {
     // If we don't have enough valid options, regenerate
     if (validOptions.length < 3) {
       setIsGeneratingOptions(false);
-      generateOptions(); // Recursively call to try again
+      generateOptions(aspect); // Recursively call to try again
       return;
     }
 
-    setOptions(validOptions);
+    setOptions(prevOptions => ({
+      ...prevOptions,
+      [aspect]: validOptions
+    }));
     setIsGeneratingOptions(false);
+    setRegeneratingAspect(null);
   };
 
   const handleOptionToggle = (option) => {
@@ -199,16 +209,6 @@ const TravelPlannerApp = () => {
           : [...current, option]
       };
     });
-  };
-
-  const moveToNextAspect = () => {
-    const currentIndex = selectedAspects.indexOf(currentAspect);
-    if (currentIndex < selectedAspects.length - 1) {
-      setCurrentAspect(selectedAspects[currentIndex + 1]);
-      setOptions([]);
-    } else {
-      finalizePlan();
-    }
   };
 
   const finalizePlan = async () => {
@@ -397,20 +397,39 @@ const TravelPlannerApp = () => {
       <Grid item xs={9}>
         <Typography variant="h4" gutterBottom>{t('title')}</Typography>
         
-        {!isPlanningStarted ? (
-          <form onSubmit={handleDestinationSubmit}>
-            <TextField
-              label={t('destination')}
-              value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-              fullWidth
-              margin="normal"
-              disabled={isLoading}
-              variant="outlined"
-            />
-            {selectedAspects.map((aspect) => (
+        <form onSubmit={handleDestinationSubmit}>
+          <TextField
+            label={t('destination')}
+            value={destination}
+            onChange={(e) => setDestination(e.target.value)}
+            fullWidth
+            margin="normal"
+            disabled={isLoading}
+            variant="outlined"
+          />
+          {!isPlanningStarted && (
+            <Button 
+              type="submit" 
+              variant="contained" 
+              disabled={!destination || !homeLocation || selectedAspects.length === 0 || !numDays}
+            >
+              {t('startPlanning')}
+            </Button>
+          )}
+          {selectedAspects.length === 0 && (
+            <Typography color="error" style={{ marginTop: '10px' }}>
+              {t('selectAtLeastOneAspect')}
+            </Typography>
+          )}
+        </form>
+
+        {selectedAspects.map((aspect) => (
+          <Card key={aspect} style={{ marginTop: '20px' }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                {predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}
+              </Typography>
               <TextField
-                key={aspect}
                 label={`${t('preferencesFor')} ${predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}`}
                 value={aspectPreferences[aspect] || ''}
                 onChange={(e) => handlePreferenceChange(aspect, e.target.value)}
@@ -419,59 +438,53 @@ const TravelPlannerApp = () => {
                 disabled={isLoading}
                 variant="outlined"
               />
-            ))}
-            <Button 
-              type="submit" 
-              variant="contained" 
-              disabled={!destination || !homeLocation || selectedAspects.length === 0 || !numDays}
-            >
-              {t('startPlanning')}
-            </Button>
-            {selectedAspects.length === 0 && (
-              <Typography color="error" style={{ marginTop: '10px' }}>
-                {t('selectAtLeastOneAspect')}
-              </Typography>
-            )}
-          </form>
-        ) : (
-          <>
-            <Typography variant="h6" gutterBottom>
-              {t('choosingOptionsFor')} {predefinedAspects.includes(currentAspect) ? t(currentAspect.toLowerCase().replace(/\s+/g, '')) : currentAspect}
-            </Typography>
-            {isGeneratingOptions ? (
-              <Typography>{t('generatingOptions')}</Typography>
-            ) : (
-              <>
-                <Grid container spacing={2}>
-                  {options.map((option, index) => (
-                    <Grid item xs={12} sm={6} md={4} key={index}>
-                      <Card>
-                        <CardContent>
-                          <ReactMarkdown>{option}</ReactMarkdown>
-                        </CardContent>
-                        <CardActions>
-                          <Button 
-                            size="small" 
-                            onClick={() => handleOptionToggle(option)}
-                            variant={selectedOptions[currentAspect]?.includes(option) ? "contained" : "outlined"}
-                          >
-                            {selectedOptions[currentAspect]?.includes(option) ? t('selected') : t('select')}
-                          </Button>
-                        </CardActions>
-                      </Card>
+              {isPlanningStarted && (
+                regeneratingAspect === aspect ? (
+                  <Typography>{t('generatingOptions')}</Typography>
+                ) : (
+                  <>
+                    <Grid container spacing={2} style={{ marginTop: '10px' }}>
+                      {options[aspect]?.map((option, index) => (
+                        <Grid item xs={12} sm={6} md={4} key={index}>
+                          <Card>
+                            <CardContent>
+                              <ReactMarkdown>{option}</ReactMarkdown>
+                            </CardContent>
+                            <CardActions>
+                              <Button 
+                                size="small" 
+                                onClick={() => handleOptionToggle(option)}
+                                variant={selectedOptions[aspect]?.includes(option) ? "contained" : "outlined"}
+                              >
+                                {selectedOptions[aspect]?.includes(option) ? t('selected') : t('select')}
+                              </Button>
+                            </CardActions>
+                          </Card>
+                        </Grid>
+                      ))}
                     </Grid>
-                  ))}
-                </Grid>
-                <Button 
-                  variant="contained" 
-                  onClick={moveToNextAspect}
-                  style={{ marginTop: '20px' }}
-                >
-                  {currentAspect === selectedAspects[selectedAspects.length - 1] ? t('finalizePlan') : t('nextAspect')}
-                </Button>
-              </>
-            )}
-          </>
+                    <Button 
+                      variant="outlined" 
+                      onClick={() => generateOptions(aspect)}
+                      style={{ marginTop: '10px' }}
+                    >
+                      {t('generateOptions')}
+                    </Button>
+                  </>
+                )
+              )}
+            </CardContent>
+          </Card>
+        ))}
+
+        {isPlanningStarted && (
+          <Button 
+            variant="contained" 
+            onClick={finalizePlan}
+            style={{ marginTop: '20px' }}
+          >
+            {t('finalizePlan')}
+          </Button>
         )}
 
         {showDebug && currentPrompt && (
