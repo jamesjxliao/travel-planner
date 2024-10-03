@@ -68,6 +68,8 @@ const translations = {
     afternoon: "Afternoon",
     evening: "Evening",
     day: "Day",
+    midRange: "Mid-range",
+    luxury: "Luxury"
   },
   zh: {
     title: "AI旅行规划器",
@@ -121,6 +123,8 @@ const translations = {
     afternoon: "下午",
     evening: "晚上",
     day: "第天",  // This will be used as a template
+    midRange: "中档",
+    luxury: "豪华"
   }
 };
 
@@ -196,15 +200,15 @@ const TravelPlannerApp = () => {
   const [newOptionIndices, setNewOptionIndices] = useState({});
   const scrollRefs = useRef({});
   const [isRoundTrip, setIsRoundTrip] = useState(true);
+  const [budget, setBudget] = useState('Mid-range');  // New state for budget
 
   const predefinedAspects = [
     "Time to visit",
     "Transportation",
     "Accommodations",
     "Food",
-    "Attractions",
-    "Activities",
-    "Budget"
+    "Attractions"
+    // "Activities" removed from here
   ];
 
   const [coveredAspects, setCoveredAspects] = useState(new Set());
@@ -314,12 +318,19 @@ Ensure each option is unique and provides a different experience or approach.`;
     });
   };
 
+  const handleBudgetChange = (event) => {
+    setBudget(event.target.value);
+    if (isMobile) handleDrawerClose();
+  };
+
+  // Update finalizePlan function to include budget
   const finalizePlan = async () => {
     setIsLoading(true);
     let travelersInfo = `Who's traveling: ${travelers}`;
     if (travelers === 'Family' || travelers === 'Group') {
       travelersInfo += `. Group size: ${groupSize}`;
     }
+    travelersInfo += `. Budget: ${budget}`;  // Add budget to travelers info
     let finalPrompt = `I'm planning a ${numDays}-day ${isRoundTrip ? 'round trip' : 'one-way trip'} from ${homeLocation} to ${destination}. ${travelersInfo}.`;
     
     Object.entries(selectedOptions).forEach(([aspect, choices]) => {
@@ -608,6 +619,20 @@ Format the response as a JSON object with the following structure:
           onChange={(e) => setHomeLocation(e.target.value)}
           placeholder={t('enterYourHomeCity')}
         />
+
+        <FormControl fullWidth margin="normal">
+          <InputLabel id="budget-label">{t('budget')}</InputLabel>
+          <Select
+            labelId="budget-label"
+            value={budget}
+            label={t('budget')}
+            onChange={handleBudgetChange}
+          >
+            <MenuItem value="Budget">{t('budget')}</MenuItem>
+            <MenuItem value="Mid-range">{t('midRange')}</MenuItem>
+            <MenuItem value="Luxury">{t('luxury')}</MenuItem>
+          </Select>
+        </FormControl>
       </Paper>
 
       <Paper elevation={3} sx={{ p: 2, mt: 3, backgroundColor: '#f0f8ff' }}>
@@ -649,7 +674,7 @@ Format the response as a JSON object with the following structure:
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static">
+      <AppBar position="fixed">
         <Toolbar>
           {isMobile && (
             <IconButton
@@ -691,7 +716,8 @@ Format the response as a JSON object with the following structure:
           </FormControl>
         </Toolbar>
       </AppBar>
-      <Grid container spacing={2} sx={{ p: 2 }}>
+      <Toolbar /> {/* This empty Toolbar acts as a spacer */}
+      <Grid container spacing={2} sx={{ p: 2, mt: 2 }}>
         {!isMobile && (
           <Grid item xs={12} sm={3}>
             {sidebarContent}
