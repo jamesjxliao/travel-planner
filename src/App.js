@@ -109,7 +109,6 @@ const client = new OpenAI({
 
 const TravelPlannerApp = () => {
   const [destination, setDestination] = useState('Los Angeles');
-  const [isPlanningStarted, setIsPlanningStarted] = useState(false);
   const [currentAspect, setCurrentAspect] = useState('');
   const [options, setOptions] = useState({});
   const [selectedOptions, setSelectedOptions] = useState({});
@@ -160,15 +159,7 @@ const TravelPlannerApp = () => {
     return llmResponse;
   };
 
-  const handleDestinationSubmit = async (e) => {
-    if (e) e.preventDefault();
-    if (!destination.trim() || selectedAspects.length === 0 || !numDays) return;
-    
-    setIsPlanningStarted(true);
-    setCurrentAspect(selectedAspects[0]);
-  };
-
-  const generateOptions = async (aspect = currentAspect) => {
+  const generateOptions = async (aspect) => {
     setIsGeneratingOptions(true);
     setRegeneratingAspect(aspect);
     const aspectPreference = aspectPreferences[aspect] || '';
@@ -294,12 +285,6 @@ const TravelPlannerApp = () => {
     }
   };
 
-  useEffect(() => {
-    if (currentAspect && options.length === 0) {
-      generateOptions();
-    }
-  }, [currentAspect]);
-
   return (
     <Grid container spacing={2} className="p-4 max-w-6xl mx-auto">
       <Grid item xs={3}>
@@ -397,31 +382,15 @@ const TravelPlannerApp = () => {
       <Grid item xs={9}>
         <Typography variant="h4" gutterBottom>{t('title')}</Typography>
         
-        <form onSubmit={handleDestinationSubmit}>
-          <TextField
-            label={t('destination')}
-            value={destination}
-            onChange={(e) => setDestination(e.target.value)}
-            fullWidth
-            margin="normal"
-            disabled={isLoading}
-            variant="outlined"
-          />
-          {!isPlanningStarted && (
-            <Button 
-              type="submit" 
-              variant="contained" 
-              disabled={!destination || !homeLocation || selectedAspects.length === 0 || !numDays}
-            >
-              {t('startPlanning')}
-            </Button>
-          )}
-          {selectedAspects.length === 0 && (
-            <Typography color="error" style={{ marginTop: '10px' }}>
-              {t('selectAtLeastOneAspect')}
-            </Typography>
-          )}
-        </form>
+        <TextField
+          label={t('destination')}
+          value={destination}
+          onChange={(e) => setDestination(e.target.value)}
+          fullWidth
+          margin="normal"
+          disabled={isLoading}
+          variant="outlined"
+        />
 
         {selectedAspects.map((aspect) => (
           <Card key={aspect} style={{ marginTop: '20px' }}>
@@ -438,13 +407,13 @@ const TravelPlannerApp = () => {
                 disabled={isLoading}
                 variant="outlined"
               />
-              {isPlanningStarted && (
-                regeneratingAspect === aspect ? (
-                  <Typography>{t('generatingOptions')}</Typography>
-                ) : (
-                  <>
+              {regeneratingAspect === aspect ? (
+                <Typography>{t('generatingOptions')}</Typography>
+              ) : (
+                <>
+                  {options[aspect] && options[aspect].length > 0 ? (
                     <Grid container spacing={2} style={{ marginTop: '10px' }}>
-                      {options[aspect]?.map((option, index) => (
+                      {options[aspect].map((option, index) => (
                         <Grid item xs={12} sm={6} md={4} key={index}>
                           <Card>
                             <CardContent>
@@ -463,29 +432,28 @@ const TravelPlannerApp = () => {
                         </Grid>
                       ))}
                     </Grid>
-                    <Button 
-                      variant="outlined" 
-                      onClick={() => generateOptions(aspect)}
-                      style={{ marginTop: '10px' }}
-                    >
-                      {t('generateOptions')}
-                    </Button>
-                  </>
-                )
+                  ) : null}
+                  <Button 
+                    variant="outlined" 
+                    onClick={() => generateOptions(aspect)}
+                    style={{ marginTop: '10px' }}
+                  >
+                    {t('generateOptions')}
+                  </Button>
+                </>
               )}
             </CardContent>
           </Card>
         ))}
 
-        {isPlanningStarted && (
-          <Button 
-            variant="contained" 
-            onClick={finalizePlan}
-            style={{ marginTop: '20px' }}
-          >
-            {t('finalizePlan')}
-          </Button>
-        )}
+        {/* Always show the Finalize Plan button */}
+        <Button 
+          variant="contained" 
+          onClick={finalizePlan}
+          style={{ marginTop: '20px' }}
+        >
+          {t('finalizePlan')}
+        </Button>
 
         {showDebug && currentPrompt && (
           <Card style={{ marginTop: '20px', backgroundColor: '#f0f0f0' }}>
