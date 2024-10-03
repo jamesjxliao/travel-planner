@@ -613,10 +613,7 @@ const TravelPlannerApp = () => {
         </form>
       </Paper>
 
-      <FormControlLabel
-        control={<Switch checked={showDebug} onChange={(e) => setShowDebug(e.target.checked)} />}
-        label={t('showDebugInfo')}
-      />
+      {/* Removed the debugging toggle from here */}
     </Box>
   );
 
