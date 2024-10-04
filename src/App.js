@@ -804,16 +804,19 @@ Format the response as a JSON object with the following structure:
             });
           }
 
+          const updatedVersions = [...currentVersions, newVersion];
+          
+          // Set the current page to the newly generated version
+          setCurrentPages(prevPages => ({
+            ...prevPages,
+            [day]: updatedVersions.length
+          }));
+
           return {
             ...prev,
-            [day]: [...currentVersions, newVersion]
+            [day]: updatedVersions
           };
         });
-
-        setCurrentPages(prev => ({
-          ...prev,
-          [day]: (prev[day] || 1) + 1
-        }));
       } else {
         console.error("Invalid response structure:", parsedResponse);
       }
