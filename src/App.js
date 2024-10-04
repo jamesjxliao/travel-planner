@@ -197,11 +197,23 @@ const translations = {
   }
 };
 
+// Add this function to determine the initial language
+const getInitialLanguage = () => {
+  const savedLanguage = localStorage.getItem('language');
+  if (savedLanguage) {
+    return savedLanguage;
+  }
+  
+  const browserLanguage = navigator.language.split('-')[0];
+  return browserLanguage === 'zh' ? 'zh' : 'en';
+};
+
 // Update the LanguageProvider component
 const LanguageProvider = ({ children }) => {
   const [language, setLanguage] = useState(() => {
-    // Retrieve the language from localStorage, default to 'zh' if not set
-    return localStorage.getItem('language') || 'zh';
+    const initialLang = getInitialLanguage();
+    localStorage.setItem('language', initialLang);
+    return initialLang;
   });
 
   const value = { 
