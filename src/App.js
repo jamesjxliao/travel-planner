@@ -280,8 +280,10 @@ const commonPreferences = {
   "Attractions": ["attractions.museums", "attractions.nature", "attractions.historicalsites", "attractions.themeparks", "attractions.shopping"]
 };
 
-// Initialize Google Analytics
-ReactGA.initialize("G-5FTTLPJ62P"); // Replace with your Google Analytics measurement ID
+// Initialize Google Analytics only in production
+if (process.env.NODE_ENV === 'production') {
+  ReactGA.initialize("G-5FTTLPJ62P"); // Replace with your Google Analytics measurement ID
+}
 
 const TravelPlannerApp = () => {
   const { language, setLanguage, t } = useLanguage();
@@ -383,25 +385,29 @@ const TravelPlannerApp = () => {
     localStorage.setItem('specialRequirements', specialRequirements);
   };
 
-  // Update handlers to save preferences
+  // Update the ReactGA event calls
+  const logEvent = (category, action, label) => {
+    if (process.env.NODE_ENV === 'production') {
+      ReactGA.event({
+        category,
+        action,
+        label
+      });
+    }
+  };
+
+  // Replace all ReactGA.event calls with logEvent
+  // For example:
   const handleDestinationChange = (e) => {
     setDestination(e.target.value);
     localStorage.setItem('destination', e.target.value);
-    ReactGA.event({
-      category: "User Input",
-      action: "Changed Destination",
-      label: e.target.value
-    });
+    logEvent("User Input", "Changed Destination", e.target.value);
   };
 
   const handleHomeLocationChange = (e) => {
     setHomeLocation(e.target.value);
     localStorage.setItem('homeLocation', e.target.value);
-    ReactGA.event({
-      category: "User Input",
-      action: "Changed Home Location",
-      label: e.target.value
-    });
+    logEvent("User Input", "Changed Home Location", e.target.value);
   };
 
   const handleTravelersChange = (event) => {
@@ -422,93 +428,57 @@ const TravelPlannerApp = () => {
       localStorage.setItem('groupSize', '5');
     }
     if (isMobile) handleDrawerClose();
-    ReactGA.event({
-      category: "User Input",
-      action: "Changed Travelers",
-      label: value
-    });
+    logEvent("User Input", "Changed Travelers", value);
   };
 
   const handleGroupSizeChange = (e) => {
     setGroupSize(e.target.value);
     localStorage.setItem('groupSize', e.target.value);
-    ReactGA.event({
-      category: "User Input",
-      action: "Changed Group Size",
-      label: e.target.value
-    });
+    logEvent("User Input", "Changed Group Size", e.target.value);
   };
 
   const handleNumDaysChange = (e) => {
     setNumDays(e.target.value);
     localStorage.setItem('numDays', e.target.value);
-    ReactGA.event({
-      category: "User Input",
-      action: "Changed Number of Days",
-      label: e.target.value
-    });
+    logEvent("User Input", "Changed Number of Days", e.target.value);
   };
 
   const handleBudgetChange = (event) => {
     setBudget(event.target.value);
     localStorage.setItem('budget', event.target.value);
     if (isMobile) handleDrawerClose();
-    ReactGA.event({
-      category: "User Input",
-      action: "Changed Budget",
-      label: event.target.value
-    });
+    logEvent("User Input", "Changed Budget", event.target.value);
   };
 
   const handleIsRoundTripChange = (e) => {
     const newValue = e.target.checked;
     setIsRoundTrip(newValue);
     localStorage.setItem('isRoundTrip', newValue.toString());
-    ReactGA.event({
-      category: "User Input",
-      action: "Changed Round Trip",
-      label: newValue ? "Yes" : "No"
-    });
+    logEvent("User Input", "Changed Round Trip", newValue ? "Yes" : "No");
   };
 
   const handleTimeToVisitChange = (e) => {
     setTimeToVisit(e.target.value);
     localStorage.setItem('timeToVisit', e.target.value);
-    ReactGA.event({
-      category: "User Input",
-      action: "Changed Time to Visit",
-      label: e.target.value
-    });
+    logEvent("User Input", "Changed Time to Visit", e.target.value);
   };
 
   const handleAccommodationTypeChange = (e) => {
     setAccommodationType(e.target.value);
     localStorage.setItem('accommodationType', e.target.value);
-    ReactGA.event({
-      category: "User Input",
-      action: "Changed Accommodation Type",
-      label: e.target.value
-    });
+    logEvent("User Input", "Changed Accommodation Type", e.target.value);
   };
 
   const handleTransportationModeChange = (e) => {
     setTransportationMode(e.target.value);
     localStorage.setItem('transportationMode', e.target.value);
-    ReactGA.event({
-      category: "User Input",
-      action: "Changed Transportation Mode",
-      label: e.target.value
-    });
+    logEvent("User Input", "Changed Transportation Mode", e.target.value);
   };
 
   const handleSpecialRequirementsChange = (e) => {
     setSpecialRequirements(e.target.value);
     localStorage.setItem('specialRequirements', e.target.value);
-    ReactGA.event({
-      category: "User Input",
-      action: "Changed Special Requirements",
-      label: e.target.value
-    });
+    logEvent("User Input", "Changed Special Requirements", e.target.value);
   };
 
   // Update this function to handle special requirements
@@ -526,11 +496,7 @@ const TravelPlannerApp = () => {
       
       return updatedPreferences.join(', ');
     });
-    ReactGA.event({
-      category: "User Input",
-      action: "Clicked Common Preference",
-      label: prefKey
-    });
+    logEvent("User Input", "Clicked Common Preference", prefKey);
   };
 
   const getLLMResponse = async (prompt) => {
@@ -630,11 +596,7 @@ Ensure each option is unique and provides a different experience or approach.`;
   };
 
   const finalizePlan = async () => {
-    ReactGA.event({
-      category: "User Action",
-      action: "Finalized Plan",
-      label: `${destination} - ${numDays} days`
-    });
+    logEvent("User Action", "Finalized Plan", `${destination} - ${numDays} days`);
     setIsLoading(true);
     setIsFullPlanGeneration(true);
     const travelInfo = {
@@ -783,11 +745,7 @@ Format the response as a JSON object with the following structure:
   };
 
   const regenerateItinerary = async (day, timeOfDay = null) => {
-    ReactGA.event({
-      category: "User Action",
-      action: "Regenerated Itinerary",
-      label: `Day ${day}${timeOfDay ? ` - ${timeOfDay}` : ''}`
-    });
+    logEvent("User Action", "Regenerated Itinerary", `Day ${day}${timeOfDay ? ` - ${timeOfDay}` : ''}`);
     setRegeneratingItinerary({ day, timeOfDay });
     setIsLoading(true);
 
@@ -1130,10 +1088,7 @@ Format the response as a JSON object with the following structure:
 
   // Define resetAllSettings using useCallback
   const resetAllSettings = useCallback(() => {
-    ReactGA.event({
-      category: "User Action",
-      action: "Reset All Settings"
-    });
+    logEvent("User Action", "Reset All Settings");
     // Reset all state variables to their default values
     setDestination(t('defaultDestination'));
     setHomeLocation(t('defaultHomeLocation'));
