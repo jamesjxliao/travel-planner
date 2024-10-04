@@ -10,6 +10,7 @@ import ReactMarkdown from 'react-markdown';
 import PersonIcon from '@mui/icons-material/Person'; // Add this import
 import Tooltip from '@mui/material/Tooltip'; // Add this import
 import RefreshIcon from '@mui/icons-material/Refresh'; // Add this import
+import Cookies from 'js-cookie';
 
 // Create a language context
 const LanguageContext = createContext();
@@ -143,7 +144,7 @@ const translations = {
     generateOptions: "生成选项",
     roundTrip: "往返",
     estimatedCostBreakdown: "预估费用明细",
-    totalEstimatedCost: "总预估费��",
+    totalEstimatedCost: "总预估费",
     accommodation: "住宿",
     transportation: "交通",
     food: "餐饮",
@@ -292,6 +293,120 @@ const TravelPlannerApp = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  // Load preferences from cookies on initial render
+  useEffect(() => {
+    const loadedDestination = Cookies.get('destination') || 'Los Angeles';
+    const loadedHomeLocation = Cookies.get('homeLocation') || 'San Carlos';
+    const loadedTravelers = Cookies.get('travelers') || 'Family';
+    const loadedGroupSize = Cookies.get('groupSize') || '3';
+    const loadedNumDays = Cookies.get('numDays') || '3';
+    const loadedBudget = Cookies.get('budget') || 'Mid-range';
+    const loadedIsRoundTrip = Cookies.get('isRoundTrip') === 'true';
+    const loadedTimeToVisit = Cookies.get('timeToVisit') || 'flexible';
+    const loadedAccommodationType = Cookies.get('accommodationType') || 'flexible';
+    const loadedTransportationMode = Cookies.get('transportationMode') || 'flexible';
+    const loadedSpecialRequirements = Cookies.get('specialRequirements') || '';
+
+    setDestination(loadedDestination);
+    setHomeLocation(loadedHomeLocation);
+    setTravelers(loadedTravelers);
+    setGroupSize(loadedGroupSize);
+    setNumDays(loadedNumDays);
+    setBudget(loadedBudget);
+    setIsRoundTrip(loadedIsRoundTrip);
+    setTimeToVisit(loadedTimeToVisit);
+    setAccommodationType(loadedAccommodationType);
+    setTransportationMode(loadedTransportationMode);
+    setSpecialRequirements(loadedSpecialRequirements);
+  }, []);
+
+  // Function to save preferences to cookies
+  const savePreferencesToCookies = () => {
+    Cookies.set('destination', destination, { expires: 30 });
+    Cookies.set('homeLocation', homeLocation, { expires: 30 });
+    Cookies.set('travelers', travelers, { expires: 30 });
+    Cookies.set('groupSize', groupSize, { expires: 30 });
+    Cookies.set('numDays', numDays, { expires: 30 });
+    Cookies.set('budget', budget, { expires: 30 });
+    Cookies.set('isRoundTrip', isRoundTrip.toString(), { expires: 30 });
+    Cookies.set('timeToVisit', timeToVisit, { expires: 30 });
+    Cookies.set('accommodationType', accommodationType, { expires: 30 });
+    Cookies.set('transportationMode', transportationMode, { expires: 30 });
+    Cookies.set('specialRequirements', specialRequirements, { expires: 30 });
+  };
+
+  // Update handlers to save preferences
+  const handleDestinationChange = (e) => {
+    setDestination(e.target.value);
+    Cookies.set('destination', e.target.value, { expires: 30 });
+  };
+
+  const handleHomeLocationChange = (e) => {
+    setHomeLocation(e.target.value);
+    Cookies.set('homeLocation', e.target.value, { expires: 30 });
+  };
+
+  const handleTravelersChange = (event) => {
+    const value = event.target.value;
+    setTravelers(value);
+    Cookies.set('travelers', value, { expires: 30 });
+    if (value === 'Solo') {
+      setGroupSize('1');
+      Cookies.set('groupSize', '1', { expires: 30 });
+    } else if (value === 'Couple') {
+      setGroupSize('2');
+      Cookies.set('groupSize', '2', { expires: 30 });
+    } else if (value === 'Family') {
+      setGroupSize('3');
+      Cookies.set('groupSize', '3', { expires: 30 });
+    } else if (value === 'Group') {
+      setGroupSize('5');
+      Cookies.set('groupSize', '5', { expires: 30 });
+    }
+    if (isMobile) handleDrawerClose();
+  };
+
+  const handleGroupSizeChange = (e) => {
+    setGroupSize(e.target.value);
+    Cookies.set('groupSize', e.target.value, { expires: 30 });
+  };
+
+  const handleNumDaysChange = (e) => {
+    setNumDays(e.target.value);
+    Cookies.set('numDays', e.target.value, { expires: 30 });
+  };
+
+  const handleBudgetChange = (event) => {
+    setBudget(event.target.value);
+    Cookies.set('budget', event.target.value, { expires: 30 });
+    if (isMobile) handleDrawerClose();
+  };
+
+  const handleIsRoundTripChange = (e) => {
+    setIsRoundTrip(e.target.checked);
+    Cookies.set('isRoundTrip', e.target.checked.toString(), { expires: 30 });
+  };
+
+  const handleTimeToVisitChange = (e) => {
+    setTimeToVisit(e.target.value);
+    Cookies.set('timeToVisit', e.target.value, { expires: 30 });
+  };
+
+  const handleAccommodationTypeChange = (e) => {
+    setAccommodationType(e.target.value);
+    Cookies.set('accommodationType', e.target.value, { expires: 30 });
+  };
+
+  const handleTransportationModeChange = (e) => {
+    setTransportationMode(e.target.value);
+    Cookies.set('transportationMode', e.target.value, { expires: 30 });
+  };
+
+  const handleSpecialRequirementsChange = (e) => {
+    setSpecialRequirements(e.target.value);
+    Cookies.set('specialRequirements', e.target.value, { expires: 30 });
+  };
+
   // Update this function to handle special requirements
   const handleCommonPreferenceClick = (prefKey) => {
     const translatedPreference = t(prefKey);
@@ -333,7 +448,7 @@ const TravelPlannerApp = () => {
     }
     const prompt = `For a ${numDays}-day trip to ${destination} from ${homeLocation}, provide 4 distinct options for ${aspect}. ${travelersInfo}. User's preference: "${aspectPreference}". Each option should be a brief markdown bullet point (no more than 30 words) and represent a different approach or choice, considering the type of travelers and trip duration. 
 
-When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this], not just individual words. For example, use "[好莱坞附近的热门汉堡餐���]" instead of just "[好莱坞]". Be as specific and descriptive as possible when marking these entities.
+When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this], not just individual words. For example, use "[好莱坞附近的热门汉堡餐]" instead of just "[好莱坞]". Be as specific and descriptive as possible when marking these entities.
 
 Ensure each option is unique and provides a different experience or approach.`;
 
@@ -403,11 +518,6 @@ Ensure each option is unique and provides a different experience or approach.`;
         [aspect]: updated
       };
     });
-  };
-
-  const handleBudgetChange = (event) => {
-    setBudget(event.target.value);
-    if (isMobile) handleDrawerClose();
   };
 
   const finalizePlan = async () => {
@@ -529,21 +639,6 @@ Format the response as a JSON object with the following structure:
 
   const handleDrawerClose = () => {
     setDrawerOpen(false);
-  };
-
-  const handleTravelersChange = (event) => {
-    const value = event.target.value;
-    setTravelers(value);
-    if (value === 'Solo') {
-      setGroupSize('1');
-    } else if (value === 'Couple') {
-      setGroupSize('2');
-    } else if (value === 'Family') {
-      setGroupSize('3');
-    } else if (value === 'Group') {
-      setGroupSize('5');
-    }
-    if (isMobile) handleDrawerClose();
   };
 
   const toggleDrawer = (open) => (event) => {
@@ -828,7 +923,7 @@ Format the response as a JSON object with the following structure:
             margin="normal"
             label={t('groupSize')}
             value={groupSize}
-            onChange={(e) => setGroupSize(e.target.value)}
+            onChange={handleGroupSizeChange}
             placeholder={t('enterNumberOfTravelers')}
             type="number"
             InputProps={{ inputProps: { min: travelers === 'Family' ? 3 : 5 } }}
@@ -840,7 +935,7 @@ Format the response as a JSON object with the following structure:
           margin="normal"
           label={t('homeLocation')}
           value={homeLocation}
-          onChange={(e) => setHomeLocation(e.target.value)}
+          onChange={handleHomeLocationChange}
           placeholder={t('enterYourHomeCity')}
         />
 
@@ -921,7 +1016,7 @@ Format the response as a JSON object with the following structure:
               <TextField
                 label={t('destination')}
                 value={destination}
-                onChange={(e) => setDestination(e.target.value)}
+                onChange={handleDestinationChange}
                 fullWidth
                 margin="normal"
                 disabled={isLoading}
@@ -932,7 +1027,7 @@ Format the response as a JSON object with the following structure:
               <TextField
                 label={t('numberOfDays')}
                 value={numDays}
-                onChange={(e) => setNumDays(e.target.value)}
+                onChange={handleNumDaysChange}
                 fullWidth
                 margin="normal"
                 type="number"
@@ -946,7 +1041,7 @@ Format the response as a JSON object with the following structure:
                 control={
                   <Switch
                     checked={isRoundTrip}
-                    onChange={(e) => setIsRoundTrip(e.target.checked)}
+                    onChange={handleIsRoundTripChange}
                     disabled={isLoading}
                   />
                 }
@@ -964,7 +1059,7 @@ Format the response as a JSON object with the following structure:
                   labelId="time-to-visit-label"
                   value={timeToVisit}
                   label={t('timetovisit')}
-                  onChange={(e) => setTimeToVisit(e.target.value)}
+                  onChange={handleTimeToVisitChange}
                   disabled={isLoading}
                 >
                   <MenuItem value="flexible">{t('accommodations.flexible')}</MenuItem>
@@ -983,7 +1078,7 @@ Format the response as a JSON object with the following structure:
                   labelId="transportation-label"
                   value={transportationMode}
                   label={t('transportation')}
-                  onChange={(e) => setTransportationMode(e.target.value)}
+                  onChange={handleTransportationModeChange}
                   disabled={isLoading}
                 >
                   <MenuItem value="flexible">{t('transportation.flexible')}</MenuItem>
@@ -999,7 +1094,7 @@ Format the response as a JSON object with the following structure:
                   labelId="accommodation-label"
                   value={accommodationType}
                   label={t('accommodations')}
-                  onChange={(e) => setAccommodationType(e.target.value)}
+                  onChange={handleAccommodationTypeChange}
                   disabled={isLoading}
                 >
                   <MenuItem value="flexible">{t('accommodations.flexible')}</MenuItem>
@@ -1035,7 +1130,7 @@ Format the response as a JSON object with the following structure:
                 <TextField
                   label={t('specialRequirements')}
                   value={specialRequirements}
-                  onChange={(e) => setSpecialRequirements(e.target.value)}
+                  onChange={handleSpecialRequirementsChange}
                   fullWidth
                   margin="normal"
                   disabled={isLoading}
