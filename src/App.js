@@ -11,6 +11,8 @@ import PersonIcon from '@mui/icons-material/Person'; // Add this import
 import Tooltip from '@mui/material/Tooltip'; // Add this import
 import RefreshIcon from '@mui/icons-material/Refresh'; // Replace DeleteIcon with RefreshIcon
 import Cookies from 'js-cookie';
+import CircularProgress from '@mui/material/CircularProgress';
+import Backdrop from '@mui/material/Backdrop';
 
 // Create a language context
 const LanguageContext = createContext();
@@ -1215,7 +1217,18 @@ Format the response as a JSON object with the following structure:
             </Card>
           )}
 
-          {isLoading && <Typography sx={{ mt: 2 }}>{t('generatingTravelPlan')}</Typography>}
+          {/* Replace the existing loading indicator with this new one */}
+          <Backdrop
+            sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+            open={isLoading}
+          >
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <CircularProgress color="inherit" size={60} />
+              <Typography variant="h6" sx={{ mt: 2 }}>
+                {t('generatingTravelPlan')}
+              </Typography>
+            </Box>
+          </Backdrop>
 
           {finalPlan && (
             <Box sx={{ mt: 4 }}>
