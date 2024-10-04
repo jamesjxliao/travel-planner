@@ -684,81 +684,96 @@ Format the response as a JSON object with the following structure:
   const renderItinerary = () => {
     if (!finalPlan || !finalPlan.itinerary) return null;
 
-    console.log("Rendering itinerary:", finalPlan.itinerary);
-
     return (
       <Box sx={{ mt: 2 }}>
         <Typography variant="h5" gutterBottom>{t('yourTravelPlan')}</Typography>
-        <Grid container spacing={2}>
-          {finalPlan.itinerary.map((day, index) => (
-            <Grid item xs={12} key={index}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h6">
-                      {language === 'zh' 
-                        ? t('day').replace('天', `${day.day}天`) 
-                        : `${t('day')} ${day.day}`}
-                    </Typography>
-                    <Tooltip title={t('regenerateDay')}>
-                      <IconButton 
-                        onClick={() => regenerateItinerary(day.day)}
-                        disabled={isLoading || (regeneratingItinerary.day === day.day && !regeneratingItinerary.timeOfDay)}
-                      >
-                        <RefreshIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                  <Grid container spacing={2}>
-                    {['morning', 'afternoon', 'evening'].map((timeOfDay) => (
-                      <Grid item xs={12} sm={4} key={timeOfDay}>
-                        <Card variant="outlined">
-                          <CardContent>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                              <Typography variant="subtitle1">
-                                {t(timeOfDay)}
-                              </Typography>
-                              <Tooltip title={t('regenerateTimeOfDay')}>
-                                <IconButton 
-                                  size="small"
-                                  onClick={() => regenerateItinerary(day.day, timeOfDay)}
-                                  disabled={isLoading || (regeneratingItinerary.day === day.day && regeneratingItinerary.timeOfDay === timeOfDay)}
-                                >
-                                  <RefreshIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            </Box>
-                            <StyledContent>
-                              <Typography 
-                                variant="body2" 
-                                component="div"
-                                dangerouslySetInnerHTML={{ __html: day[timeOfDay] }}
-                              />
-                            </StyledContent>
-                          </CardContent>
-                        </Card>
-                      </Grid>
-                    ))}
+        {finalPlan.itinerary.map((day, index) => (
+          <Card key={index} elevation={3} sx={{ mb: 2, overflow: 'hidden' }}>
+            <Box sx={{ 
+              bgcolor: 'primary.main', 
+              color: 'primary.contrastText', 
+              py: 1,
+              px: 2,
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center' 
+            }}>
+              <Typography variant="subtitle1" fontWeight="bold">
+                {language === 'zh' 
+                  ? t('day').replace('天', `${day.day}天`) 
+                  : `${t('day')} ${day.day}`}
+              </Typography>
+              <Tooltip title={t('regenerateDay')}>
+                <IconButton 
+                  size="small"
+                  onClick={() => regenerateItinerary(day.day)}
+                  disabled={isLoading || (regeneratingItinerary.day === day.day && !regeneratingItinerary.timeOfDay)}
+                  sx={{ color: 'primary.contrastText' }}
+                >
+                  <RefreshIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Box>
+            <CardContent sx={{ pt: 1 }}>
+              <Grid container spacing={2}>
+                {['morning', 'afternoon', 'evening'].map((timeOfDay) => (
+                  <Grid item xs={12} sm={4} key={timeOfDay}>
+                    <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                      <CardContent sx={{ flexGrow: 1, p: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                          <Typography variant="body2" color="primary" fontWeight="bold">
+                            {t(timeOfDay)}
+                          </Typography>
+                          <Tooltip title={t('regenerateTimeOfDay')}>
+                            <IconButton 
+                              size="small"
+                              onClick={() => regenerateItinerary(day.day, timeOfDay)}
+                              disabled={isLoading || (regeneratingItinerary.day === day.day && regeneratingItinerary.timeOfDay === timeOfDay)}
+                            >
+                              <RefreshIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                        <StyledContent>
+                          <Typography 
+                            variant="body2" 
+                            component="div"
+                            dangerouslySetInnerHTML={{ __html: day[timeOfDay] }}
+                            sx={{ 
+                              '& a': { 
+                                color: 'secondary.main',
+                                textDecoration: 'none',
+                                '&:hover': { textDecoration: 'underline' }
+                              }
+                            }}
+                          />
+                        </StyledContent>
+                      </CardContent>
+                    </Card>
                   </Grid>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-        <Typography variant="h6" sx={{ mt: 2 }}>{t('estimatedCostBreakdown')}</Typography>
-        <Grid container spacing={2} sx={{ mt: 1 }}>
+                ))}
+              </Grid>
+            </CardContent>
+          </Card>
+        ))}
+        <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>{t('estimatedCostBreakdown')}</Typography>
+        <Grid container spacing={2}>
           {Object.entries(finalPlan.estimatedCost.breakdown).map(([category, cost]) => (
             <Grid item xs={12} sm={6} md={4} key={category}>
-              <Paper elevation={2} sx={{ p: 2 }}>
-                <Typography variant="subtitle1" gutterBottom>
+              <Paper elevation={2} sx={{ p: 2, height: '100%', bgcolor: 'background.default' }}>
+                <Typography variant="subtitle1" color="primary" gutterBottom>
                   {t(category)}
                 </Typography>
-                <Typography variant="body1">{cost}</Typography>
+                <Typography variant="h6">{cost}</Typography>
               </Paper>
             </Grid>
           ))}
         </Grid>
-        <Typography variant="h6" sx={{ mt: 2 }}>{t('totalEstimatedCost')}: {finalPlan.estimatedCost.total}</Typography>
+        <Paper elevation={3} sx={{ mt: 3, p: 2, bgcolor: 'secondary.light' }}>
+          <Typography variant="h6" color="secondary.contrastText">
+            {t('totalEstimatedCost')}: <strong>{finalPlan.estimatedCost.total}</strong>
+          </Typography>
+        </Paper>
       </Box>
     );
   };
