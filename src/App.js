@@ -27,7 +27,7 @@ const translations = {
     title: "AI Travel Planner",
     destination: "Destination",
     startPlanning: "Start Planning",
-    travelersInformation: "Traveler",
+    travelersInformation: "Traveller",
     whosTraveling: "Who's Traveling",
     solo: "Solo",
     couple: "Couple",
