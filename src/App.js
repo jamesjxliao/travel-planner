@@ -106,7 +106,7 @@ const translations = {
     destination: "目的地",
     startPlanning: "开始规划",
     travelersInformation: "旅行者信息",
-    whosTraveling: "谁在旅行",
+    whosTraveling: "谁在旅",
     solo: "单人",
     couple: "情侣",
     family: "家庭",
@@ -143,7 +143,7 @@ const translations = {
     generateOptions: "生成选项",
     roundTrip: "往返",
     estimatedCostBreakdown: "预估费用明细",
-    totalEstimatedCost: "总预估费用",
+    totalEstimatedCost: "总预估费��",
     accommodation: "住宿",
     transportation: "交通",
     food: "餐饮",
@@ -333,7 +333,7 @@ const TravelPlannerApp = () => {
     }
     const prompt = `For a ${numDays}-day trip to ${destination} from ${homeLocation}, provide 4 distinct options for ${aspect}. ${travelersInfo}. User's preference: "${aspectPreference}". Each option should be a brief markdown bullet point (no more than 30 words) and represent a different approach or choice, considering the type of travelers and trip duration. 
 
-When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this], not just individual words. For example, use "[好莱坞附近的热门汉堡餐厅]" instead of just "[好莱坞]". Be as specific and descriptive as possible when marking these entities.
+When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this], not just individual words. For example, use "[好莱坞附近的热门汉堡餐���]" instead of just "[好莱坞]". Be as specific and descriptive as possible when marking these entities.
 
 Ensure each option is unique and provides a different experience or approach.`;
 
@@ -686,7 +686,6 @@ Format the response as a JSON object with the following structure:
 
     return (
       <Box sx={{ mt: 2 }}>
-        <Typography variant="h5" gutterBottom>{t('yourTravelPlan')}</Typography>
         {finalPlan.itinerary.map((day, index) => (
           <Card key={index} elevation={3} sx={{ mb: 2, overflow: 'hidden' }}>
             <Box sx={{ 
@@ -1053,7 +1052,7 @@ Format the response as a JSON object with the following structure:
           <Button 
             variant="contained" 
             onClick={finalizePlan}
-            sx={{ mt: 2, width: '100%' }}
+            sx={{ mt: 2, width: '100%', mb: 4 }}  // Added mb: 4 for bottom margin
           >
             {t('finalizePlan')}
           </Button>
@@ -1071,7 +1070,12 @@ Format the response as a JSON object with the following structure:
 
           {isLoading && <Typography sx={{ mt: 2 }}>{t('generatingTravelPlan')}</Typography>}
 
-          {finalPlan && renderItinerary()}
+          {finalPlan && (
+            <Box sx={{ mt: 4 }}>
+              <Typography variant="h5" gutterBottom>{t('yourTravelPlan')}</Typography>
+              {renderItinerary()}
+            </Box>
+          )}
         </Grid>
       </Grid>
       {isMobile && (
