@@ -7,6 +7,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import ReactMarkdown from 'react-markdown';
+import PersonIcon from '@mui/icons-material/Person'; // Add this import
 
 // Create a language context
 const LanguageContext = createContext();
@@ -771,16 +772,14 @@ Format the response as a JSON object with the following structure:
       <AppBar position="fixed">
         <Toolbar>
           {isMobile && (
-            <IconButton
-              size="large"
-              edge="start"
+            <Button
               color="inherit"
-              aria-label="menu"
-              sx={{ mr: 2 }}
+              startIcon={<PersonIcon />}
               onClick={toggleDrawer(true)}
+              sx={{ mr: 2 }}
             >
-              <MenuIcon />
-            </IconButton>
+              {t('travelersInformation')}
+            </Button>
           )}
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             {t('title')}
