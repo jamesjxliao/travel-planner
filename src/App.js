@@ -1031,7 +1031,7 @@ Format the response as a JSON object with the following structure:
               sx={{ mr: 2, color: 'white' }}
             />
           )}
-          <FormControl sx={{ minWidth: 120 }} size="small">
+          <FormControl sx={{ minWidth: 80 }} size="small">
             <Select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
@@ -1040,7 +1040,7 @@ Format the response as a JSON object with the following structure:
               sx={{ color: 'white', '& .MuiSvgIcon-root': { color: 'white' } }}
             >
               <MenuItem value="zh">中文</MenuItem>
-              <MenuItem value="en">English</MenuItem>
+              <MenuItem value="en">EN</MenuItem>
             </Select>
           </FormControl>
           <Tooltip title={t('resetAllSettings')}>
