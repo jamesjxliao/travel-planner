@@ -569,6 +569,23 @@ Format the response as a JSON object with the following structure:
       timeToVisit: timeToVisit
     };
 
+    // Function to remove HTML tags
+    const stripHtml = (html) => {
+      return html.replace(/<[^>]*>/g, '');
+    };
+
+    // Create a context string from the existing itinerary
+    let existingItineraryContext = '';
+    finalPlan.itinerary.forEach((existingDay, index) => {
+      if (index + 1 !== day) { // Skip the day being regenerated
+        existingItineraryContext += `Day ${existingDay.day}:\n`;
+        ['morning', 'afternoon', 'evening'].forEach(tod => {
+          existingItineraryContext += `${tod.charAt(0).toUpperCase() + tod.slice(1)}: ${stripHtml(existingDay[tod])}\n`;
+        });
+        existingItineraryContext += '\n';
+      }
+    });
+
     let regeneratePrompt = `Please respond in ${language === 'zh' ? 'Chinese' : 'English'}. `;
     regeneratePrompt += `Briefly regenerate the itinerary for ${timeOfDay ? `the ${timeOfDay} of ` : ''}Day ${day} of the ${travelInfo.type} from ${travelInfo.from} to ${travelInfo.to} for ${travelInfo.travelers}`;
     if (travelInfo.groupSize) regeneratePrompt += ` (group of ${travelInfo.groupSize})`;
@@ -582,20 +599,24 @@ Format the response as a JSON object with the following structure:
       regeneratePrompt += ` Special Requirements: ${specialRequirements}.`;
     }
 
-    regeneratePrompt += ` Please provide a concise revised ${timeOfDay ? timeOfDay : 'full day'} itinerary based on these choices and preferences. Keep each time period description to about 30-50 words.
+    regeneratePrompt += ` Here's the context of the existing itinerary (excluding the day being regenerated):
 
-    When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this]. Be specific but brief when marking these entities. Do not mark general activities or common nouns.
+${existingItineraryContext}
 
-    Format the response as a JSON object with the following structure:
-    {
-      ${timeOfDay ? `
-      "${timeOfDay}": "Brief description of ${timeOfDay} activities with [specific attractions] marked"
-      ` : `
-      "morning": "Brief description of morning activities with [specific attractions] marked",
-      "afternoon": "Brief description of afternoon activities with [specific landmarks] marked",
-      "evening": "Brief description of evening activities with [unique experiences] marked"
-      `}
-    }`;
+Please provide a concise revised ${timeOfDay ? timeOfDay : 'full day'} itinerary based on these choices and preferences, ensuring it complements the existing plan without duplicating activities. Keep each time period description to about 30-50 words.
+
+When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this]. Be specific but brief when marking these entities. Do not mark general activities or common nouns.
+
+Format the response as a JSON object with the following structure:
+{
+  ${timeOfDay ? `
+  "${timeOfDay}": "Brief description of ${timeOfDay} activities with [specific attractions] marked"
+  ` : `
+  "morning": "Brief description of morning activities with [specific attractions] marked",
+  "afternoon": "Brief description of afternoon activities with [specific landmarks] marked",
+  "evening": "Brief description of evening activities with [unique experiences] marked"
+  `}
+}`;
 
     try {
       const response = await getLLMResponse(regeneratePrompt);
