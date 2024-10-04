@@ -734,20 +734,21 @@ Format the response as a JSON object with the following structure:
                             </IconButton>
                           </Tooltip>
                         </Box>
-                        <StyledContent>
-                          <Typography 
-                            variant="body2" 
-                            component="div"
-                            dangerouslySetInnerHTML={{ __html: day[timeOfDay] }}
-                            sx={{ 
-                              '& a': { 
-                                color: 'secondary.main',
-                                textDecoration: 'none',
-                                '&:hover': { textDecoration: 'underline' }
-                              }
-                            }}
-                          />
-                        </StyledContent>
+                        <Typography 
+                          variant="body2" 
+                          component="div"
+                          dangerouslySetInnerHTML={{ __html: day[timeOfDay] }}
+                          sx={{
+                            '& a': {
+                              color: 'primary.main',
+                              textDecoration: 'underline',
+                              fontWeight: 'bold',  // Added boldness
+                              '&:hover': {
+                                color: 'primary.dark',
+                              },
+                            },
+                          }}
+                        />
                       </CardContent>
                     </Card>
                   </Grid>
