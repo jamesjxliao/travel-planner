@@ -639,27 +639,30 @@ Ensure each option is unique and provides a different experience or approach.`;
 
 When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this], not just individual words. For example, use "[好莱坞附近的热门汉堡餐厅]" instead of just "[好莱坞]". Be as specific and descriptive as possible when marking these entities. Do not mark general activities or common nouns.
 
-Format the response as a JSON object with the following structure:
+Your response must be a valid JSON object with the following structure:
+{
+  "itinerary": [
     {
-      "itinerary": [
-        {
-          "day": 1,
-          "morning": "Description of morning activities with [specific attractions] marked",
-          "afternoon": "Description of afternoon activities with [specific landmarks] marked",
-          "evening": "Description of evening activities with [unique experiences] marked"
-        },
-        // ... repeat for each day
-      ],
-      "estimatedCost": {
-        "total": "Total cost range for the entire trip",
-        "breakdown": {
-          "accommodation": "Cost range for accommodation",
-          "transportation": "Cost range for transportation",
-          "food": "Cost range for food",
-          "activities": "Cost range for activities",
-          "other": "Cost range for other expenses"
-        }
-      }`;
+      "day": 1,
+      "morning": "Description of morning activities with [specific attractions] marked",
+      "afternoon": "Description of afternoon activities with [specific landmarks] marked",
+      "evening": "Description of evening activities with [unique experiences] marked"
+    },
+    // ... repeat for each day
+  ],
+  "estimatedCost": {
+    "total": "Total cost range for the entire trip",
+    "breakdown": {
+      "accommodation": "Cost range for accommodation",
+      "transportation": "Cost range for transportation",
+      "food": "Cost range for food",
+      "activities": "Cost range for activities",
+      "other": "Cost range for other expenses"
+    }
+  }
+}
+
+Do not include any text outside of this JSON structure. Ensure all JSON keys are enclosed in double quotes and that the JSON is valid.`;
 
     try {
       const response = await getLLMResponse(finalPrompt);
