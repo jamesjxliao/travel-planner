@@ -101,13 +101,13 @@ const translations = {
     "attractions.historicalsites": "Historical sites",
     "attractions.themeparks": "Theme parks",
     "attractions.shopping": "Shopping",
-    specialRequirements: "Special Requirements",
+    specialRequirements: "Select or type in any requirements",
     regenerateDay: "Regenerate this day's itinerary",
     regenerateTimeOfDay: "Regenerate this part of the day",
     resetAllSettings: "Reset All Settings",
     defaultHomeLocation: "San Carlos",
     defaultDestination: "Los Angeles",
-    selectOrTypeRequirements: "Select or type in any requirements",
+    // selectOrTypeRequirements: "Select or type in any requirements",
   },
   zh: {
     title: "AI旅行规划器",
@@ -187,13 +187,13 @@ const translations = {
     "attractions.historicalsites": "历史遗迹",
     "attractions.themeparks": "主题公园",
     "attractions.shopping": "购物",
-    specialRequirements: "特殊要求",
+    specialRequirements: "选择或输入任何要求",
     regenerateDay: "重新生成这一天的行程",
     regenerateTimeOfDay: "重新生成这部分的行程",
     resetAllSettings: "重置所有设置",
     defaultHomeLocation: "圣卡洛斯",
     defaultDestination: "洛杉矶",
-    selectOrTypeRequirements: "选择或输入任何要求",
+    // selectOrTypeRequirements: "选择或输入任何要求",
   }
 };
 
@@ -1254,9 +1254,6 @@ Format the response as a JSON object with the following structure:
           <Card sx={{ mt: 2 }}>
             <CardContent>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Typography variant="h6">
-                  {t('specialRequirements')}
-                </Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                   {allCommonPreferences.map((prefKey, index) => (
                     <Chip
@@ -1278,13 +1275,6 @@ Format the response as a JSON object with the following structure:
                   disabled={isLoading}
                   variant="outlined"
                   rows={1}
-                  InputProps={{
-                    startAdornment: specialRequirements === '' ? (
-                      <InputAdornment position="start" sx={{ color: 'text.secondary' }}>
-                        {t('selectOrTypeRequirements')}
-                      </InputAdornment>
-                    ) : null,
-                  }}
                 />
               </Box>
             </CardContent>
