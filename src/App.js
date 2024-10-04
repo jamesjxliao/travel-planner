@@ -1018,17 +1018,19 @@ Format the response as a JSON object with the following structure:
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             {t('title')}
           </Typography>
-          <FormControlLabel
-            control={
-              <Switch 
-                checked={showDebug} 
-                onChange={(e) => setShowDebug(e.target.checked)}
-                color="default"
-              />
-            }
-            label={<BugReportIcon />}
-            sx={{ mr: 2, color: 'white' }}
-          />
+          {!isMobile && (
+            <FormControlLabel
+              control={
+                <Switch 
+                  checked={showDebug} 
+                  onChange={(e) => setShowDebug(e.target.checked)}
+                  color="default"
+                />
+              }
+              label={<BugReportIcon />}
+              sx={{ mr: 2, color: 'white' }}
+            />
+          )}
           <FormControl sx={{ minWidth: 120 }} size="small">
             <Select
               value={language}
