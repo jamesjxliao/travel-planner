@@ -611,18 +611,18 @@ Format the response as a JSON object with the following structure:
 
 ${existingItineraryContext}
 
-Please provide a ${timeOfDay ? '' : 'full day '}itinerary based on these choices and preferences, ensuring it complements the existing plan without duplicating activities. ${timeOfDay ? `Focus on creating a coherent plan for the ${timeOfDay}, considering the other activities planned for this day.` : ''} Keep each time period description to about 30-50 words.
+Please provide a ${timeOfDay ? '' : 'full day '}itinerary based on these choices and preferences, ensuring it complements the existing plan without duplicating activities. ${timeOfDay ? `Focus on creating a coherent plan for the ${timeOfDay} of Day ${day}, considering the other activities planned for this day.` : ''} Keep each time period description to about 30-50 words.
 
 When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this]. Be specific but brief when marking these entities. Do not mark general activities or common nouns.
 
 Format the response as a JSON object with the following structure:
 {
   ${timeOfDay ? `
-  "${timeOfDay}": "Description of ${timeOfDay} activities with [specific attractions] marked"
+  "${timeOfDay}": "Description of ${timeOfDay} activities for Day ${day} with [specific attractions] marked"
   ` : `
-  "morning": "Description of morning activities with [specific attractions] marked",
-  "afternoon": "Description of afternoon activities with [specific landmarks] marked",
-  "evening": "Description of evening activities with [unique experiences] marked"
+  "morning": "Description of morning activities for Day ${day} with [specific attractions] marked",
+  "afternoon": "Description of afternoon activities for Day ${day} with [specific landmarks] marked",
+  "evening": "Description of evening activities for Day ${day} with [unique experiences] marked"
   `}
 }`;
 
