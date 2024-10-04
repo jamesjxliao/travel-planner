@@ -9,6 +9,7 @@ import BugReportIcon from '@mui/icons-material/BugReport';
 import ReactMarkdown from 'react-markdown';
 import PersonIcon from '@mui/icons-material/Person'; // Add this import
 import Tooltip from '@mui/material/Tooltip'; // Add this import
+import RefreshIcon from '@mui/icons-material/Refresh'; // Add this import
 
 // Create a language context
 const LanguageContext = createContext();
@@ -96,7 +97,9 @@ const translations = {
     "attractions.historicalsites": "Historical sites",
     "attractions.themeparks": "Theme parks",
     "attractions.shopping": "Shopping",
-    specialRequirements: "Special Requirements"
+    specialRequirements: "Special Requirements",
+    regenerateDay: "Regenerate this day's itinerary",
+    regenerateTimeOfDay: "Regenerate this part of the day"
   },
   zh: {
     title: "AI旅行规划器",
@@ -176,7 +179,9 @@ const translations = {
     "attractions.historicalsites": "历史遗迹",
     "attractions.themeparks": "主题公园",
     "attractions.shopping": "购物",
-    specialRequirements: "特殊要求"
+    specialRequirements: "特殊要求",
+    regenerateDay: "重新生成这一天的行程",
+    regenerateTimeOfDay: "重新生成这部分的行程"
   }
 };
 
@@ -244,7 +249,7 @@ const TravelPlannerApp = () => {
   const [options, setOptions] = useState({});
   const [selectedOptions, setSelectedOptions] = useState({});
   const [conversationHistory, setConversationHistory] = useState([]);
-  const [finalPlan, setFinalPlan] = useState('');
+  const [finalPlan, setFinalPlan] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [homeLocation, setHomeLocation] = useState('San Carlos');
   const [aspectPreferences, setAspectPreferences] = useState({});
@@ -279,6 +284,9 @@ const TravelPlannerApp = () => {
 
   // Add this new state variable
   const [regeneratingAspect, setRegeneratingAspect] = useState(null);
+
+  // Add this new state variable
+  const [regeneratingItinerary, setRegeneratingItinerary] = useState({ day: null, timeOfDay: null });
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -545,8 +553,109 @@ Format the response as a JSON object with the following structure:
     setDrawerOpen(open);
   };
 
+  const regenerateItinerary = async (day, timeOfDay = null) => {
+    setRegeneratingItinerary({ day, timeOfDay });
+    setIsLoading(true);
+
+    const travelInfo = {
+      type: `${numDays}-day ${isRoundTrip ? 'round trip' : 'one-way trip'}`,
+      from: homeLocation,
+      to: destination,
+      travelers: travelers,
+      groupSize: travelers === 'Family' || travelers === 'Group' ? groupSize : null,
+      budget: budget,
+      transportation: transportationMode,
+      accommodation: accommodationType,
+      timeToVisit: timeToVisit
+    };
+
+    let regeneratePrompt = `Please respond in ${language === 'zh' ? 'Chinese' : 'English'}. `;
+    regeneratePrompt += `Briefly regenerate the itinerary for ${timeOfDay ? `the ${timeOfDay} of ` : ''}Day ${day} of the ${travelInfo.type} from ${travelInfo.from} to ${travelInfo.to} for ${travelInfo.travelers}`;
+    if (travelInfo.groupSize) regeneratePrompt += ` (group of ${travelInfo.groupSize})`;
+    regeneratePrompt += `. Budget: ${travelInfo.budget}.`;
+    regeneratePrompt += ` Transportation: ${travelInfo.transportation === 'flexible' ? 'flexible options' : travelInfo.transportation}.`;
+    regeneratePrompt += ` Accommodation: ${travelInfo.accommodation === 'flexible' ? 'flexible options' : t(`accommodations.${travelInfo.accommodation}`)}.`;
+    regeneratePrompt += ` Time to visit: ${travelInfo.timeToVisit === 'flexible' ? 'flexible' : t(`timetovisit.${travelInfo.timeToVisit}`)}.`;
+
+    // Update this part to use only specialRequirements
+    if (specialRequirements) {
+      regeneratePrompt += ` Special Requirements: ${specialRequirements}.`;
+    }
+
+    regeneratePrompt += ` Please provide a concise revised ${timeOfDay ? timeOfDay : 'full day'} itinerary based on these choices and preferences. Keep each time period description to about 30-50 words.
+
+    When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this]. Be specific but brief when marking these entities. Do not mark general activities or common nouns.
+
+    Format the response as a JSON object with the following structure:
+    {
+      ${timeOfDay ? `
+      "${timeOfDay}": "Brief description of ${timeOfDay} activities with [specific attractions] marked"
+      ` : `
+      "morning": "Brief description of morning activities with [specific attractions] marked",
+      "afternoon": "Brief description of afternoon activities with [specific landmarks] marked",
+      "evening": "Brief description of evening activities with [unique experiences] marked"
+      `}
+    }`;
+
+    try {
+      const response = await getLLMResponse(regeneratePrompt);
+      console.log("Raw LLM response:", response);
+
+      let parsedResponse;
+      try {
+        parsedResponse = JSON.parse(response);
+      } catch (parseError) {
+        console.error("Failed to parse LLM response:", parseError);
+        console.log("Attempting to extract JSON from response...");
+        
+        // Attempt to extract JSON from the response
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            parsedResponse = JSON.parse(jsonMatch[0]);
+          } catch (extractError) {
+            console.error("Failed to extract and parse JSON:", extractError);
+          }
+        }
+      }
+
+      console.log("Parsed response:", parsedResponse);
+
+      if (parsedResponse) {
+        setFinalPlan(prevPlan => {
+          console.log("Previous plan:", prevPlan);
+          const updatedItinerary = [...prevPlan.itinerary];
+          if (timeOfDay) {
+            updatedItinerary[day - 1][timeOfDay] = parsedResponse[timeOfDay].replace(/\[([^\]]+)\]/g, (_, entity) => {
+              return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer">${entity}</a>`;
+            });
+          } else {
+            ['morning', 'afternoon', 'evening'].forEach(tod => {
+              if (parsedResponse[tod]) {
+                updatedItinerary[day - 1][tod] = parsedResponse[tod].replace(/\[([^\]]+)\]/g, (_, entity) => {
+                  return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer">${entity}</a>`;
+                });
+              }
+            });
+          }
+          console.log("Updated itinerary:", updatedItinerary);
+          return { ...prevPlan, itinerary: updatedItinerary };
+        });
+      } else {
+        console.error("Invalid response structure:", parsedResponse);
+      }
+    } catch (error) {
+      console.error("Error in regenerateItinerary:", error);
+    } finally {
+      setIsLoading(false);
+      setRegeneratingItinerary({ day: null, timeOfDay: null });
+    }
+  };
+
   const renderItinerary = () => {
     if (!finalPlan || !finalPlan.itinerary) return null;
+
+    console.log("Rendering itinerary:", finalPlan.itinerary);
 
     return (
       <Box sx={{ mt: 2 }}>
@@ -556,19 +665,40 @@ Format the response as a JSON object with the following structure:
             <Grid item xs={12} key={index}>
               <Card>
                 <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    {language === 'zh' 
-                      ? t('day').replace('天', `${day.day}天`) 
-                      : `${t('day')} ${day.day}`}
-                  </Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6">
+                      {language === 'zh' 
+                        ? t('day').replace('天', `${day.day}天`) 
+                        : `${t('day')} ${day.day}`}
+                    </Typography>
+                    <Tooltip title={t('regenerateDay')}>
+                      <IconButton 
+                        onClick={() => regenerateItinerary(day.day)}
+                        disabled={isLoading || (regeneratingItinerary.day === day.day && !regeneratingItinerary.timeOfDay)}
+                      >
+                        <RefreshIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
                   <Grid container spacing={2}>
                     {['morning', 'afternoon', 'evening'].map((timeOfDay) => (
                       <Grid item xs={12} sm={4} key={timeOfDay}>
                         <Card variant="outlined">
                           <CardContent>
-                            <Typography variant="subtitle1" gutterBottom>
-                              {t(timeOfDay)}
-                            </Typography>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                              <Typography variant="subtitle1">
+                                {t(timeOfDay)}
+                              </Typography>
+                              <Tooltip title={t('regenerateTimeOfDay')}>
+                                <IconButton 
+                                  size="small"
+                                  onClick={() => regenerateItinerary(day.day, timeOfDay)}
+                                  disabled={isLoading || (regeneratingItinerary.day === day.day && regeneratingItinerary.timeOfDay === timeOfDay)}
+                                >
+                                  <RefreshIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
                             <StyledContent>
                               <Typography 
                                 variant="body2" 
