@@ -10,7 +10,6 @@ import ReactMarkdown from 'react-markdown';
 import PersonIcon from '@mui/icons-material/Person'; // Add this import
 import Tooltip from '@mui/material/Tooltip'; // Add this import
 import RefreshIcon from '@mui/icons-material/Refresh'; // Replace DeleteIcon with RefreshIcon
-import Cookies from 'js-cookie';
 import CircularProgress from '@mui/material/CircularProgress';
 import Backdrop from '@mui/material/Backdrop';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -198,10 +197,22 @@ const translations = {
   }
 };
 
-// Create a LanguageProvider component
+// Update the LanguageProvider component
 const LanguageProvider = ({ children }) => {
-  const [language, setLanguage] = useState('zh');  // Changed from 'en' to 'zh'
-  const value = { language, setLanguage, t: (key) => translations[language][key] };
+  const [language, setLanguage] = useState(() => {
+    // Retrieve the language from localStorage, default to 'zh' if not set
+    return localStorage.getItem('language') || 'zh';
+  });
+
+  const value = { 
+    language, 
+    setLanguage: (lang) => {
+      setLanguage(lang);
+      localStorage.setItem('language', lang);
+    }, 
+    t: (key) => translations[language][key] 
+  };
+
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 };
 
@@ -311,19 +322,19 @@ const TravelPlannerApp = () => {
   const [dayVersions, setDayVersions] = useState({});
   const [currentPages, setCurrentPages] = useState({});
 
-  // Load preferences from cookies on initial render
+  // Load preferences from localStorage on initial render
   useEffect(() => {
-    const loadedDestination = Cookies.get('destination') || t('defaultDestination');
-    const loadedHomeLocation = Cookies.get('homeLocation') || t('defaultHomeLocation');
-    const loadedTravelers = Cookies.get('travelers') || 'Family';
-    const loadedGroupSize = Cookies.get('groupSize') || '3';
-    const loadedNumDays = Cookies.get('numDays') || '3';
-    const loadedBudget = Cookies.get('budget') || 'Mid-range';
-    const loadedIsRoundTrip = Cookies.get('isRoundTrip');
-    const loadedTimeToVisit = Cookies.get('timeToVisit') || 'flexible';
-    const loadedAccommodationType = Cookies.get('accommodationType') || 'flexible';
-    const loadedTransportationMode = Cookies.get('transportationMode') || 'flexible';
-    const loadedSpecialRequirements = Cookies.get('specialRequirements') || '';
+    const loadedDestination = localStorage.getItem('destination') || t('defaultDestination');
+    const loadedHomeLocation = localStorage.getItem('homeLocation') || t('defaultHomeLocation');
+    const loadedTravelers = localStorage.getItem('travelers') || 'Family';
+    const loadedGroupSize = localStorage.getItem('groupSize') || '3';
+    const loadedNumDays = localStorage.getItem('numDays') || '3';
+    const loadedBudget = localStorage.getItem('budget') || 'Mid-range';
+    const loadedIsRoundTrip = localStorage.getItem('isRoundTrip');
+    const loadedTimeToVisit = localStorage.getItem('timeToVisit') || 'flexible';
+    const loadedAccommodationType = localStorage.getItem('accommodationType') || 'flexible';
+    const loadedTransportationMode = localStorage.getItem('transportationMode') || 'flexible';
+    const loadedSpecialRequirements = localStorage.getItem('specialRequirements') || '';
 
     setDestination(loadedDestination);
     setHomeLocation(loadedHomeLocation);
@@ -331,99 +342,99 @@ const TravelPlannerApp = () => {
     setGroupSize(loadedGroupSize);
     setNumDays(loadedNumDays);
     setBudget(loadedBudget);
-    setIsRoundTrip(loadedIsRoundTrip === undefined ? true : loadedIsRoundTrip === 'true');
+    setIsRoundTrip(loadedIsRoundTrip === null ? true : loadedIsRoundTrip === 'true');
     setTimeToVisit(loadedTimeToVisit);
     setAccommodationType(loadedAccommodationType);
     setTransportationMode(loadedTransportationMode);
     setSpecialRequirements(loadedSpecialRequirements);
-  }, [language, t]);
+  }, [t]); // Remove language from the dependency array
 
-  // Function to save preferences to cookies
-  const savePreferencesToCookies = () => {
-    Cookies.set('destination', destination, { expires: 30 });
-    Cookies.set('homeLocation', homeLocation, { expires: 30 });
-    Cookies.set('travelers', travelers, { expires: 30 });
-    Cookies.set('groupSize', groupSize, { expires: 30 });
-    Cookies.set('numDays', numDays, { expires: 30 });
-    Cookies.set('budget', budget, { expires: 30 });
-    Cookies.set('isRoundTrip', isRoundTrip.toString(), { expires: 30 });
-    Cookies.set('timeToVisit', timeToVisit, { expires: 30 });
-    Cookies.set('accommodationType', accommodationType, { expires: 30 });
-    Cookies.set('transportationMode', transportationMode, { expires: 30 });
-    Cookies.set('specialRequirements', specialRequirements, { expires: 30 });
+  // Function to save preferences to localStorage
+  const savePreferencesToLocalStorage = () => {
+    localStorage.setItem('destination', destination);
+    localStorage.setItem('homeLocation', homeLocation);
+    localStorage.setItem('travelers', travelers);
+    localStorage.setItem('groupSize', groupSize);
+    localStorage.setItem('numDays', numDays);
+    localStorage.setItem('budget', budget);
+    localStorage.setItem('isRoundTrip', isRoundTrip.toString());
+    localStorage.setItem('timeToVisit', timeToVisit);
+    localStorage.setItem('accommodationType', accommodationType);
+    localStorage.setItem('transportationMode', transportationMode);
+    localStorage.setItem('specialRequirements', specialRequirements);
   };
 
   // Update handlers to save preferences
   const handleDestinationChange = (e) => {
     setDestination(e.target.value);
-    Cookies.set('destination', e.target.value, { expires: 30 });
+    localStorage.setItem('destination', e.target.value);
   };
 
   const handleHomeLocationChange = (e) => {
     setHomeLocation(e.target.value);
-    Cookies.set('homeLocation', e.target.value, { expires: 30 });
+    localStorage.setItem('homeLocation', e.target.value);
   };
 
   const handleTravelersChange = (event) => {
     const value = event.target.value;
     setTravelers(value);
-    Cookies.set('travelers', value, { expires: 30 });
+    localStorage.setItem('travelers', value);
     if (value === 'Solo') {
       setGroupSize('1');
-      Cookies.set('groupSize', '1', { expires: 30 });
+      localStorage.setItem('groupSize', '1');
     } else if (value === 'Couple') {
       setGroupSize('2');
-      Cookies.set('groupSize', '2', { expires: 30 });
+      localStorage.setItem('groupSize', '2');
     } else if (value === 'Family') {
       setGroupSize('3');
-      Cookies.set('groupSize', '3', { expires: 30 });
+      localStorage.setItem('groupSize', '3');
     } else if (value === 'Group') {
       setGroupSize('5');
-      Cookies.set('groupSize', '5', { expires: 30 });
+      localStorage.setItem('groupSize', '5');
     }
     if (isMobile) handleDrawerClose();
   };
 
   const handleGroupSizeChange = (e) => {
     setGroupSize(e.target.value);
-    Cookies.set('groupSize', e.target.value, { expires: 30 });
+    localStorage.setItem('groupSize', e.target.value);
   };
 
   const handleNumDaysChange = (e) => {
     setNumDays(e.target.value);
-    Cookies.set('numDays', e.target.value, { expires: 30 });
+    localStorage.setItem('numDays', e.target.value);
   };
 
   const handleBudgetChange = (event) => {
     setBudget(event.target.value);
-    Cookies.set('budget', event.target.value, { expires: 30 });
+    localStorage.setItem('budget', event.target.value);
     if (isMobile) handleDrawerClose();
   };
 
   const handleIsRoundTripChange = (e) => {
     const newValue = e.target.checked;
     setIsRoundTrip(newValue);
-    Cookies.set('isRoundTrip', newValue.toString(), { expires: 30 });
+    localStorage.setItem('isRoundTrip', newValue.toString());
   };
 
   const handleTimeToVisitChange = (e) => {
     setTimeToVisit(e.target.value);
-    Cookies.set('timeToVisit', e.target.value, { expires: 30 });
+    localStorage.setItem('timeToVisit', e.target.value);
   };
 
   const handleAccommodationTypeChange = (e) => {
     setAccommodationType(e.target.value);
-    Cookies.set('accommodationType', e.target.value, { expires: 30 });
+    localStorage.setItem('accommodationType', e.target.value);
   };
 
   const handleTransportationModeChange = (e) => {
     setTransportationMode(e.target.value);
-    Cookies.set('transportationMode', e.target.value, { expires: 30 });
+    localStorage.setItem('transportationMode', e.target.value);
   };
 
   const handleSpecialRequirementsChange = (e) => {
     setSpecialRequirements(e.target.value);
-    Cookies.set('specialRequirements', e.target.value, { expires: 30 });
+    localStorage.setItem('specialRequirements', e.target.value);
   };
 
   // Update this function to handle special requirements
@@ -1043,20 +1054,20 @@ Format the response as a JSON object with the following structure:
     setTransportationMode('flexible');
     setSpecialRequirements('');
 
-    // Clear all cookies
-    Cookies.remove('destination');
-    Cookies.remove('homeLocation');
-    Cookies.remove('travelers');
-    Cookies.remove('groupSize');
-    Cookies.remove('numDays');
-    Cookies.remove('budget');
-    Cookies.remove('timeToVisit');
-    Cookies.remove('accommodationType');
-    Cookies.remove('transportationMode');
-    Cookies.remove('specialRequirements');
+    // Clear all localStorage items
+    localStorage.removeItem('destination');
+    localStorage.removeItem('homeLocation');
+    localStorage.removeItem('travelers');
+    localStorage.removeItem('groupSize');
+    localStorage.removeItem('numDays');
+    localStorage.removeItem('budget');
+    localStorage.removeItem('timeToVisit');
+    localStorage.removeItem('accommodationType');
+    localStorage.removeItem('transportationMode');
+    localStorage.removeItem('specialRequirements');
 
-    // Update the cookie for isRoundTrip
-    Cookies.set('isRoundTrip', 'true', { expires: 30 });
+    // Update the localStorage for isRoundTrip
+    localStorage.setItem('isRoundTrip', 'true');
 
     // Clear the final plan
     setFinalPlan(null);
