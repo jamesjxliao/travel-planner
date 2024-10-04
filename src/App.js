@@ -16,6 +16,7 @@ import Backdrop from '@mui/material/Backdrop';
 import InputAdornment from '@mui/material/InputAdornment';
 import Pagination from '@mui/material/Pagination'; // Add this import
 import GoogleAnalytics from './components/GoogleAnalytics';
+import { createLogger } from './utils/logger'; // We'll create this utility
 
 // Create a language context
 const LanguageContext = createContext();
@@ -500,19 +501,28 @@ const TravelPlannerApp = () => {
     logEvent("User Input", "Clicked Common Preference", prefKey);
   };
 
+  // Create a logger instance
+  const logger = createLogger(process.env.NODE_ENV);
+
+  // Replace console.log, console.error, etc. with logger methods
   const getLLMResponse = async (prompt) => {
-    setCurrentPrompt(prompt);  // Set the current prompt for debugging
+    setCurrentPrompt(prompt);
     const updatedHistory = [...conversationHistory, { role: "user", content: prompt }];
     setConversationHistory(updatedHistory);
 
-    const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: updatedHistory
-    });
+    try {
+      const response = await client.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: updatedHistory
+      });
 
-    const llmResponse = response.choices[0].message.content;
-    setConversationHistory([...updatedHistory, { role: "assistant", content: llmResponse }]);
-    return llmResponse;
+      const llmResponse = response.choices[0].message.content;
+      setConversationHistory([...updatedHistory, { role: "assistant", content: llmResponse }]);
+      return llmResponse;
+    } catch (error) {
+      logger.error("Error in getLLMResponse:", error);
+      throw error;
+    }
   };
 
   const generateOptions = async (aspect) => {
@@ -653,14 +663,14 @@ Format the response as a JSON object with the following structure:
 
     try {
       const response = await getLLMResponse(finalPrompt);
-      console.log("Raw LLM response:", response);
+      logger.debug("Raw LLM response:", response);
 
       let parsedResponse;
       try {
         parsedResponse = JSON.parse(response);
       } catch (parseError) {
-        console.error("Failed to parse LLM response:", parseError);
-        console.log("Attempting to extract JSON from response...");
+        logger.error("Failed to parse LLM response:", parseError);
+        logger.debug("Attempting to extract JSON from response...");
         
         // Attempt to extract JSON from the response
         const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -668,7 +678,7 @@ Format the response as a JSON object with the following structure:
           try {
             parsedResponse = JSON.parse(jsonMatch[0]);
           } catch (extractError) {
-            console.error("Failed to extract and parse JSON:", extractError);
+            logger.error("Failed to extract and parse JSON:", extractError);
           }
         }
       }
@@ -683,14 +693,14 @@ Format the response as a JSON object with the following structure:
           });
         }
 
-        console.log("Parsed response:", parsedResponse);
+        logger.debug("Parsed response:", parsedResponse);
         setFinalPlan(parsedResponse);
       } else {
-        console.error("Invalid response structure:", parsedResponse);
+        logger.error("Invalid response structure:", parsedResponse);
         setFinalPlan({ error: "Failed to generate a valid itinerary. Please try again." });
       }
     } catch (error) {
-      console.error("Error in finalizePlan:", error);
+      logger.error("Error in finalizePlan:", error);
       setFinalPlan({ error: "An error occurred while generating the travel plan. Please try again." });
     } finally {
       setIsLoading(false);
@@ -821,14 +831,14 @@ Format the response as a JSON object with the following structure:
 
     try {
       const response = await getLLMResponse(regeneratePrompt);
-      console.log("Raw LLM response:", response);
+      logger.debug("Raw LLM response:", response);
 
       let parsedResponse;
       try {
         parsedResponse = JSON.parse(response);
       } catch (parseError) {
-        console.error("Failed to parse LLM response:", parseError);
-        console.log("Attempting to extract JSON from response...");
+        logger.error("Failed to parse LLM response:", parseError);
+        logger.debug("Attempting to extract JSON from response...");
         
         // Attempt to extract JSON from the response
         const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -836,12 +846,12 @@ Format the response as a JSON object with the following structure:
           try {
             parsedResponse = JSON.parse(jsonMatch[0]);
           } catch (extractError) {
-            console.error("Failed to extract and parse JSON:", extractError);
+            logger.error("Failed to extract and parse JSON:", extractError);
           }
         }
       }
 
-      console.log("Parsed response:", parsedResponse);
+      logger.debug("Parsed response:", parsedResponse);
 
       if (parsedResponse) {
         setDayVersions(prev => {
@@ -877,10 +887,10 @@ Format the response as a JSON object with the following structure:
           };
         });
       } else {
-        console.error("Invalid response structure:", parsedResponse);
+        logger.error("Invalid response structure:", parsedResponse);
       }
     } catch (error) {
-      console.error("Error in regenerateItinerary:", error);
+      logger.error("Error in regenerateItinerary:", error);
     } finally {
       setIsLoading(false);
       setRegeneratingItinerary({ day: null, timeOfDay: null });
