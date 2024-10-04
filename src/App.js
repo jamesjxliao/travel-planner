@@ -103,7 +103,9 @@ const translations = {
     specialRequirements: "Special Requirements",
     regenerateDay: "Regenerate this day's itinerary",
     regenerateTimeOfDay: "Regenerate this part of the day",
-    resetAllSettings: "Reset All Settings"
+    resetAllSettings: "Reset All Settings",
+    defaultHomeLocation: "San Carlos",
+    defaultDestination: "Los Angeles",
   },
   zh: {
     title: "AI旅行规划器",
@@ -186,7 +188,9 @@ const translations = {
     specialRequirements: "特殊要求",
     regenerateDay: "重新生成这一天的行程",
     regenerateTimeOfDay: "重新生成这部分的行程",
-    resetAllSettings: "重置所有设置"
+    resetAllSettings: "重置所有设置",
+    defaultHomeLocation: "圣卡洛斯",
+    defaultDestination: "洛杉矶",
   }
 };
 
@@ -249,14 +253,15 @@ const commonPreferences = {
 };
 
 const TravelPlannerApp = () => {
-  const [destination, setDestination] = useState('Los Angeles');
+  const { language, setLanguage, t } = useLanguage();
+  const [destination, setDestination] = useState(t('defaultDestination'));
+  const [homeLocation, setHomeLocation] = useState(t('defaultHomeLocation'));
   const [currentAspect, setCurrentAspect] = useState('');
   const [options, setOptions] = useState({});
   const [selectedOptions, setSelectedOptions] = useState({});
   const [conversationHistory, setConversationHistory] = useState([]);
   const [finalPlan, setFinalPlan] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [homeLocation, setHomeLocation] = useState('San Carlos');
   const [aspectPreferences, setAspectPreferences] = useState({});
   const [isGeneratingOptions, setIsGeneratingOptions] = useState({});
   const [showDebug, setShowDebug] = useState(false);
@@ -264,7 +269,6 @@ const TravelPlannerApp = () => {
   const [travelers, setTravelers] = useState('Family');
   const [groupSize, setGroupSize] = useState('3');
   const [numDays, setNumDays] = useState('3');
-  const { language, setLanguage, t } = useLanguage();
   const [newOptionIndices, setNewOptionIndices] = useState({});
   const scrollRefs = useRef({});
   const [isRoundTrip, setIsRoundTrip] = useState(true);
@@ -302,8 +306,8 @@ const TravelPlannerApp = () => {
 
   // Load preferences from cookies on initial render
   useEffect(() => {
-    const loadedDestination = Cookies.get('destination') || 'Los Angeles';
-    const loadedHomeLocation = Cookies.get('homeLocation') || 'San Carlos';
+    const loadedDestination = Cookies.get('destination') || t('defaultDestination');
+    const loadedHomeLocation = Cookies.get('homeLocation') || t('defaultHomeLocation');
     const loadedTravelers = Cookies.get('travelers') || 'Family';
     const loadedGroupSize = Cookies.get('groupSize') || '3';
     const loadedNumDays = Cookies.get('numDays') || '3';
@@ -325,7 +329,7 @@ const TravelPlannerApp = () => {
     setAccommodationType(loadedAccommodationType);
     setTransportationMode(loadedTransportationMode);
     setSpecialRequirements(loadedSpecialRequirements);
-  }, []);
+  }, [language, t]);
 
   // Function to save preferences to cookies
   const savePreferencesToCookies = () => {
@@ -983,8 +987,8 @@ Format the response as a JSON object with the following structure:
   // Define resetAllSettings using useCallback
   const resetAllSettings = useCallback(() => {
     // Reset all state variables to their default values
-    setDestination('Los Angeles');
-    setHomeLocation('San Carlos');
+    setDestination(t('defaultDestination'));
+    setHomeLocation(t('defaultHomeLocation'));
     setTravelers('Family');
     setGroupSize('3');
     setNumDays('3');
@@ -1013,7 +1017,7 @@ Format the response as a JSON object with the following structure:
     // Clear the final plan
     setFinalPlan(null);
   }, [
-    setDestination, setHomeLocation, setTravelers, setGroupSize, setNumDays,
+    t, setDestination, setHomeLocation, setTravelers, setGroupSize, setNumDays,
     setBudget, setIsRoundTrip, setTimeToVisit, setAccommodationType,
     setTransportationMode, setSpecialRequirements, setFinalPlan
   ]); // Include all setter functions in the dependency array
