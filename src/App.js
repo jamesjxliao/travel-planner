@@ -266,12 +266,6 @@ const TravelPlannerApp = () => {
   // Combine all common preferences
   const allCommonPreferences = Object.values(commonPreferences).flat();
 
-  // Keep these predefined aspects
-  const predefinedAspects = [
-    "Food",
-    "Attractions"
-  ];
-
   // Add a new state for time to visit
   const [timeToVisit, setTimeToVisit] = useState('flexible');
 
@@ -430,18 +424,9 @@ Ensure each option is unique and provides a different experience or approach.`;
     finalPrompt += ` Accommodation: ${travelInfo.accommodation === 'flexible' ? 'flexible options' : t(`accommodations.${travelInfo.accommodation}`)}.`;
     finalPrompt += ` Time to visit: ${travelInfo.timeToVisit === 'flexible' ? 'flexible' : t(`timetovisit.${travelInfo.timeToVisit}`)}.`;
 
-    // Update this part to use predefinedAspects and specialRequirements
-    const preferences = predefinedAspects.map(aspect => {
-      const preference = aspectPreferences[aspect] || '';
-      return `${aspect}: "${preference}"`;
-    }).filter(Boolean);
-
+    // Update this part to use only specialRequirements
     if (specialRequirements) {
-      preferences.push(`Special Requirements: ${specialRequirements}`);
-    }
-
-    if (preferences.length > 0) {
-      finalPrompt += ` Preferences: ${preferences.join('. ')}.`;
+      finalPrompt += ` Special Requirements: ${specialRequirements}.`;
     }
 
     finalPrompt += ` Please provide a comprehensive ${numDays}-day travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip, with a breakdown for major categories (e.g., accommodation, transportation, food, activities). 
