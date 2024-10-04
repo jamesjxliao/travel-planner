@@ -8,6 +8,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import ReactMarkdown from 'react-markdown';
 import PersonIcon from '@mui/icons-material/Person'; // Add this import
+import Tooltip from '@mui/material/Tooltip'; // Add this import
 
 // Create a language context
 const LanguageContext = createContext();
@@ -772,14 +773,16 @@ Format the response as a JSON object with the following structure:
       <AppBar position="fixed">
         <Toolbar>
           {isMobile && (
-            <Button
-              color="inherit"
-              startIcon={<PersonIcon />}
-              onClick={toggleDrawer(true)}
-              sx={{ mr: 2 }}
-            >
-              {t('travelersInformation')}
-            </Button>
+            <Tooltip title={t('travelersInformation')}>
+              <IconButton
+                color="inherit"
+                onClick={toggleDrawer(true)}
+                sx={{ mr: 2 }}
+                aria-label={t('travelersInformation')}
+              >
+                <PersonIcon />
+              </IconButton>
+            </Tooltip>
           )}
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             {t('title')}
