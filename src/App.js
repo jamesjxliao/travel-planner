@@ -866,8 +866,10 @@ Format the response as a JSON object with the following structure:
                   margin="normal"
                   disabled={isLoading}
                   variant="outlined"
-                  multiline
-                  rows={3}
+                  // Remove the multiline prop
+                  // multiline
+                  // Change rows to 1
+                  rows={1}
                 />
               </Box>
             </CardContent>
