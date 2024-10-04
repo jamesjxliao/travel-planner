@@ -297,6 +297,9 @@ const TravelPlannerApp = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  const [isFullPlanGeneration, setIsFullPlanGeneration] = useState(false);
+  const finalPlanRef = useRef(null);
+
   // Load preferences from cookies on initial render
   useEffect(() => {
     const loadedDestination = Cookies.get('destination') || 'Los Angeles';
@@ -527,6 +530,7 @@ Ensure each option is unique and provides a different experience or approach.`;
 
   const finalizePlan = async () => {
     setIsLoading(true);
+    setIsFullPlanGeneration(true);
     const travelInfo = {
       type: `${numDays}-day ${isRoundTrip ? 'round trip' : 'one-way trip'}`,
       from: homeLocation,
@@ -623,6 +627,13 @@ Format the response as a JSON object with the following structure:
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!isLoading && isFullPlanGeneration && finalPlanRef.current) {
+      finalPlanRef.current.scrollIntoView({ behavior: 'smooth' });
+      setIsFullPlanGeneration(false);
+    }
+  }, [isLoading, isFullPlanGeneration]);
 
   const handlePreferenceChange = (aspect, value) => {
     setAspectPreferences(prev => ({ ...prev, [aspect]: value }));
@@ -1201,9 +1212,10 @@ Format the response as a JSON object with the following structure:
           <Button 
             variant="contained" 
             onClick={finalizePlan}
-            sx={{ mt: 2, width: '100%', mb: 4 }}  // Added mb: 4 for bottom margin
+            sx={{ mt: 2, width: '100%', mb: 4 }}
+            disabled={isLoading}
           >
-            {t('finalizePlan')}
+            {isLoading ? t('generatingTravelPlan') : t('finalizePlan')}
           </Button>
 
           {showDebug && currentPrompt && (
@@ -1217,21 +1229,8 @@ Format the response as a JSON object with the following structure:
             </Card>
           )}
 
-          {/* Replace the existing loading indicator with this new one */}
-          <Backdrop
-            sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-            open={isLoading}
-          >
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <CircularProgress color="inherit" size={60} />
-              <Typography variant="h6" sx={{ mt: 2 }}>
-                {t('generatingTravelPlan')}
-              </Typography>
-            </Box>
-          </Backdrop>
-
           {finalPlan && (
-            <Box sx={{ mt: 4 }}>
+            <Box sx={{ mt: 4 }} ref={finalPlanRef}>
               <Typography variant="h5" gutterBottom>{t('yourTravelPlan')}</Typography>
               {renderItinerary()}
             </Box>
