@@ -14,6 +14,7 @@ import Cookies from 'js-cookie';
 import CircularProgress from '@mui/material/CircularProgress';
 import Backdrop from '@mui/material/Backdrop';
 import InputAdornment from '@mui/material/InputAdornment';
+import Pagination from '@mui/material/Pagination'; // Add this import
 
 // Create a language context
 const LanguageContext = createContext();
@@ -120,9 +121,9 @@ const translations = {
     family: "家庭",
     group: "团体",
     groupSize: "团体人数",
-    homeLocation: "出发地",
+    homeLocation: "��发地",
     numberOfDays: "旅行天数",
-    aspectsToConsider: "考虑的方面：",
+    aspectsToConsider: "考虑方面：",
     addCustomAspect: "添加自定义方面",
     showDebugInfo: "显示调试信息",
     language: "语言",
@@ -150,7 +151,7 @@ const translations = {
     budget: "预算",
     generateOptions: "生成选项",
     roundTrip: "往返",
-    estimatedCostBreakdown: "预估费用明细",
+    estimatedCostBreakdown: "预估费用明",
     totalEstimatedCost: "总预估费",
     accommodation: "住宿",
     transportation: "交通",
@@ -306,6 +307,9 @@ const TravelPlannerApp = () => {
 
   const [isFullPlanGeneration, setIsFullPlanGeneration] = useState(false);
   const finalPlanRef = useRef(null);
+
+  const [dayVersions, setDayVersions] = useState({});
+  const [currentPages, setCurrentPages] = useState({});
 
   // Load preferences from cookies on initial render
   useEffect(() => {
@@ -676,6 +680,13 @@ Format the response as a JSON object with the following structure:
     setDrawerOpen(open);
   };
 
+  const handlePageChange = (day, page) => {
+    setCurrentPages(prev => ({
+      ...prev,
+      [day]: page
+    }));
+  };
+
   const regenerateItinerary = async (day, timeOfDay = null) => {
     setRegeneratingItinerary({ day, timeOfDay });
     setIsLoading(true);
@@ -774,25 +785,35 @@ Format the response as a JSON object with the following structure:
       console.log("Parsed response:", parsedResponse);
 
       if (parsedResponse) {
-        setFinalPlan(prevPlan => {
-          console.log("Previous plan:", prevPlan);
-          const updatedItinerary = [...prevPlan.itinerary];
+        setDayVersions(prev => {
+          const currentVersions = prev[day] || [finalPlan.itinerary[day - 1]];
+          const lastVersion = { ...currentVersions[currentVersions.length - 1] };
+          let newVersion = { ...lastVersion };
+
           if (timeOfDay) {
-            updatedItinerary[day - 1][timeOfDay] = parsedResponse[timeOfDay].replace(/\[([^\]]+)\]/g, (_, entity) => {
+            newVersion[timeOfDay] = parsedResponse[timeOfDay].replace(/\[([^\]]+)\]/g, (_, entity) => {
               return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer">${entity}</a>`;
             });
           } else {
             ['morning', 'afternoon', 'evening'].forEach(tod => {
               if (parsedResponse[tod]) {
-                updatedItinerary[day - 1][tod] = parsedResponse[tod].replace(/\[([^\]]+)\]/g, (_, entity) => {
+                newVersion[tod] = parsedResponse[tod].replace(/\[([^\]]+)\]/g, (_, entity) => {
                   return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer">${entity}</a>`;
                 });
               }
             });
           }
-          console.log("Updated itinerary:", updatedItinerary);
-          return { ...prevPlan, itinerary: updatedItinerary };
+
+          return {
+            ...prev,
+            [day]: [...currentVersions, newVersion]
+          };
         });
+
+        setCurrentPages(prev => ({
+          ...prev,
+          [day]: (prev[day] || 1) + 1
+        }));
       } else {
         console.error("Invalid response structure:", parsedResponse);
       }
@@ -809,76 +830,93 @@ Format the response as a JSON object with the following structure:
 
     return (
       <Box sx={{ mt: 2 }}>
-        {finalPlan.itinerary.map((day, index) => (
-          <Card key={index} elevation={3} sx={{ mb: 2, overflow: 'hidden' }}>
-            <Box sx={{ 
-              bgcolor: 'primary.main', 
-              color: 'primary.contrastText', 
-              py: 1,
-              px: 2,
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center' 
-            }}>
-              <Typography variant="subtitle1" fontWeight="bold">
-                {language === 'zh' 
-                  ? t('day').replace('天', `${day.day}天`) 
-                  : `${t('day')} ${day.day}`}
-              </Typography>
-              <Tooltip title={t('regenerateDay')}>
-                <IconButton 
-                  size="small"
-                  onClick={() => regenerateItinerary(day.day)}
-                  disabled={isLoading || (regeneratingItinerary.day === day.day && !regeneratingItinerary.timeOfDay)}
-                  sx={{ color: 'primary.contrastText' }}
-                >
-                  <RefreshIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Box>
-            <CardContent sx={{ pt: 1 }}>
-              <Grid container spacing={2}>
-                {['morning', 'afternoon', 'evening'].map((timeOfDay) => (
-                  <Grid item xs={12} sm={4} key={timeOfDay}>
-                    <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                      <CardContent sx={{ flexGrow: 1, p: 1 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                          <Typography variant="body2" color="primary" fontWeight="bold">
-                            {t(timeOfDay)}
-                          </Typography>
-                          <Tooltip title={t('regenerateTimeOfDay')}>
-                            <IconButton 
-                              size="small"
-                              onClick={() => regenerateItinerary(day.day, timeOfDay)}
-                              disabled={isLoading || (regeneratingItinerary.day === day.day && regeneratingItinerary.timeOfDay === timeOfDay)}
-                            >
-                              <RefreshIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                        <Typography 
-                          variant="body2" 
-                          component="div"
-                          dangerouslySetInnerHTML={{ __html: day[timeOfDay] }}
-                          sx={{
-                            '& a': {
-                              color: 'primary.main',
-                              textDecoration: 'underline',
-                              fontWeight: 'bold',  // Added boldness
-                              '&:hover': {
-                                color: 'primary.dark',
+        {finalPlan.itinerary.map((originalDay, index) => {
+          const day = originalDay.day;
+          const versions = dayVersions[day] || [originalDay];
+          const currentPage = currentPages[day] || 1;
+          const currentVersion = versions[currentPage - 1] || originalDay;
+
+          return (
+            <Card key={index} elevation={3} sx={{ mb: 2, overflow: 'hidden' }}>
+              <Box sx={{ 
+                bgcolor: 'primary.main', 
+                color: 'primary.contrastText', 
+                py: 1,
+                px: 2,
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center' 
+              }}>
+                <Typography variant="subtitle1" fontWeight="bold">
+                  {language === 'zh' 
+                    ? t('day').replace('天', `${day}天`) 
+                    : `${t('day')} ${day}`}
+                </Typography>
+                <Tooltip title={t('regenerateDay')}>
+                  <IconButton 
+                    size="small"
+                    onClick={() => regenerateItinerary(day)}
+                    disabled={isLoading || (regeneratingItinerary.day === day && !regeneratingItinerary.timeOfDay)}
+                    sx={{ color: 'primary.contrastText' }}
+                  >
+                    <RefreshIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+              <CardContent sx={{ pt: 1 }}>
+                <Grid container spacing={2}>
+                  {['morning', 'afternoon', 'evening'].map((timeOfDay) => (
+                    <Grid item xs={12} sm={4} key={timeOfDay}>
+                      <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                        <CardContent sx={{ flexGrow: 1, p: 1 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                            <Typography variant="body2" color="primary" fontWeight="bold">
+                              {t(timeOfDay)}
+                            </Typography>
+                            <Tooltip title={t('regenerateTimeOfDay')}>
+                              <IconButton 
+                                size="small"
+                                onClick={() => regenerateItinerary(day, timeOfDay)}
+                                disabled={isLoading || (regeneratingItinerary.day === day && regeneratingItinerary.timeOfDay === timeOfDay)}
+                              >
+                                <RefreshIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                          <Typography 
+                            variant="body2" 
+                            component="div"
+                            dangerouslySetInnerHTML={{ __html: currentVersion[timeOfDay] }}
+                            sx={{
+                              '& a': {
+                                color: 'primary.main',
+                                textDecoration: 'underline',
+                                fontWeight: 'bold',
+                                '&:hover': {
+                                  color: 'primary.dark',
+                                },
                               },
-                            },
-                          }}
-                        />
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
-            </CardContent>
-          </Card>
-        ))}
+                            }}
+                          />
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+                {versions.length > 1 && (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                    <Pagination 
+                      count={versions.length} 
+                      page={currentPage} 
+                      onChange={(event, page) => handlePageChange(day, page)}
+                      color="primary"
+                    />
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
         <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>{t('estimatedCostBreakdown')}</Typography>
         <Grid container spacing={2}>
           {Object.entries(finalPlan.estimatedCost.breakdown).map(([category, cost]) => (
