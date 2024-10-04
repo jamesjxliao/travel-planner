@@ -577,17 +577,25 @@ Format the response as a JSON object with the following structure:
     // Create a context string from the existing itinerary
     let existingItineraryContext = '';
     finalPlan.itinerary.forEach((existingDay, index) => {
-      if (index + 1 !== day) { // Skip the day being regenerated
+      if (index + 1 !== day) { // Other days
         existingItineraryContext += `Day ${existingDay.day}:\n`;
         ['morning', 'afternoon', 'evening'].forEach(tod => {
           existingItineraryContext += `${tod.charAt(0).toUpperCase() + tod.slice(1)}: ${stripHtml(existingDay[tod])}\n`;
+        });
+        existingItineraryContext += '\n';
+      } else if (timeOfDay) { // The day being partially regenerated
+        existingItineraryContext += `Current Day ${existingDay.day}:\n`;
+        ['morning', 'afternoon', 'evening'].forEach(tod => {
+          if (tod !== timeOfDay) {
+            existingItineraryContext += `${tod.charAt(0).toUpperCase() + tod.slice(1)}: ${stripHtml(existingDay[tod])}\n`;
+          }
         });
         existingItineraryContext += '\n';
       }
     });
 
     let regeneratePrompt = `Please respond in ${language === 'zh' ? 'Chinese' : 'English'}. `;
-    regeneratePrompt += `Briefly regenerate the itinerary for ${timeOfDay ? `the ${timeOfDay} of ` : ''}Day ${day} of the ${travelInfo.type} from ${travelInfo.from} to ${travelInfo.to} for ${travelInfo.travelers}`;
+    regeneratePrompt += `Regenerate the itinerary for ${timeOfDay ? `the ${timeOfDay} of ` : ''}Day ${day} of the ${travelInfo.type} from ${travelInfo.from} to ${travelInfo.to} for ${travelInfo.travelers}`;
     if (travelInfo.groupSize) regeneratePrompt += ` (group of ${travelInfo.groupSize})`;
     regeneratePrompt += `. Budget: ${travelInfo.budget}.`;
     regeneratePrompt += ` Transportation: ${travelInfo.transportation === 'flexible' ? 'flexible options' : travelInfo.transportation}.`;
@@ -599,22 +607,22 @@ Format the response as a JSON object with the following structure:
       regeneratePrompt += ` Special Requirements: ${specialRequirements}.`;
     }
 
-    regeneratePrompt += ` Here's the context of the existing itinerary (excluding the day being regenerated):
+    regeneratePrompt += ` Here's the context of the existing itinerary:
 
 ${existingItineraryContext}
 
-Please provide a concise revised ${timeOfDay ? timeOfDay : 'full day'} itinerary based on these choices and preferences, ensuring it complements the existing plan without duplicating activities. Keep each time period description to about 30-50 words.
+Please provide a ${timeOfDay ? '' : 'full day '}itinerary based on these choices and preferences, ensuring it complements the existing plan without duplicating activities. ${timeOfDay ? `Focus on creating a coherent plan for the ${timeOfDay}, considering the other activities planned for this day.` : ''} Keep each time period description to about 30-50 words.
 
 When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this]. Be specific but brief when marking these entities. Do not mark general activities or common nouns.
 
 Format the response as a JSON object with the following structure:
 {
   ${timeOfDay ? `
-  "${timeOfDay}": "Brief description of ${timeOfDay} activities with [specific attractions] marked"
+  "${timeOfDay}": "Description of ${timeOfDay} activities with [specific attractions] marked"
   ` : `
-  "morning": "Brief description of morning activities with [specific attractions] marked",
-  "afternoon": "Brief description of afternoon activities with [specific landmarks] marked",
-  "evening": "Brief description of evening activities with [unique experiences] marked"
+  "morning": "Description of morning activities with [specific attractions] marked",
+  "afternoon": "Description of afternoon activities with [specific landmarks] marked",
+  "evening": "Description of evening activities with [unique experiences] marked"
   `}
 }`;
 
