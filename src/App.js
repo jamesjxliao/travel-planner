@@ -95,7 +95,8 @@ const translations = {
     "attractions.nature": "Nature",
     "attractions.historicalsites": "Historical sites",
     "attractions.themeparks": "Theme parks",
-    "attractions.shopping": "Shopping"
+    "attractions.shopping": "Shopping",
+    specialRequirements: "Special Requirements"
   },
   zh: {
     title: "AI旅行规划器",
@@ -124,7 +125,7 @@ const translations = {
     generatingTravelPlan: "正在生成您的旅行计划...",
     yourTravelPlan: "您的旅行计划",
     enterNumberOfTravelers: "输入旅行者人数",
-    enterYourHomeCity: "输入您出发城市/国家",
+    enterYourHomeCity: "您出发城市/国家",
     enterNumberOfDays: "输入旅行天数",
     enterCustomAspect: "添加自定义方面",
     selectAtLeastOneAspect: "请至少选择一个考虑的旅行方面。",
@@ -174,7 +175,8 @@ const translations = {
     "attractions.nature": "自然景观",
     "attractions.historicalsites": "历史遗迹",
     "attractions.themeparks": "主题公园",
-    "attractions.shopping": "购物"
+    "attractions.shopping": "购物",
+    specialRequirements: "特殊要求"
   }
 };
 
@@ -228,6 +230,14 @@ const StyledContent = styled('div')(({ theme }) => ({
   },
 }));
 
+// Move commonPreferences here, before the TravelPlannerApp component
+const commonPreferences = {
+  // "Time to visit": ["timetovisit.spring", "timetovisit.summer", "timetovisit.fall", "timetovisit.winter", "timetovisit.holidays"],
+  // "Accommodations": ["accommodations.hotel", "accommodations.airbnb", "accommodations.resort", "accommodations.hostel", "accommodations.camping"],
+  "Food": ["food.localcuisine", "food.finedining", "food.streetfood", "food.vegetarian", "food.familyfriendly"],
+  "Attractions": ["attractions.museums", "attractions.nature", "attractions.historicalsites", "attractions.themeparks", "attractions.shopping"]
+};
+
 const TravelPlannerApp = () => {
   const [destination, setDestination] = useState('Los Angeles');
   const [currentAspect, setCurrentAspect] = useState('');
@@ -237,8 +247,6 @@ const TravelPlannerApp = () => {
   const [finalPlan, setFinalPlan] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [homeLocation, setHomeLocation] = useState('San Carlos');
-  const [selectedAspects, setSelectedAspects] = useState(['Food']);
-  const [customAspect, setCustomAspect] = useState('');
   const [aspectPreferences, setAspectPreferences] = useState({});
   const [isGeneratingOptions, setIsGeneratingOptions] = useState({});
   const [showDebug, setShowDebug] = useState(false);
@@ -252,7 +260,13 @@ const TravelPlannerApp = () => {
   const [isRoundTrip, setIsRoundTrip] = useState(true);
   const [budget, setBudget] = useState('Mid-range');  // New state for budget
 
-  // Remove Time to visit from predefinedAspects
+  // Add this new state variable
+  const [specialRequirements, setSpecialRequirements] = useState('');
+
+  // Combine all common preferences
+  const allCommonPreferences = Object.values(commonPreferences).flat();
+
+  // Keep these predefined aspects
   const predefinedAspects = [
     "Food",
     "Attractions"
@@ -276,19 +290,11 @@ const TravelPlannerApp = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Update the commonPreferences object to use translation keys
-  const commonPreferences = {
-    "Time to visit": ["timetovisit.spring", "timetovisit.summer", "timetovisit.fall", "timetovisit.winter", "timetovisit.holidays"],
-    "Accommodations": ["accommodations.hotel", "accommodations.airbnb", "accommodations.resort", "accommodations.hostel", "accommodations.camping"],
-    "Food": ["food.localcuisine", "food.finedining", "food.streetfood", "food.vegetarian", "food.familyfriendly"],
-    "Attractions": ["attractions.museums", "attractions.nature", "attractions.historicalsites", "attractions.themeparks", "attractions.shopping"]
-  };
-
-  // Update this function to use translated preferences
-  const handleCommonPreferenceClick = (aspect, preferenceKey) => {
-    const translatedPreference = t(preferenceKey);
-    setAspectPreferences(prev => {
-      const currentPreferences = prev[aspect] ? prev[aspect].split(', ') : [];
+  // Update this function to handle special requirements
+  const handleCommonPreferenceClick = (prefKey) => {
+    const translatedPreference = t(prefKey);
+    setSpecialRequirements(prev => {
+      const currentPreferences = prev ? prev.split(', ') : [];
       let updatedPreferences;
       
       if (currentPreferences.includes(translatedPreference)) {
@@ -297,10 +303,7 @@ const TravelPlannerApp = () => {
         updatedPreferences = [...currentPreferences, translatedPreference];
       }
       
-      return {
-        ...prev,
-        [aspect]: updatedPreferences.join(', ')
-      };
+      return updatedPreferences.join(', ');
     });
   };
 
@@ -427,15 +430,15 @@ Ensure each option is unique and provides a different experience or approach.`;
     finalPrompt += ` Accommodation: ${travelInfo.accommodation === 'flexible' ? 'flexible options' : t(`accommodations.${travelInfo.accommodation}`)}.`;
     finalPrompt += ` Time to visit: ${travelInfo.timeToVisit === 'flexible' ? 'flexible' : t(`timetovisit.${travelInfo.timeToVisit}`)}.`;
 
-    const preferences = Object.entries(selectedOptions).map(([aspect, choices]) => {
+    // Update this part to use predefinedAspects and specialRequirements
+    const preferences = predefinedAspects.map(aspect => {
       const preference = aspectPreferences[aspect] || '';
-      if (choices.length > 0) {
-        return `${aspect} (preference: "${preference}"): ${choices.join(', ')}`;
-      } else if (preference) {
-        return `${aspect}: "${preference}"`;
-      }
-      return null;
+      return `${aspect}: "${preference}"`;
     }).filter(Boolean);
+
+    if (specialRequirements) {
+      preferences.push(`Special Requirements: ${specialRequirements}`);
+    }
 
     if (preferences.length > 0) {
       finalPrompt += ` Preferences: ${preferences.join('. ')}.`;
@@ -531,45 +534,8 @@ Format the response as a JSON object with the following structure:
     setOptions(optionsResponse.split('\n'));
   };
 
-  const handleOptionChoice = async (choice) => {
-    if (choice === 'none') {
-      setOptions([]);
-      return;
-    }
-
-    const selectedOption = options[parseInt(choice) - 1].split('. ')[1];
-    const response = await getLLMResponse(`The user chose '${selectedOption}' for ${currentAspect}. Identify any other aspects from ${selectedAspects.join(', ')} that this choice might have covered.`);
-    
-    const newCoveredAspects = new Set(coveredAspects);
-    newCoveredAspects.add(currentAspect);
-    response.toLowerCase().split(' ').forEach(word => {
-      if (selectedAspects.includes(word.trim())) {
-        newCoveredAspects.add(word.trim());
-      }
-    });
-    setCoveredAspects(newCoveredAspects);
-  };
-
   const handleDrawerClose = () => {
     setDrawerOpen(false);
-  };
-
-  const handleAspectToggle = (aspect) => {
-    setSelectedAspects(prevAspects =>
-      prevAspects.includes(aspect)
-        ? prevAspects.filter(a => a !== aspect)
-        : [...prevAspects, aspect]
-    );
-    if (isMobile) handleDrawerClose();
-  };
-
-  const handleAddCustomAspect = (e) => {
-    e.preventDefault();
-    if (customAspect && !selectedAspects.includes(customAspect)) {
-      setSelectedAspects(prevAspects => [...prevAspects, customAspect]);
-      setCustomAspect('');
-    }
-    if (isMobile) handleDrawerClose();
   };
 
   const handleTravelersChange = (event) => {
@@ -734,37 +700,8 @@ Format the response as a JSON object with the following structure:
         </FormControl>
       </Paper>
 
-      <Paper elevation={3} sx={{ p: 2, mt: 3, backgroundColor: '#f0f8ff' }}>
-        <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
-          {t('aspectsToConsider')}
-        </Typography>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-          {[...predefinedAspects, ...selectedAspects.filter(aspect => !predefinedAspects.includes(aspect))].map((aspect) => (
-            <Chip
-              key={aspect}
-              label={predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}
-              onClick={() => handleAspectToggle(aspect)}
-              color={selectedAspects.includes(aspect) ? "primary" : "default"}
-              sx={{ '&:hover': { backgroundColor: 'primary.light', cursor: 'pointer' } }}
-            />
-          ))}
-        </Box>
-        <form onSubmit={handleAddCustomAspect}>
-          <TextField
-            fullWidth
-            margin="normal"
-            label={t('addCustomAspect')}
-            value={customAspect}
-            onChange={(e) => setCustomAspect(e.target.value)}
-            placeholder={t('enterCustomAspect')}
-          />
-          <Button type="submit" variant="contained" size="small" sx={{ mt: 1 }}>
-            {t('addCustomAspect')}
-          </Button>
-        </form>
-      </Paper>
+      {/* Remove the Aspects to Consider section */}
 
-      {/* Removed the debugging toggle from here */}
     </Box>
   );
 
@@ -917,76 +854,39 @@ Format the response as a JSON object with the following structure:
             </Grid>
           </Grid>
 
-          {selectedAspects.map((aspect) => (
-            <Card key={aspect} sx={{ mt: 2 }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-                    <Typography variant="h6" sx={{ mr: 2 }}>
-                      {predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}
-                    </Typography>
-                    {commonPreferences[aspect] && commonPreferences[aspect].map((prefKey, index) => (
-                      <Chip
-                        key={index}
-                        label={t(prefKey)}
-                        size="small"
-                        onClick={() => handleCommonPreferenceClick(aspect, prefKey)}
-                        color={aspectPreferences[aspect]?.includes(t(prefKey)) ? "primary" : "default"}
-                        sx={{ '&:hover': { backgroundColor: 'primary.light', cursor: 'pointer' } }}
-                      />
-                    ))}
-                  </Box>
-                  <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', gap: 2 }}>
-                    <TextField
-                      label={`${t('preferencesFor')} ${predefinedAspects.includes(aspect) ? t(aspect.toLowerCase().replace(/\s+/g, '')) : aspect}`}
-                      value={aspectPreferences[aspect] || ''}
-                      onChange={(e) => handlePreferenceChange(aspect, e.target.value)}
-                      onKeyPress={(e) => handleKeyPress(aspect, e)}
-                      fullWidth
-                      margin="normal"
-                      disabled={isLoading}
-                      variant="outlined"
+          {/* Add the Special Requirements section */}
+          <Card sx={{ mt: 2 }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Typography variant="h6">
+                  {t('specialRequirements')}
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {allCommonPreferences.map((prefKey, index) => (
+                    <Chip
+                      key={index}
+                      label={t(prefKey)}
+                      size="small"
+                      onClick={() => handleCommonPreferenceClick(prefKey)}
+                      color={specialRequirements.includes(t(prefKey)) ? "primary" : "default"}
+                      sx={{ '&:hover': { backgroundColor: 'primary.light', cursor: 'pointer' } }}
                     />
-                    <Button 
-                      variant="outlined" 
-                      onClick={() => generateOptions(aspect)}
-                      disabled={isGeneratingOptions[aspect]}
-                      sx={{ height: '56px', whiteSpace: 'nowrap', width: isMobile ? '100%' : 'auto' }}
-                    >
-                      {isGeneratingOptions[aspect] ? t('generatingOptions') : t('generateOptions')}
-                    </Button>
-                  </Box>
+                  ))}
                 </Box>
-                {options[aspect] && options[aspect].length > 0 && (
-                  <ScrollableBox ref={el => scrollRefs.current[aspect] = el}>
-                    <Grid container spacing={2}>
-                      {options[aspect].map((option, index) => (
-                        <Grid item xs={12} sm={6} key={index}>
-                          <HighlightCard isNew={newOptionIndices[aspect]?.[index]}>
-                            <CardContent sx={{ flexGrow: 1, overflow: 'auto' }}>
-                              <StyledContent>
-                                {renderMarkdownWithLinks(option)}
-                              </StyledContent>
-                            </CardContent>
-                            <CardActions>
-                              <Button 
-                                size="small" 
-                                onClick={() => handleOptionToggle(aspect, option)}
-                                variant={selectedOptions[aspect]?.includes(option) ? "contained" : "outlined"}
-                                fullWidth
-                              >
-                                {selectedOptions[aspect]?.includes(option) ? t('selected') : t('select')}
-                              </Button>
-                            </CardActions>
-                          </HighlightCard>
-                        </Grid>
-                      ))}
-                    </Grid>
-                  </ScrollableBox>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                <TextField
+                  label={t('specialRequirements')}
+                  value={specialRequirements}
+                  onChange={(e) => setSpecialRequirements(e.target.value)}
+                  fullWidth
+                  margin="normal"
+                  disabled={isLoading}
+                  variant="outlined"
+                  multiline
+                  rows={3}
+                />
+              </Box>
+            </CardContent>
+          </Card>
 
           <Button 
             variant="contained" 
