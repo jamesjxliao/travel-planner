@@ -15,6 +15,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Backdrop from '@mui/material/Backdrop';
 import InputAdornment from '@mui/material/InputAdornment';
 import Pagination from '@mui/material/Pagination'; // Add this import
+import GoogleAnalytics from './components/GoogleAnalytics';
 
 // Create a language context
 const LanguageContext = createContext();
@@ -1356,6 +1357,7 @@ Format the response as a JSON object with the following structure:
           {sidebarContent}
         </Drawer>
       )}
+      {process.env.NODE_ENV === 'production' && <GoogleAnalytics />}
     </Box>
   );
 };
