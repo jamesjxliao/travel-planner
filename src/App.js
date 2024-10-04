@@ -121,7 +121,7 @@ const translations = {
     family: "家庭",
     group: "团体",
     groupSize: "团体人数",
-    homeLocation: "��发地",
+    homeLocation: "出发地",
     numberOfDays: "旅行天数",
     aspectsToConsider: "考虑方面：",
     addCustomAspect: "添加自定义方面",
