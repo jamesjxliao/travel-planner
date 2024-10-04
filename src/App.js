@@ -630,8 +630,14 @@ Format the response as a JSON object with the following structure:
 
   useEffect(() => {
     if (!isLoading && isFullPlanGeneration && finalPlanRef.current) {
-      finalPlanRef.current.scrollIntoView({ behavior: 'smooth' });
-      setIsFullPlanGeneration(false);
+      setTimeout(() => {
+        const yOffset = -80; // Adjust this value as needed
+        const element = finalPlanRef.current;
+        const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        
+        window.scrollTo({top: y, behavior: 'smooth'});
+        setIsFullPlanGeneration(false);
+      }, 100);
     }
   }, [isLoading, isFullPlanGeneration]);
 
