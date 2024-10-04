@@ -13,6 +13,7 @@ import RefreshIcon from '@mui/icons-material/Refresh'; // Replace DeleteIcon wit
 import Cookies from 'js-cookie';
 import CircularProgress from '@mui/material/CircularProgress';
 import Backdrop from '@mui/material/Backdrop';
+import InputAdornment from '@mui/material/InputAdornment';
 
 // Create a language context
 const LanguageContext = createContext();
@@ -106,6 +107,7 @@ const translations = {
     resetAllSettings: "Reset All Settings",
     defaultHomeLocation: "San Carlos",
     defaultDestination: "Los Angeles",
+    selectOrTypeRequirements: "Select or type in any requirements",
   },
   zh: {
     title: "AI旅行规划器",
@@ -191,6 +193,7 @@ const translations = {
     resetAllSettings: "重置所有设置",
     defaultHomeLocation: "圣卡洛斯",
     defaultDestination: "洛杉矶",
+    selectOrTypeRequirements: "选择或输入任何要求",
   }
 };
 
@@ -1210,10 +1213,14 @@ Format the response as a JSON object with the following structure:
                   margin="normal"
                   disabled={isLoading}
                   variant="outlined"
-                  // Remove the multiline prop
-                  // multiline
-                  // Change rows to 1
                   rows={1}
+                  InputProps={{
+                    startAdornment: specialRequirements === '' ? (
+                      <InputAdornment position="start" sx={{ color: 'text.secondary' }}>
+                        {t('selectOrTypeRequirements')}
+                      </InputAdornment>
+                    ) : null,
+                  }}
                 />
               </Box>
             </CardContent>
