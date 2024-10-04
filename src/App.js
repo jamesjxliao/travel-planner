@@ -14,10 +14,6 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Backdrop from '@mui/material/Backdrop';
 import InputAdornment from '@mui/material/InputAdornment';
 import Pagination from '@mui/material/Pagination'; // Add this import
-import ReactGA from 'react-ga4'; // Add this import
-
-// Initialize Google Analytics
-ReactGA.initialize('G-5FTTLPJ62P');
 
 // Create a language context
 const LanguageContext = createContext();
@@ -341,24 +337,6 @@ const TravelPlannerApp = () => {
   // Add this near the top of the component
   const isProduction = process.env.NODE_ENV === 'production';
 
-  // Add a new state variable to track app usage time
-  const [startTime, setStartTime] = useState(null);
-
-  // Use effect to track time spent on the app
-  useEffect(() => {
-    setStartTime(Date.now());
-    
-    return () => {
-      const endTime = Date.now();
-      const timeSpent = Math.round((endTime - startTime) / 1000); // time in seconds
-      ReactGA.event({
-        category: 'User Engagement',
-        action: 'Time Spent',
-        value: timeSpent
-      });
-    };
-  }, []);
-
   // Load preferences from localStorage on initial render
   useEffect(() => {
     const loadedDestination = localStorage.getItem('destination') || t('defaultDestination');
@@ -403,16 +381,8 @@ const TravelPlannerApp = () => {
 
   // Update handlers to save preferences
   const handleDestinationChange = (e) => {
-    const newDestination = e.target.value;
-    setDestination(newDestination);
-    localStorage.setItem('destination', newDestination);
-
-    // Track destination change
-    ReactGA.event({
-      category: 'User Input',
-      action: 'Change Destination',
-      label: newDestination
-    });
+    setDestination(e.target.value);
+    localStorage.setItem('destination', e.target.value);
   };
 
   const handleHomeLocationChange = (e) => {
@@ -424,13 +394,6 @@ const TravelPlannerApp = () => {
     const value = event.target.value;
     setTravelers(value);
     localStorage.setItem('travelers', value);
-
-    ReactGA.event({
-      category: 'User Input',
-      action: 'Change Travelers',
-      label: value
-    });
-
     if (value === 'Solo') {
       setGroupSize('1');
       localStorage.setItem('groupSize', '1');
@@ -453,28 +416,13 @@ const TravelPlannerApp = () => {
   };
 
   const handleNumDaysChange = (e) => {
-    const newNumDays = e.target.value;
-    setNumDays(newNumDays);
-    localStorage.setItem('numDays', newNumDays);
-
-    ReactGA.event({
-      category: 'User Input',
-      action: 'Change Number of Days',
-      label: newNumDays
-    });
+    setNumDays(e.target.value);
+    localStorage.setItem('numDays', e.target.value);
   };
 
   const handleBudgetChange = (event) => {
-    const newBudget = event.target.value;
-    setBudget(newBudget);
-    localStorage.setItem('budget', newBudget);
-
-    ReactGA.event({
-      category: 'User Preference',
-      action: 'Select Budget',
-      label: newBudget
-    });
-
+    setBudget(event.target.value);
+    localStorage.setItem('budget', event.target.value);
     if (isMobile) handleDrawerClose();
   };
 
@@ -485,53 +433,23 @@ const TravelPlannerApp = () => {
   };
 
   const handleTimeToVisitChange = (e) => {
-    const newTime = e.target.value;
-    setTimeToVisit(newTime);
-    localStorage.setItem('timeToVisit', newTime);
-
-    ReactGA.event({
-      category: 'User Preference',
-      action: 'Select Time to Visit',
-      label: newTime
-    });
+    setTimeToVisit(e.target.value);
+    localStorage.setItem('timeToVisit', e.target.value);
   };
 
   const handleAccommodationTypeChange = (e) => {
-    const newType = e.target.value;
-    setAccommodationType(newType);
-    localStorage.setItem('accommodationType', newType);
-
-    ReactGA.event({
-      category: 'User Preference',
-      action: 'Select Accommodation',
-      label: newType
-    });
+    setAccommodationType(e.target.value);
+    localStorage.setItem('accommodationType', e.target.value);
   };
 
   const handleTransportationModeChange = (e) => {
-    const newMode = e.target.value;
-    setTransportationMode(newMode);
-    localStorage.setItem('transportationMode', newMode);
-
-    ReactGA.event({
-      category: 'User Preference',
-      action: 'Select Transportation',
-      label: newMode
-    });
+    setTransportationMode(e.target.value);
+    localStorage.setItem('transportationMode', e.target.value);
   };
 
   const handleSpecialRequirementsChange = (e) => {
-    const newRequirements = e.target.value;
-    setSpecialRequirements(newRequirements);
-    localStorage.setItem('specialRequirements', newRequirements);
-
-    if (newRequirements) {
-      ReactGA.event({
-        category: 'User Input',
-        action: 'Add Special Requirements',
-        label: newRequirements
-      });
-    }
+    setSpecialRequirements(e.target.value);
+    localStorage.setItem('specialRequirements', e.target.value);
   };
 
   // Update this function to handle special requirements
@@ -552,30 +470,18 @@ const TravelPlannerApp = () => {
   };
 
   const getLLMResponse = async (prompt) => {
-    setCurrentPrompt(prompt);
+    setCurrentPrompt(prompt);  // Set the current prompt for debugging
     const updatedHistory = [...conversationHistory, { role: "user", content: prompt }];
     setConversationHistory(updatedHistory);
 
-    try {
-      const response = await client.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: updatedHistory
-      });
+    const response = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: updatedHistory
+    });
 
-      const llmResponse = response.choices[0].message.content;
-      setConversationHistory([...updatedHistory, { role: "assistant", content: llmResponse }]);
-      return llmResponse;
-    } catch (error) {
-      console.error("Error in API call:", error);
-      
-      ReactGA.event({
-        category: 'Error',
-        action: 'API Call Failed',
-        label: error.message
-      });
-
-      throw error; // Re-throw the error to be handled by the calling function
-    }
+    const llmResponse = response.choices[0].message.content;
+    setConversationHistory([...updatedHistory, { role: "assistant", content: llmResponse }]);
+    return llmResponse;
   };
 
   const generateOptions = async (aspect) => {
@@ -660,43 +566,34 @@ Ensure each option is unique and provides a different experience or approach.`;
   };
 
   const finalizePlan = async () => {
-    ReactGA.event({
-      category: 'Travel Plan',
-      action: 'Generate',
-      label: destination,
-      value: parseInt(numDays)
-    });
-
     setIsLoading(true);
     setIsFullPlanGeneration(true);
+    const travelInfo = {
+      type: `${numDays}-day ${isRoundTrip ? 'round trip' : 'one-way trip'}`,
+      from: homeLocation,
+      to: destination,
+      travelers: travelers,
+      groupSize: travelers === 'Family' || travelers === 'Group' ? groupSize : null,
+      budget: budget,
+      transportation: transportationMode,
+      accommodation: accommodationType,
+      timeToVisit: timeToVisit
+    };
 
-    try {
-      const travelInfo = {
-        type: `${numDays}-day ${isRoundTrip ? 'round trip' : 'one-way trip'}`,
-        from: homeLocation,
-        to: destination,
-        travelers: travelers,
-        groupSize: travelers === 'Family' || travelers === 'Group' ? groupSize : null,
-        budget: budget,
-        transportation: transportationMode,
-        accommodation: accommodationType,
-        timeToVisit: timeToVisit
-      };
+    let finalPrompt = `Please respond in ${language === 'zh' ? 'Chinese' : 'English'}. `;
+    finalPrompt += `Plan a ${travelInfo.type} from ${travelInfo.from} to ${travelInfo.to} for ${travelInfo.travelers}`;
+    if (travelInfo.groupSize) finalPrompt += ` (group of ${travelInfo.groupSize})`;
+    finalPrompt += `. Budget: ${travelInfo.budget}.`;
+    finalPrompt += ` Transportation: ${travelInfo.transportation === 'flexible' ? 'flexible options' : travelInfo.transportation}.`;
+    finalPrompt += ` Accommodation: ${travelInfo.accommodation === 'flexible' ? 'flexible options' : t(`accommodations.${travelInfo.accommodation}`)}.`;
+    finalPrompt += ` Time to visit: ${travelInfo.timeToVisit === 'flexible' ? 'flexible' : t(`timetovisit.${travelInfo.timeToVisit}`)}.`;
 
-      let finalPrompt = `Please respond in ${language === 'zh' ? 'Chinese' : 'English'}. `;
-      finalPrompt += `Plan a ${travelInfo.type} from ${travelInfo.from} to ${travelInfo.to} for ${travelInfo.travelers}`;
-      if (travelInfo.groupSize) finalPrompt += ` (group of ${travelInfo.groupSize})`;
-      finalPrompt += `. Budget: ${travelInfo.budget}.`;
-      finalPrompt += ` Transportation: ${travelInfo.transportation === 'flexible' ? 'flexible options' : travelInfo.transportation}.`;
-      finalPrompt += ` Accommodation: ${travelInfo.accommodation === 'flexible' ? 'flexible options' : t(`accommodations.${travelInfo.accommodation}`)}.`;
-      finalPrompt += ` Time to visit: ${travelInfo.timeToVisit === 'flexible' ? 'flexible' : t(`timetovisit.${travelInfo.timeToVisit}`)}.`;
+    // Update this part to use only specialRequirements
+    if (specialRequirements) {
+      finalPrompt += ` Special Requirements: ${specialRequirements}.`;
+    }
 
-      // Update this part to use only specialRequirements
-      if (specialRequirements) {
-        finalPrompt += ` Special Requirements: ${specialRequirements}.`;
-      }
-
-      finalPrompt += ` Please provide a comprehensive ${numDays}-day travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip, with a breakdown for major categories (e.g., accommodation, transportation, food, activities). 
+    finalPrompt += ` Please provide a comprehensive ${numDays}-day travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip, with a breakdown for major categories (e.g., accommodation, transportation, food, activities). 
 
 When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this], not just individual words. For example, use "[好莱坞附近的热门汉堡餐厅]" instead of just "[好莱坞]". Be as specific and descriptive as possible when marking these entities. Do not mark general activities or common nouns.
 
@@ -760,21 +657,8 @@ Format the response as a JSON object with the following structure:
         console.error("Invalid response structure:", parsedResponse);
         setFinalPlan({ error: "Failed to generate a valid itinerary. Please try again." });
       }
-
-      ReactGA.event({
-        category: 'Travel Plan',
-        action: 'Generate Success',
-        label: destination
-      });
     } catch (error) {
-      console.error("Error generating travel plan:", error);
-
-      ReactGA.event({
-        category: 'Error',
-        action: 'Plan Generation Failed',
-        label: error.message
-      });
-
+      console.error("Error in finalizePlan:", error);
       setFinalPlan({ error: "An error occurred while generating the travel plan. Please try again." });
     } finally {
       setIsLoading(false);
@@ -830,12 +714,6 @@ Format the response as a JSON object with the following structure:
   };
 
   const regenerateItinerary = async (day, timeOfDay = null) => {
-    ReactGA.event({
-      category: 'Travel Plan',
-      action: 'Regenerate Itinerary',
-      label: `Day ${day}${timeOfDay ? ` - ${timeOfDay}` : ''}`
-    });
-
     setRegeneratingItinerary({ day, timeOfDay });
     setIsLoading(true);
 
@@ -1178,11 +1056,6 @@ Format the response as a JSON object with the following structure:
 
   // Define resetAllSettings using useCallback
   const resetAllSettings = useCallback(() => {
-    ReactGA.event({
-      category: 'User Action',
-      action: 'Reset All Settings'
-    });
-
     // Reset all state variables to their default values
     setDestination(t('defaultDestination'));
     setHomeLocation(t('defaultHomeLocation'));
