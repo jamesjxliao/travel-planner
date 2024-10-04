@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext, useRef } from 'react';
+import React, { useState, useEffect, createContext, useContext, useRef, useCallback } from 'react';
 import OpenAI from 'openai';
 import { Button, TextField, Card, CardContent, CardActions, Typography, Grid, FormControl, InputLabel, Select, MenuItem, Chip, Box, Switch, FormControlLabel, Paper, useMediaQuery, Drawer, IconButton, AppBar, Toolbar } from '@mui/material';
 import { styled, useTheme } from '@mui/material/styles';
@@ -9,7 +9,7 @@ import BugReportIcon from '@mui/icons-material/BugReport';
 import ReactMarkdown from 'react-markdown';
 import PersonIcon from '@mui/icons-material/Person'; // Add this import
 import Tooltip from '@mui/material/Tooltip'; // Add this import
-import RefreshIcon from '@mui/icons-material/Refresh'; // Add this import
+import RefreshIcon from '@mui/icons-material/Refresh'; // Replace DeleteIcon with RefreshIcon
 import Cookies from 'js-cookie';
 
 // Create a language context
@@ -100,7 +100,8 @@ const translations = {
     "attractions.shopping": "Shopping",
     specialRequirements: "Special Requirements",
     regenerateDay: "Regenerate this day's itinerary",
-    regenerateTimeOfDay: "Regenerate this part of the day"
+    regenerateTimeOfDay: "Regenerate this part of the day",
+    resetAllSettings: "Reset All Settings"
   },
   zh: {
     title: "AI旅行规划器",
@@ -182,7 +183,8 @@ const translations = {
     "attractions.shopping": "购物",
     specialRequirements: "特殊要求",
     regenerateDay: "重新生成这一天的行程",
-    regenerateTimeOfDay: "重新生成这部分的行程"
+    regenerateTimeOfDay: "重新生成这部分的行程",
+    resetAllSettings: "重置所有设置"
   }
 };
 
@@ -301,7 +303,7 @@ const TravelPlannerApp = () => {
     const loadedGroupSize = Cookies.get('groupSize') || '3';
     const loadedNumDays = Cookies.get('numDays') || '3';
     const loadedBudget = Cookies.get('budget') || 'Mid-range';
-    const loadedIsRoundTrip = Cookies.get('isRoundTrip') === 'true';
+    const loadedIsRoundTrip = Cookies.get('isRoundTrip');
     const loadedTimeToVisit = Cookies.get('timeToVisit') || 'flexible';
     const loadedAccommodationType = Cookies.get('accommodationType') || 'flexible';
     const loadedTransportationMode = Cookies.get('transportationMode') || 'flexible';
@@ -313,7 +315,7 @@ const TravelPlannerApp = () => {
     setGroupSize(loadedGroupSize);
     setNumDays(loadedNumDays);
     setBudget(loadedBudget);
-    setIsRoundTrip(loadedIsRoundTrip);
+    setIsRoundTrip(loadedIsRoundTrip === undefined ? true : loadedIsRoundTrip === 'true');
     setTimeToVisit(loadedTimeToVisit);
     setAccommodationType(loadedAccommodationType);
     setTransportationMode(loadedTransportationMode);
@@ -383,8 +385,9 @@ const TravelPlannerApp = () => {
   };
 
   const handleIsRoundTripChange = (e) => {
-    setIsRoundTrip(e.target.checked);
-    Cookies.set('isRoundTrip', e.target.checked.toString(), { expires: 30 });
+    const newValue = e.target.checked;
+    setIsRoundTrip(newValue);
+    Cookies.set('isRoundTrip', newValue.toString(), { expires: 30 });
   };
 
   const handleTimeToVisitChange = (e) => {
@@ -571,8 +574,7 @@ Format the response as a JSON object with the following structure:
           "activities": "Cost range for activities",
           "other": "Cost range for other expenses"
         }
-      }
-    }`;
+      }`;
 
     try {
       const response = await getLLMResponse(finalPrompt);
@@ -959,6 +961,44 @@ Format the response as a JSON object with the following structure:
     </Box>
   );
 
+  // Define resetAllSettings using useCallback
+  const resetAllSettings = useCallback(() => {
+    // Reset all state variables to their default values
+    setDestination('Los Angeles');
+    setHomeLocation('San Carlos');
+    setTravelers('Family');
+    setGroupSize('3');
+    setNumDays('3');
+    setBudget('Mid-range');
+    setIsRoundTrip(true);
+    setTimeToVisit('flexible');
+    setAccommodationType('flexible');
+    setTransportationMode('flexible');
+    setSpecialRequirements('');
+
+    // Clear all cookies
+    Cookies.remove('destination');
+    Cookies.remove('homeLocation');
+    Cookies.remove('travelers');
+    Cookies.remove('groupSize');
+    Cookies.remove('numDays');
+    Cookies.remove('budget');
+    Cookies.remove('timeToVisit');
+    Cookies.remove('accommodationType');
+    Cookies.remove('transportationMode');
+    Cookies.remove('specialRequirements');
+
+    // Update the cookie for isRoundTrip
+    Cookies.set('isRoundTrip', 'true', { expires: 30 });
+
+    // Clear the final plan
+    setFinalPlan(null);
+  }, [
+    setDestination, setHomeLocation, setTravelers, setGroupSize, setNumDays,
+    setBudget, setIsRoundTrip, setTimeToVisit, setAccommodationType,
+    setTransportationMode, setSpecialRequirements, setFinalPlan
+  ]); // Include all setter functions in the dependency array
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <AppBar position="fixed">
@@ -1001,6 +1041,16 @@ Format the response as a JSON object with the following structure:
               <MenuItem value="en">English</MenuItem>
             </Select>
           </FormControl>
+          <Tooltip title={t('resetAllSettings')}>
+            <IconButton
+              color="inherit"
+              onClick={resetAllSettings}
+              sx={{ ml: 2 }}
+              aria-label={t('resetAllSettings')}
+            >
+              <RefreshIcon /> {/* Changed from DeleteIcon to RefreshIcon */}
+            </IconButton>
+          </Tooltip>
         </Toolbar>
       </AppBar>
       <Toolbar /> {/* This empty Toolbar acts as a spacer */}
