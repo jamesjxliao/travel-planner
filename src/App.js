@@ -334,6 +334,9 @@ const TravelPlannerApp = () => {
   const [dayVersions, setDayVersions] = useState({});
   const [currentPages, setCurrentPages] = useState({});
 
+  // Add this near the top of the component
+  const isProduction = process.env.NODE_ENV === 'production';
+
   // Load preferences from localStorage on initial render
   useEffect(() => {
     const loadedDestination = localStorage.getItem('destination') || t('defaultDestination');
@@ -1108,7 +1111,7 @@ Format the response as a JSON object with the following structure:
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             {t('title')}
           </Typography>
-          {!isMobile && (
+          {!isMobile && !isProduction && (
             <FormControlLabel
               control={
                 <Switch 
@@ -1289,7 +1292,7 @@ Format the response as a JSON object with the following structure:
             {isLoading ? t('generatingTravelPlan') : t('finalizePlan')}
           </Button>
 
-          {showDebug && currentPrompt && (
+          {showDebug && !isProduction && currentPrompt && (
             <Card sx={{ mt: 2, backgroundColor: '#f0f0f0' }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>{t('currentLLMPrompt')}</Typography>
