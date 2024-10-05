@@ -1147,9 +1147,6 @@ Format the response as a JSON object with the following structure:
                             </Box>
                           </Box>
                           <CardContent sx={{ flexGrow: 1, p: 1 }}>
-                            <Typography variant="subtitle2" gutterBottom>
-                              Highlight: {highlight}
-                            </Typography>
                             <Typography 
                               variant="body2" 
                               component="div"
