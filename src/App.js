@@ -962,22 +962,34 @@ Format the response as a JSON object with the following structure:
                                 objectPosition: 'center',
                               }}
                             />
-                          </Box>
-                          <CardContent sx={{ flexGrow: 1, p: 1 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                              <Typography variant="body2" color="primary" fontWeight="bold">
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                bottom: 8,
+                                left: 8,
+                                bgcolor: 'rgba(0, 0, 0, 0.6)',
+                                borderRadius: '16px',
+                                padding: '4px 8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                              }}
+                            >
+                              <Typography variant="body2" color="white" fontWeight="medium">
                                 {t(timeOfDay)}
                               </Typography>
                               <Tooltip title={t('regenerateTimeOfDay')}>
-                                <IconButton 
+                                <IconButton
                                   size="small"
                                   onClick={() => regenerateItinerary(day, timeOfDay)}
                                   disabled={isLoading || (regeneratingItinerary.day === day && regeneratingItinerary.timeOfDay === timeOfDay)}
+                                  sx={{ ml: 0.5, p: 0.5, color: 'white' }}
                                 >
                                   <RefreshIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
                             </Box>
+                          </Box>
+                          <CardContent sx={{ flexGrow: 1, p: 1 }}>
                             <Typography 
                               variant="body2" 
                               component="div"
