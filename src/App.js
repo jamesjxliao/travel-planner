@@ -968,12 +968,16 @@ Format the response as a JSON object with the following structure:
             newVersion[timeOfDay] = parsedResponse[timeOfDay].replace(/\[([^\]]+)\]/g, (_, entity) => {
               return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer">${entity}</a>`;
             });
+            // Fetch new image for the regenerated time of day
+            fetchAttractionImage(parsedResponse[timeOfDay].match(/\[([^\]]+)\]/)?.[1] || '', day, timeOfDay);
           } else {
             ['morning', 'afternoon', 'evening'].forEach(tod => {
               if (parsedResponse[tod]) {
                 newVersion[tod] = parsedResponse[tod].replace(/\[([^\]]+)\]/g, (_, entity) => {
                   return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer">${entity}</a>`;
                 });
+                // Fetch new image for each time of day
+                fetchAttractionImage(parsedResponse[tod].match(/\[([^\]]+)\]/)?.[1] || '', day, tod);
               }
             });
           }
