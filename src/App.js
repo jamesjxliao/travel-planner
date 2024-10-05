@@ -18,9 +18,7 @@ import Pagination from '@mui/material/Pagination'; // Add this import
 import GoogleAnalytics from './components/GoogleAnalytics';
 import { createLogger } from './utils/logger'; // We'll create this utility
 import CardMedia from '@mui/material/CardMedia';
-
-// Add this import for the placeholder image
-import placeholderImage from './Disney.jpg'; // Update this path
+import Skeleton from '@mui/material/Skeleton'; // Add this import
 
 // Create a language context
 const LanguageContext = createContext();
@@ -1080,26 +1078,39 @@ Format the response as a JSON object with the following structure:
                     const content = currentVersion[timeOfDay];
                     const firstAttraction = content.match(/\[([^\]]+)\]/)?.[1];
                     const imageUrl = attractionImages[day]?.[timeOfDay];
-                    console.log(`Day ${day}, ${timeOfDay}: Image URL - ${imageUrl || 'Not found, using placeholder'}`);
+                    console.log(`Day ${day}, ${timeOfDay}: Image URL - ${imageUrl || 'Not found, loading'}`);
 
                     return (
                       <Grid item xs={12} sm={4} key={timeOfDay}>
                         <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                           <Box sx={{ position: 'relative', paddingTop: '66.67%' }}>
-                            <CardMedia
-                              component="img"
-                              image={imageUrl || placeholderImage}
-                              alt={firstAttraction || "Placeholder"}
-                              sx={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover',
-                                objectPosition: 'center',
-                              }}
-                            />
+                            {imageUrl ? (
+                              <CardMedia
+                                component="img"
+                                image={imageUrl}
+                                alt={firstAttraction || "Attraction"}
+                                sx={{
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover',
+                                  objectPosition: 'center',
+                                }}
+                              />
+                            ) : (
+                              <Skeleton 
+                                variant="rectangular" 
+                                sx={{
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
+                                  width: '100%',
+                                  height: '100%',
+                                }}
+                              />
+                            )}
                             <Box
                               sx={{
                                 position: 'absolute',
