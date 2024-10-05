@@ -802,7 +802,27 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
         }
 
         logger.debug("Parsed response:", parsedResponse);
+        
+        // Reset day versions and current pages when generating a new plan
+        setDayVersions({});
+        setCurrentPages({});
+        
+        // Clear existing attraction images
+        setAttractionImages({});
+        
+        // Update the final plan state
         setFinalPlan(parsedResponse);
+
+        // Fetch new images for each day and time of day
+        parsedResponse.itinerary.forEach((day, index) => {
+          ['morning', 'afternoon', 'evening'].forEach(timeOfDay => {
+            const content = day[timeOfDay];
+            const firstAttraction = content.match(/<a[^>]*>([^<]+)<\/a>/)?.[1] || '';
+            if (firstAttraction) {
+              fetchAttractionImage(firstAttraction, index + 1, timeOfDay);
+            }
+          });
+        });
       } else {
         logger.error("Invalid response structure:", parsedResponse);
         setFinalPlan({ error: "Failed to generate a valid itinerary. Please try again." });
@@ -1011,7 +1031,7 @@ Format the response as a JSON object with the following structure:
     if (!finalPlan || !finalPlan.itinerary) return null;
 
     return (
-      <Box sx={{ mt: 2 }}>
+      <Box sx={{ mt: 2 }} key={JSON.stringify(finalPlan)}>
         {finalPlan.itinerary.map((originalDay, index) => {
           const day = originalDay.day;
           const versions = dayVersions[day] || [originalDay];
