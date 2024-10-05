@@ -362,8 +362,11 @@ const TravelPlannerApp = () => {
     }
 
     try {
+      // Remove brackets from the attraction name (as a safeguard)
+      const cleanedAttraction = attraction.replace(/[\[\]]/g, '').trim();
+      
       const corsProxy = 'https://cors-anywhere.herokuapp.com/';
-      const searchUrl = `${corsProxy}https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(attraction)}&inputtype=textquery&fields=photos,formatted_address,name,rating,opening_hours,geometry&key=${apiKey}`;
+      const searchUrl = `${corsProxy}https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(cleanedAttraction)}&inputtype=textquery&fields=photos,formatted_address,name,rating,opening_hours,geometry&key=${apiKey}`;
       console.log('Search URL:', searchUrl);
       
       const searchResponse = await fetch(searchUrl);
@@ -742,9 +745,9 @@ Ensure each option is unique and provides a different experience or approach.`;
 
     finalPrompt += ` Please provide a comprehensive ${numDays}-day travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip, with a breakdown for major categories (e.g., accommodation, transportation, food, activities). 
 
-For each time period (morning, afternoon, evening) of each day, please include a "highlight" field with the name of the most significant attraction or activity for that time period.
+For each time period (morning, afternoon, evening) of each day, please include a "highlight" field with the name of the most significant attraction or activity for that time period. Do not use brackets in the highlight field.
 
-When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this], not just individual words. For example, use "[Hollywood Classic Restaurant]" instead of just "[Hollywood]". Be as specific and descriptive as possible when marking these entities. Do not mark general activities or common nouns.
+In the description, when mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this], not just individual words. For example, use "[Hollywood Classic Restaurant]" instead of just "[Hollywood]". Be as specific and descriptive as possible when marking these entities in the description. Do not mark general activities or common nouns.
 
 Your response must be a valid JSON object with the following structure:
 {
@@ -752,15 +755,15 @@ Your response must be a valid JSON object with the following structure:
     {
       "day": 1,
       "morning": {
-        "highlight": "Name of the most significant attraction or activity",
+        "highlight": "Name of the most significant attraction or activity (without brackets)",
         "description": "Description of morning activities with [specific attractions] marked"
       },
       "afternoon": {
-        "highlight": "Name of the most significant attraction or activity",
+        "highlight": "Name of the most significant attraction or activity (without brackets)",
         "description": "Description of afternoon activities with [specific landmarks] marked"
       },
       "evening": {
-        "highlight": "Name of the most significant attraction or activity",
+        "highlight": "Name of the most significant attraction or activity (without brackets)",
         "description": "Description of evening activities with [unique experiences] marked"
       }
     },
