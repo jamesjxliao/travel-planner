@@ -20,7 +20,7 @@ import { createLogger } from './utils/logger'; // We'll create this utility
 import CardMedia from '@mui/material/CardMedia';
 
 // Add this import for the placeholder image
-import placeholderImage from './Ultraman.jpg'; // Update this path
+import placeholderImage from './Disney.jpg'; // Update this path
 
 // Create a language context
 const LanguageContext = createContext();
