@@ -153,8 +153,8 @@ const translations = {
     budget: "预算",
     generateOptions: "生成选项",
     roundTrip: "往返",
-    estimatedCostBreakdown: "预估费用明",
-    totalEstimatedCost: "总预估费",
+    estimatedCostBreakdown: "预估费用明细",
+    totalEstimatedCost: "总预估费用",
     accommodation: "住宿",
     transportation: "交通",
     food: "餐饮",
@@ -186,7 +186,7 @@ const translations = {
     "food.vegetarian": "素食",
     "food.familyfriendly": "适合家庭",
     "attractions.museums": "博物馆",
-    "attractions.nature": "自���景观",
+    "attractions.nature": "自然景观",
     "attractions.historicalsites": "历史遗迹",
     "attractions.themeparks": "主题公园",
     "attractions.shopping": "购物",
@@ -1194,102 +1194,105 @@ Format the response as a JSON object with the following structure:
         )}
         
         <Grid item xs={12}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6} md={4}>
-              <TextField
-                label={t('destination')}
-                value={destination}
-                onChange={handleDestinationChange}
-                fullWidth
-                margin="normal"
-                disabled={isLoading}
-                variant="outlined"
-              />
-            </Grid>
-            <Grid item xs={6} sm={3} md={2}>
-              <TextField
-                label={t('numberOfDays')}
-                value={numDays}
-                onChange={handleNumDaysChange}
-                fullWidth
-                margin="normal"
-                type="number"
-                InputProps={{ inputProps: { min: 1 } }}
-                disabled={isLoading}
-                variant="outlined"
-              />
-            </Grid>
-            <Grid item xs={6} sm={3} md={2}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={isRoundTrip}
-                    onChange={handleIsRoundTripChange}
+          <Paper elevation={3} sx={{ p: 2, mb: 3 }}>
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} sm={6} md={3}>
+                <TextField
+                  label={t('destination')}
+                  value={destination}
+                  onChange={handleDestinationChange}
+                  fullWidth
+                  margin="normal"
+                  disabled={isLoading}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={6} sm={3} md={1}>
+                <TextField
+                  label={t('numberOfDays')}
+                  value={numDays}
+                  onChange={handleNumDaysChange}
+                  fullWidth
+                  margin="normal"
+                  type="number"
+                  InputProps={{ inputProps: { min: 1 } }}
+                  disabled={isLoading}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={2}>
+                <FormControl fullWidth margin="normal">
+                  <InputLabel id="time-to-visit-label">{t('timetovisit')}</InputLabel>
+                  <Select
+                    labelId="time-to-visit-label"
+                    value={timeToVisit}
+                    label={t('timetovisit')}
+                    onChange={handleTimeToVisitChange}
                     disabled={isLoading}
-                  />
-                }
-                label={t('roundTrip')}
-                sx={{ mt: 2 }}
-              />
+                  >
+                    <MenuItem value="flexible">{t('accommodations.flexible')}</MenuItem>
+                    <MenuItem value="spring">{t('timetovisit.spring')}</MenuItem>
+                    <MenuItem value="summer">{t('timetovisit.summer')}</MenuItem>
+                    <MenuItem value="fall">{t('timetovisit.fall')}</MenuItem>
+                    <MenuItem value="winter">{t('timetovisit.winter')}</MenuItem>
+                    <MenuItem value="holidays">{t('timetovisit.holidays')}</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6} md={2}>
+                <FormControl fullWidth margin="normal">
+                  <InputLabel id="transportation-label">{t('transportation')}</InputLabel>
+                  <Select
+                    labelId="transportation-label"
+                    value={transportationMode}
+                    label={t('transportation')}
+                    onChange={handleTransportationModeChange}
+                    disabled={isLoading}
+                  >
+                    <MenuItem value="flexible">{t('transportation.flexible')}</MenuItem>
+                    <MenuItem value="flight">{t('transportation.flight')}</MenuItem>
+                    <MenuItem value="driving">{t('transportation.driving')}</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6} md={2}>
+                <FormControl fullWidth margin="normal">
+                  <InputLabel id="accommodation-label">{t('accommodations')}</InputLabel>
+                  <Select
+                    labelId="accommodation-label"
+                    value={accommodationType}
+                    label={t('accommodations')}
+                    onChange={handleAccommodationTypeChange}
+                    disabled={isLoading}
+                  >
+                    <MenuItem value="flexible">{t('accommodations.flexible')}</MenuItem>
+                    <MenuItem value="hotel">{t('accommodations.hotel')}</MenuItem>
+                    <MenuItem value="airbnb">{t('accommodations.airbnb')}</MenuItem>
+                    <MenuItem value="resort">{t('accommodations.resort')}</MenuItem>
+                    <MenuItem value="hostel">{t('accommodations.hostel')}</MenuItem>
+                    <MenuItem value="camping">{t('accommodations.camping')}</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={6} sm={3} md={2}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={isRoundTrip}
+                      onChange={handleIsRoundTripChange}
+                      disabled={isLoading}
+                    />
+                  }
+                  label={
+                    <Typography noWrap>
+                      {t('roundTrip')}
+                    </Typography>
+                  }
+                  sx={{ mt: 2 }}
+                />
+              </Grid>
             </Grid>
-          </Grid>
-
-          <Grid container spacing={2} sx={{ mt: 2 }}>
-            <Grid item xs={12} sm={4}>
-              <FormControl fullWidth>
-                <InputLabel id="time-to-visit-label">{t('timetovisit')}</InputLabel>
-                <Select
-                  labelId="time-to-visit-label"
-                  value={timeToVisit}
-                  label={t('timetovisit')}
-                  onChange={handleTimeToVisitChange}
-                  disabled={isLoading}
-                >
-                  <MenuItem value="flexible">{t('accommodations.flexible')}</MenuItem>
-                  <MenuItem value="spring">{t('timetovisit.spring')}</MenuItem>
-                  <MenuItem value="summer">{t('timetovisit.summer')}</MenuItem>
-                  <MenuItem value="fall">{t('timetovisit.fall')}</MenuItem>
-                  <MenuItem value="winter">{t('timetovisit.winter')}</MenuItem>
-                  <MenuItem value="holidays">{t('timetovisit.holidays')}</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <FormControl fullWidth>
-                <InputLabel id="transportation-label">{t('transportation')}</InputLabel>
-                <Select
-                  labelId="transportation-label"
-                  value={transportationMode}
-                  label={t('transportation')}
-                  onChange={handleTransportationModeChange}
-                  disabled={isLoading}
-                >
-                  <MenuItem value="flexible">{t('transportation.flexible')}</MenuItem>
-                  <MenuItem value="flight">{t('transportation.flight')}</MenuItem>
-                  <MenuItem value="driving">{t('transportation.driving')}</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <FormControl fullWidth>
-                <InputLabel id="accommodation-label">{t('accommodations')}</InputLabel>
-                <Select
-                  labelId="accommodation-label"
-                  value={accommodationType}
-                  label={t('accommodations')}
-                  onChange={handleAccommodationTypeChange}
-                  disabled={isLoading}
-                >
-                  <MenuItem value="flexible">{t('accommodations.flexible')}</MenuItem>
-                  <MenuItem value="hotel">{t('accommodations.hotel')}</MenuItem>
-                  <MenuItem value="airbnb">{t('accommodations.airbnb')}</MenuItem>
-                  <MenuItem value="resort">{t('accommodations.resort')}</MenuItem>
-                  <MenuItem value="hostel">{t('accommodations.hostel')}</MenuItem>
-                  <MenuItem value="camping">{t('accommodations.camping')}</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-          </Grid>
+          </Paper>
 
           {/* Add the Special Requirements section */}
           <Card sx={{ mt: 2 }}>
