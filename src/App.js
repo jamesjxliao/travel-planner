@@ -362,11 +362,8 @@ const TravelPlannerApp = () => {
     }
 
     try {
-      // Remove brackets from the attraction name (as a safeguard)
-      const cleanedAttraction = attraction.replace(/[\[\]]/g, '').trim();
-      
       const corsProxy = 'https://cors-anywhere.herokuapp.com/';
-      const searchUrl = `${corsProxy}https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(cleanedAttraction)}&inputtype=textquery&fields=photos,formatted_address,name,rating,opening_hours,geometry&key=${apiKey}`;
+      const searchUrl = `${corsProxy}https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(attraction)}&inputtype=textquery&fields=photos,formatted_address,name,rating,opening_hours,geometry&key=${apiKey}`;
       console.log('Search URL:', searchUrl);
       
       const searchResponse = await fetch(searchUrl);
@@ -745,27 +742,16 @@ Ensure each option is unique and provides a different experience or approach.`;
 
     finalPrompt += ` Please provide a comprehensive ${numDays}-day travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip, with a breakdown for major categories (e.g., accommodation, transportation, food, activities). 
 
-For each time period (morning, afternoon, evening) of each day, please include a "highlight" field with the name of the most significant attraction or activity for that time period. Do not use brackets in the highlight field.
-
-In the description, when mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this], not just individual words. For example, use "[Hollywood Classic Restaurant]" instead of just "[Hollywood]". Be as specific and descriptive as possible when marking these entities in the description. Do not mark general activities or common nouns.
+When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this], not just individual words. For example, use "[Hollywood Classic Restaurant]" instead of just "[Hollywood]". Be as specific and descriptive as possible when marking these entities. Do not mark general activities or common nouns.
 
 Your response must be a valid JSON object with the following structure:
 {
   "itinerary": [
     {
       "day": 1,
-      "morning": {
-        "highlight": "Name of the most significant attraction or activity (without brackets)",
-        "description": "Description of morning activities with [specific attractions] marked"
-      },
-      "afternoon": {
-        "highlight": "Name of the most significant attraction or activity (without brackets)",
-        "description": "Description of afternoon activities with [specific landmarks] marked"
-      },
-      "evening": {
-        "highlight": "Name of the most significant attraction or activity (without brackets)",
-        "description": "Description of evening activities with [unique experiences] marked"
-      }
+      "morning": "Description of morning activities with [specific attractions] marked",
+      "afternoon": "Description of afternoon activities with [specific landmarks] marked",
+      "evening": "Description of evening activities with [unique experiences] marked"
     },
     // ... repeat for each day
   ],
@@ -809,7 +795,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
         // Process each day's activities to wrap entities with links
         for (let day of parsedResponse.itinerary) {
           ['morning', 'afternoon', 'evening'].forEach(timeOfDay => {
-            day[timeOfDay].description = day[timeOfDay].description.replace(/\[([^\]]+)\]/g, (_, entity) => {
+            day[timeOfDay] = day[timeOfDay].replace(/\[([^\]]+)\]/g, (_, entity) => {
               return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer">${entity}</a>`;
             });
           });
@@ -830,9 +816,10 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
         // Fetch new images for each day and time of day
         parsedResponse.itinerary.forEach((day, index) => {
           ['morning', 'afternoon', 'evening'].forEach(timeOfDay => {
-            const highlight = day[timeOfDay].highlight;
-            if (highlight) {
-              fetchAttractionImage(highlight, index + 1, timeOfDay);
+            const content = day[timeOfDay];
+            const firstAttraction = content.match(/<a[^>]*>([^<]+)<\/a>/)?.[1] || '';
+            if (firstAttraction) {
+              fetchAttractionImage(firstAttraction, index + 1, timeOfDay);
             }
           });
         });
@@ -921,14 +908,14 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
       if (index + 1 !== day) { // Other days
         existingItineraryContext += `Day ${existingDay.day}:\n`;
         ['morning', 'afternoon', 'evening'].forEach(tod => {
-          existingItineraryContext += `${tod.charAt(0).toUpperCase() + tod.slice(1)}: ${stripHtml(existingDay[tod].description)}\n`;
+          existingItineraryContext += `${tod.charAt(0).toUpperCase() + tod.slice(1)}: ${stripHtml(existingDay[tod])}\n`;
         });
         existingItineraryContext += '\n';
       } else if (timeOfDay) { // The day being partially regenerated
         existingItineraryContext += `Current Day ${existingDay.day}:\n`;
         ['morning', 'afternoon', 'evening'].forEach(tod => {
           if (tod !== timeOfDay) {
-            existingItineraryContext += `${tod.charAt(0).toUpperCase() + tod.slice(1)}: ${stripHtml(existingDay[tod].description)}\n`;
+            existingItineraryContext += `${tod.charAt(0).toUpperCase() + tod.slice(1)}: ${stripHtml(existingDay[tod])}\n`;
           }
         });
         existingItineraryContext += '\n';
@@ -959,23 +946,11 @@ When mentioning specific attractions, landmarks, unique experiences, or notable 
 Format the response as a JSON object with the following structure:
 {
   ${timeOfDay ? `
-  "${timeOfDay}": {
-    "highlight": "Name of the most significant attraction or activity",
-    "description": "Description of ${timeOfDay} activities for Day ${day} with [specific attractions] marked"
-  }
+  "${timeOfDay}": "Description of ${timeOfDay} activities for Day ${day} with [specific attractions] marked"
   ` : `
-  "morning": {
-    "highlight": "Name of the most significant attraction or activity",
-    "description": "Description of morning activities for Day ${day} with [specific attractions] marked"
-  },
-  "afternoon": {
-    "highlight": "Name of the most significant attraction or activity",
-    "description": "Description of afternoon activities for Day ${day} with [specific landmarks] marked"
-  },
-  "evening": {
-    "highlight": "Name of the most significant attraction or activity",
-    "description": "Description of evening activities for Day ${day} with [unique experiences] marked"
-  }
+  "morning": "Description of morning activities for Day ${day} with [specific attractions] marked",
+  "afternoon": "Description of afternoon activities for Day ${day} with [specific landmarks] marked",
+  "evening": "Description of evening activities for Day ${day} with [unique experiences] marked"
   `}
 }`;
 
@@ -1010,25 +985,19 @@ Format the response as a JSON object with the following structure:
           let newVersion = { ...lastVersion };
 
           if (timeOfDay) {
-            newVersion[timeOfDay] = {
-              highlight: parsedResponse[timeOfDay].highlight,
-              description: parsedResponse[timeOfDay].description.replace(/\[([^\]]+)\]/g, (_, entity) => {
-                return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer">${entity}</a>`;
-              })
-            };
+            newVersion[timeOfDay] = parsedResponse[timeOfDay].replace(/\[([^\]]+)\]/g, (_, entity) => {
+              return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer">${entity}</a>`;
+            });
             // Fetch new image for the regenerated time of day
-            fetchAttractionImage(parsedResponse[timeOfDay].highlight, day, timeOfDay);
+            fetchAttractionImage(parsedResponse[timeOfDay].match(/\[([^\]]+)\]/)?.[1] || '', day, timeOfDay);
           } else {
             ['morning', 'afternoon', 'evening'].forEach(tod => {
               if (parsedResponse[tod]) {
-                newVersion[tod] = {
-                  highlight: parsedResponse[tod].highlight,
-                  description: parsedResponse[tod].description.replace(/\[([^\]]+)\]/g, (_, entity) => {
-                    return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer">${entity}</a>`;
-                  })
-                };
+                newVersion[tod] = parsedResponse[tod].replace(/\[([^\]]+)\]/g, (_, entity) => {
+                  return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer">${entity}</a>`;
+                });
                 // Fetch new image for each time of day
-                fetchAttractionImage(parsedResponse[tod].highlight, day, tod);
+                fetchAttractionImage(parsedResponse[tod].match(/\[([^\]]+)\]/)?.[1] || '', day, tod);
               }
             });
           }
@@ -1099,8 +1068,8 @@ Format the response as a JSON object with the following structure:
               <CardContent sx={{ pt: 1 }}>
                 <Grid container spacing={2}>
                   {['morning', 'afternoon', 'evening'].map((timeOfDay) => {
-                    const content = currentVersion[timeOfDay].description;
-                    const highlight = currentVersion[timeOfDay].highlight;
+                    const content = currentVersion[timeOfDay];
+                    const firstAttraction = content.match(/\[([^\]]+)\]/)?.[1];
                     const imageUrl = attractionImages[day]?.[timeOfDay];
                     console.log(`Day ${day}, ${timeOfDay}: Image URL - ${imageUrl || 'Not found, using placeholder'}`);
 
@@ -1111,7 +1080,7 @@ Format the response as a JSON object with the following structure:
                             <CardMedia
                               component="img"
                               image={imageUrl || placeholderImage}
-                              alt={highlight || "Placeholder"}
+                              alt={firstAttraction || "Placeholder"}
                               sx={{
                                 position: 'absolute',
                                 top: 0,
