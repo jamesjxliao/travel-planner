@@ -19,6 +19,8 @@ import GoogleAnalytics from './components/GoogleAnalytics';
 import { createLogger } from './utils/logger'; // We'll create this utility
 import CardMedia from '@mui/material/CardMedia';
 import Skeleton from '@mui/material/Skeleton'; // Add this import
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 
 // Create a language context
 const LanguageContext = createContext();
@@ -186,7 +188,7 @@ const translations = {
     "food.finedining": "高档餐厅",
     "food.streetfood": "街头小",
     "food.vegetarian": "素食",
-    "food.familyfriendly": "适合��庭",
+    "food.familyfriendly": "适合家庭",
     "attractions.museums": "博物馆",
     "attractions.nature": "自然景观",
     "attractions.historicalsites": "历史遗迹",
@@ -348,9 +350,10 @@ const TravelPlannerApp = () => {
   const isProduction = process.env.NODE_ENV === 'production';
 
   const [attractionImages, setAttractionImages] = useState({});
+  const [currentImageIndices, setCurrentImageIndices] = useState({});
 
-  const fetchAttractionImage = useCallback(async (attraction, day, timeOfDay) => {
-    console.log(`Fetching image for: ${attraction}, Day: ${day}, Time: ${timeOfDay}`);
+  const fetchAttractionImage = useCallback(async (attraction, day, timeOfDay, index) => {
+    console.log(`Fetching image for: ${attraction}, Day: ${day}, Time: ${timeOfDay}, Index: ${index}`);
     const apiKey = process.env.REACT_APP_GOOGLE_PLACES_API_KEY;
     console.log('API Key:', apiKey ? 'Set' : 'Not set');
     
@@ -391,7 +394,10 @@ const TravelPlannerApp = () => {
                 ...prev,
                 [day]: {
                   ...(prev[day] || {}),
-                  [timeOfDay]: imageUrl
+                  [timeOfDay]: {
+                    ...(prev[day]?.[timeOfDay] || {}),
+                    [index]: imageUrl
+                  }
                 }
               };
               console.log('Updated attractionImages state:', newState);
@@ -399,19 +405,15 @@ const TravelPlannerApp = () => {
             });
           } else {
             console.log('Photo reference is missing');
-            // Handle missing photo reference (e.g., set a default image)
           }
         } else {
           console.log('No photos found for this place');
-          // Handle no photos case (e.g., set a default image)
         }
       } else {
         console.log('No place found for this attraction');
-        // Handle no place found case (e.g., set a default image)
       }
     } catch (error) {
       console.error('Error fetching image:', error);
-      // Handle error case (e.g., set a default image)
     }
   }, []);
 
@@ -429,33 +431,50 @@ const TravelPlannerApp = () => {
           // Create a temporary element to parse the HTML
           const tempDiv = document.createElement('div');
           tempDiv.innerHTML = content;
-          const textContent = tempDiv.textContent || tempDiv.innerText || '';
 
-          // Extract all linked text
+          // Extract all linked attractions
           const linkedAttractions = Array.from(tempDiv.querySelectorAll('a'))
             .map(a => a.textContent)
             .filter(text => text.trim() !== '');
 
           console.log(`Linked attractions:`, linkedAttractions);
 
-          // Use the first linked attraction, or the first sentence if no links
-          let firstAttraction = linkedAttractions[0] || textContent.split('.')[0].trim().slice(0, 100);
-          console.log(`Day ${index + 1}, ${timeOfDay}: First attraction - ${firstAttraction}`);
-
-          if (firstAttraction && !attractionImages[index + 1]?.[timeOfDay]) {
-            console.log(`Conditions met, fetching image for ${firstAttraction}`);
-            fetchAttractionImage(firstAttraction, index + 1, timeOfDay);
-          } else {
-            console.log(`Image already exists or no attraction found for Day ${index + 1}, ${timeOfDay}`);
-            if (!firstAttraction) console.log('No attraction found in content');
-            if (attractionImages[index + 1]?.[timeOfDay]) console.log('Image already exists for this time');
-          }
+          // Fetch images for all linked attractions
+          linkedAttractions.forEach((attraction, attrIndex) => {
+            if (attraction && !attractionImages[index + 1]?.[timeOfDay]?.[attrIndex]) {
+              console.log(`Fetching image for ${attraction}`);
+              fetchAttractionImage(attraction, index + 1, timeOfDay, attrIndex);
+            }
+          });
         });
       });
     } else {
       console.log('No finalPlan or itinerary found');
     }
   }, [finalPlan, fetchAttractionImage, attractionImages]);
+
+  const handleImageNavigation = (day, timeOfDay, direction) => {
+    setCurrentImageIndices(prev => {
+      const currentIndex = prev[day]?.[timeOfDay] || 0;
+      const imagesForTimeOfDay = attractionImages[day]?.[timeOfDay] || {};
+      const maxIndex = Object.keys(imagesForTimeOfDay).length - 1;
+      let newIndex;
+
+      if (direction === 'next') {
+        newIndex = currentIndex < maxIndex ? currentIndex + 1 : 0;
+      } else {
+        newIndex = currentIndex > 0 ? currentIndex - 1 : maxIndex;
+      }
+
+      return {
+        ...prev,
+        [day]: {
+          ...(prev[day] || {}),
+          [timeOfDay]: newIndex
+        }
+      };
+    });
+  };
 
   // Load preferences from localStorage on initial render
   useEffect(() => {
@@ -1076,9 +1095,10 @@ Format the response as a JSON object with the following structure:
                 <Grid container spacing={2}>
                   {['morning', 'afternoon', 'evening'].map((timeOfDay) => {
                     const content = currentVersion[timeOfDay];
-                    const firstAttraction = content.match(/\[([^\]]+)\]/)?.[1];
-                    const imageUrl = attractionImages[day]?.[timeOfDay];
-                    console.log(`Day ${day}, ${timeOfDay}: Image URL - ${imageUrl || 'Not found, loading'}`);
+                    const imagesForTimeOfDay = attractionImages[day]?.[timeOfDay] || {};
+                    const currentImageIndex = currentImageIndices[day]?.[timeOfDay] || 0;
+                    const imageUrl = imagesForTimeOfDay[currentImageIndex];
+                    const totalImages = Object.keys(imagesForTimeOfDay).length;
 
                     return (
                       <Grid item xs={12} sm={4} key={timeOfDay}>
@@ -1088,7 +1108,7 @@ Format the response as a JSON object with the following structure:
                               <CardMedia
                                 component="img"
                                 image={imageUrl}
-                                alt={firstAttraction || "Attraction"}
+                                alt={`Attraction ${currentImageIndex + 1}`}
                                 sx={{
                                   position: 'absolute',
                                   top: 0,
@@ -1110,6 +1130,35 @@ Format the response as a JSON object with the following structure:
                                   height: '100%',
                                 }}
                               />
+                            )}
+                            {totalImages > 1 && (
+                              <>
+                                <IconButton
+                                  sx={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)' }}
+                                  onClick={() => handleImageNavigation(day, timeOfDay, 'prev')}
+                                >
+                                  <ArrowBackIosNewIcon />
+                                </IconButton>
+                                <IconButton
+                                  sx={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}
+                                  onClick={() => handleImageNavigation(day, timeOfDay, 'next')}
+                                >
+                                  <ArrowForwardIosIcon />
+                                </IconButton>
+                                <Typography
+                                  sx={{
+                                    position: 'absolute',
+                                    bottom: 8,
+                                    right: 8,
+                                    bgcolor: 'rgba(0, 0, 0, 0.6)',
+                                    color: 'white',
+                                    padding: '2px 6px',
+                                    borderRadius: '10px',
+                                  }}
+                                >
+                                  {currentImageIndex + 1} / {totalImages}
+                                </Typography>
+                              </>
                             )}
                             <Box
                               sx={{
