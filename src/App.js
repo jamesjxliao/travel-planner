@@ -639,7 +639,7 @@ const TravelPlannerApp = () => {
     }
     const prompt = `For a ${numDays}-day trip to ${destination} from ${homeLocation}, provide 4 distinct options for ${aspect}. ${travelersInfo}. User's preference: "${aspectPreference}". Each option should be a brief markdown bullet point (no more than 30 words) and represent a different approach or choice, considering the type of travelers and trip duration. 
 
-When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this], not just individual words. For example, use "[好莱坞附近的热门汉堡餐]" instead of just "[好莱坞]". Be as specific and descriptive as possible when marking these entities.
+When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this], not just individual words. For example, use "[Hollywood Classic Restaurant]" instead of just "[Hollywood]". Be as specific and descriptive as possible when marking these entities.
 
 Ensure each option is unique and provides a different experience or approach.`;
 
@@ -742,7 +742,7 @@ Ensure each option is unique and provides a different experience or approach.`;
 
     finalPrompt += ` Please provide a comprehensive ${numDays}-day travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip, with a breakdown for major categories (e.g., accommodation, transportation, food, activities). 
 
-When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this], not just individual words. For example, use "[好莱坞附近的热门汉堡餐厅]" instead of just "[好莱坞]". Be as specific and descriptive as possible when marking these entities. Do not mark general activities or common nouns.
+When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this], not just individual words. For example, use "[Hollywood Classic Restaurant]" instead of just "[Hollywood]". Be as specific and descriptive as possible when marking these entities. Do not mark general activities or common nouns.
 
 Your response must be a valid JSON object with the following structure:
 {
