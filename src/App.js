@@ -349,6 +349,107 @@ const TravelPlannerApp = () => {
   // Add this near the top of the component
   const isProduction = process.env.NODE_ENV === 'production';
 
+  const [attractionImages, setAttractionImages] = useState({});
+
+  const fetchAttractionImage = useCallback(async (attraction, day, timeOfDay) => {
+    console.log(`Fetching image for: ${attraction}, Day: ${day}, Time: ${timeOfDay}`);
+    const apiKey = process.env.REACT_APP_GOOGLE_PLACES_API_KEY;
+    console.log('API Key:', apiKey ? 'Set' : 'Not set'); // Don't log the actual key
+    
+    if (!apiKey) {
+      console.error('API key is not set');
+      return;
+    }
+
+    try {
+      const corsProxy = 'https://cors-anywhere.herokuapp.com/';
+      const searchUrl = `${corsProxy}https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(attraction)}&inputtype=textquery&fields=photos,formatted_address,name,rating,opening_hours,geometry&key=${apiKey}`;
+      console.log('Search URL:', searchUrl);
+      
+      const searchResponse = await fetch(searchUrl);
+      console.log('Search Response status:', searchResponse.status);
+      
+      if (!searchResponse.ok) {
+        throw new Error(`HTTP error! status: ${searchResponse.status}`);
+      }
+      
+      const searchData = await searchResponse.json();
+      console.log('Search Data:', searchData);
+
+      if (searchData.candidates && searchData.candidates.length > 0) {
+        const place = searchData.candidates[0];
+        console.log('Place found:', place.name);
+
+        if (place.photos && place.photos.length > 0) {
+          const photoReference = place.photos[0].photo_reference;
+          console.log('Photo Reference:', photoReference);
+          const imageUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoReference}&key=${apiKey}`;
+          console.log('Image URL:', imageUrl);
+
+          setAttractionImages(prev => {
+            const newState = {
+              ...prev,
+              [day]: {
+                ...(prev[day] || {}),
+                [timeOfDay]: imageUrl
+              }
+            };
+            console.log('Updated attractionImages state:', newState);
+            return newState;
+          });
+        } else {
+          console.log('No photos found for this place');
+        }
+      } else {
+        console.log('No place found for this attraction');
+      }
+    } catch (error) {
+      console.error('Error fetching image:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    console.log('useEffect triggered. finalPlan:', finalPlan);
+
+    if (finalPlan && finalPlan.itinerary) {
+      console.log('Itinerary found, processing days...');
+      finalPlan.itinerary.forEach((day, index) => {
+        console.log(`Processing day ${index + 1}`);
+        ['morning', 'afternoon', 'evening'].forEach((timeOfDay) => {
+          const content = day[timeOfDay];
+          console.log(`Full content for Day ${index + 1}, ${timeOfDay}:`, content);
+          
+          // Create a temporary element to parse the HTML
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = content;
+          const textContent = tempDiv.textContent || tempDiv.innerText || '';
+
+          // Extract all linked text
+          const linkedAttractions = Array.from(tempDiv.querySelectorAll('a'))
+            .map(a => a.textContent)
+            .filter(text => text.trim() !== '');
+
+          console.log(`Linked attractions:`, linkedAttractions);
+
+          // Use the first linked attraction, or the first sentence if no links
+          let firstAttraction = linkedAttractions[0] || textContent.split('.')[0].trim().slice(0, 100);
+          console.log(`Day ${index + 1}, ${timeOfDay}: First attraction - ${firstAttraction}`);
+
+          if (firstAttraction && !attractionImages[index + 1]?.[timeOfDay]) {
+            console.log(`Conditions met, fetching image for ${firstAttraction}`);
+            fetchAttractionImage(firstAttraction, index + 1, timeOfDay);
+          } else {
+            console.log(`Image already exists or no attraction found for Day ${index + 1}, ${timeOfDay}`);
+            if (!firstAttraction) console.log('No attraction found in content');
+            if (attractionImages[index + 1]?.[timeOfDay]) console.log('Image already exists for this time');
+          }
+        });
+      });
+    } else {
+      console.log('No finalPlan or itinerary found');
+    }
+  }, [finalPlan, fetchAttractionImage, attractionImages]);
+
   // Load preferences from localStorage on initial render
   useEffect(() => {
     const loadedDestination = localStorage.getItem('destination') || t('defaultDestination');
@@ -902,6 +1003,7 @@ Format the response as a JSON object with the following structure:
   };
 
   const renderItinerary = () => {
+    console.log('Rendering itinerary. attractionImages:', attractionImages);
     if (!finalPlan || !finalPlan.itinerary) return null;
 
     return (
@@ -943,15 +1045,18 @@ Format the response as a JSON object with the following structure:
                 <Grid container spacing={2}>
                   {['morning', 'afternoon', 'evening'].map((timeOfDay) => {
                     const content = currentVersion[timeOfDay];
+                    const firstAttraction = content.match(/\[([^\]]+)\]/)?.[1];
+                    const imageUrl = attractionImages[day]?.[timeOfDay];
+                    console.log(`Day ${day}, ${timeOfDay}: Image URL - ${imageUrl || 'Not found, using placeholder'}`);
 
                     return (
                       <Grid item xs={12} sm={4} key={timeOfDay}>
                         <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                          <Box sx={{ position: 'relative', paddingTop: '66.67%' /* 3:2 aspect ratio */ }}>
+                          <Box sx={{ position: 'relative', paddingTop: '66.67%' }}>
                             <CardMedia
                               component="img"
-                              image={placeholderImage}
-                              alt="Placeholder"
+                              image={imageUrl || placeholderImage}
+                              alt={firstAttraction || "Placeholder"}
                               sx={{
                                 position: 'absolute',
                                 top: 0,
