@@ -186,7 +186,7 @@ const translations = {
     "food.finedining": "高档餐厅",
     "food.streetfood": "街头小",
     "food.vegetarian": "素食",
-    "food.familyfriendly": "适合家庭",
+    "food.familyfriendly": "适合��庭",
     "attractions.museums": "博物馆",
     "attractions.nature": "自然景观",
     "attractions.historicalsites": "历史遗迹",
@@ -383,7 +383,7 @@ const TravelPlannerApp = () => {
           console.log('Photo Reference:', photoReference);
           
           if (photoReference) {
-            const imageUrl = `${backendUrl}/api/photo?maxwidth=400&photoreference=${photoReference}&key=${apiKey}`;
+            const imageUrl = `${backendUrl}/api/photo?maxwidth=600&photoreference=${photoReference}&key=${apiKey}`;
             console.log('Image URL:', imageUrl);
 
             setAttractionImages(prev => {
@@ -1083,7 +1083,7 @@ Format the response as a JSON object with the following structure:
                     return (
                       <Grid item xs={12} sm={4} key={timeOfDay}>
                         <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                          <Box sx={{ position: 'relative', paddingTop: '66.67%' }}>
+                          <Box sx={{ position: 'relative', paddingTop: '56.25%' }}>
                             {imageUrl ? (
                               <CardMedia
                                 component="img"
