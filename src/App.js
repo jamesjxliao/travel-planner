@@ -354,7 +354,7 @@ const TravelPlannerApp = () => {
   const fetchAttractionImage = useCallback(async (attraction, day, timeOfDay) => {
     console.log(`Fetching image for: ${attraction}, Day: ${day}, Time: ${timeOfDay}`);
     const apiKey = process.env.REACT_APP_GOOGLE_PLACES_API_KEY;
-    console.log('API Key:', apiKey ? 'Set' : 'Not set'); // Don't log the actual key
+    console.log('API Key:', apiKey ? 'Set' : 'Not set');
     
     if (!apiKey) {
       console.error('API key is not set');
@@ -362,8 +362,8 @@ const TravelPlannerApp = () => {
     }
 
     try {
-      const corsProxy = 'https://cors-anywhere.herokuapp.com/';
-      const searchUrl = `${corsProxy}https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(attraction)}&inputtype=textquery&fields=photos,formatted_address,name,rating,opening_hours,geometry&key=${apiKey}`;
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
+      const searchUrl = `${backendUrl}/api/places?input=${encodeURIComponent(attraction)}&apiKey=${apiKey}`;
       console.log('Search URL:', searchUrl);
       
       const searchResponse = await fetch(searchUrl);
@@ -383,28 +383,37 @@ const TravelPlannerApp = () => {
         if (place.photos && place.photos.length > 0) {
           const photoReference = place.photos[0].photo_reference;
           console.log('Photo Reference:', photoReference);
-          const imageUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoReference}&key=${apiKey}`;
-          console.log('Image URL:', imageUrl);
+          
+          if (photoReference) {
+            const imageUrl = `${backendUrl}/api/photo?maxwidth=400&photoreference=${photoReference}&key=${apiKey}`;
+            console.log('Image URL:', imageUrl);
 
-          setAttractionImages(prev => {
-            const newState = {
-              ...prev,
-              [day]: {
-                ...(prev[day] || {}),
-                [timeOfDay]: imageUrl
-              }
-            };
-            console.log('Updated attractionImages state:', newState);
-            return newState;
-          });
+            setAttractionImages(prev => {
+              const newState = {
+                ...prev,
+                [day]: {
+                  ...(prev[day] || {}),
+                  [timeOfDay]: imageUrl
+                }
+              };
+              console.log('Updated attractionImages state:', newState);
+              return newState;
+            });
+          } else {
+            console.log('Photo reference is missing');
+            // Handle missing photo reference (e.g., set a default image)
+          }
         } else {
           console.log('No photos found for this place');
+          // Handle no photos case (e.g., set a default image)
         }
       } else {
         console.log('No place found for this attraction');
+        // Handle no place found case (e.g., set a default image)
       }
     } catch (error) {
       console.error('Error fetching image:', error);
+      // Handle error case (e.g., set a default image)
     }
   }, []);
 
