@@ -17,6 +17,10 @@ import InputAdornment from '@mui/material/InputAdornment';
 import Pagination from '@mui/material/Pagination'; // Add this import
 import GoogleAnalytics from './components/GoogleAnalytics';
 import { createLogger } from './utils/logger'; // We'll create this utility
+import CardMedia from '@mui/material/CardMedia';
+
+// Add this import for the placeholder image
+import placeholderImage from './Ultraman.jpg'; // Update this path
 
 // Create a language context
 const LanguageContext = createContext();
@@ -182,7 +186,7 @@ const translations = {
     "accommodations.flexible": "任意",
     "food.localcuisine": "当地美食",
     "food.finedining": "高档餐厅",
-    "food.streetfood": "街头小吃",
+    "food.streetfood": "街头小",
     "food.vegetarian": "素食",
     "food.familyfriendly": "适合家庭",
     "attractions.museums": "博物馆",
@@ -937,43 +941,63 @@ Format the response as a JSON object with the following structure:
               </Box>
               <CardContent sx={{ pt: 1 }}>
                 <Grid container spacing={2}>
-                  {['morning', 'afternoon', 'evening'].map((timeOfDay) => (
-                    <Grid item xs={12} sm={4} key={timeOfDay}>
-                      <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                        <CardContent sx={{ flexGrow: 1, p: 1 }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                            <Typography variant="body2" color="primary" fontWeight="bold">
-                              {t(timeOfDay)}
-                            </Typography>
-                            <Tooltip title={t('regenerateTimeOfDay')}>
-                              <IconButton 
-                                size="small"
-                                onClick={() => regenerateItinerary(day, timeOfDay)}
-                                disabled={isLoading || (regeneratingItinerary.day === day && regeneratingItinerary.timeOfDay === timeOfDay)}
-                              >
-                                <RefreshIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
+                  {['morning', 'afternoon', 'evening'].map((timeOfDay) => {
+                    const content = currentVersion[timeOfDay];
+
+                    return (
+                      <Grid item xs={12} sm={4} key={timeOfDay}>
+                        <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                          <Box sx={{ position: 'relative', paddingTop: '66.67%' /* 3:2 aspect ratio */ }}>
+                            <CardMedia
+                              component="img"
+                              image={placeholderImage}
+                              alt="Placeholder"
+                              sx={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                objectPosition: 'center',
+                              }}
+                            />
                           </Box>
-                          <Typography 
-                            variant="body2" 
-                            component="div"
-                            dangerouslySetInnerHTML={{ __html: currentVersion[timeOfDay] }}
-                            sx={{
-                              '& a': {
-                                color: 'primary.main',
-                                textDecoration: 'underline',
-                                fontWeight: 'bold',
-                                '&:hover': {
-                                  color: 'primary.dark',
+                          <CardContent sx={{ flexGrow: 1, p: 1 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                              <Typography variant="body2" color="primary" fontWeight="bold">
+                                {t(timeOfDay)}
+                              </Typography>
+                              <Tooltip title={t('regenerateTimeOfDay')}>
+                                <IconButton 
+                                  size="small"
+                                  onClick={() => regenerateItinerary(day, timeOfDay)}
+                                  disabled={isLoading || (regeneratingItinerary.day === day && regeneratingItinerary.timeOfDay === timeOfDay)}
+                                >
+                                  <RefreshIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
+                            <Typography 
+                              variant="body2" 
+                              component="div"
+                              dangerouslySetInnerHTML={{ __html: content }}
+                              sx={{
+                                '& a': {
+                                  color: 'primary.main',
+                                  textDecoration: 'underline',
+                                  fontWeight: 'bold',
+                                  '&:hover': {
+                                    color: 'primary.dark',
+                                  },
                                 },
-                              },
-                            }}
-                          />
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
+                              }}
+                            />
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    );
+                  })}
                 </Grid>
                 {versions.length > 1 && (
                   <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
