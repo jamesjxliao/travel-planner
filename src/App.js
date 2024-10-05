@@ -186,7 +186,7 @@ const translations = {
     "food.vegetarian": "素食",
     "food.familyfriendly": "适合家庭",
     "attractions.museums": "博物馆",
-    "attractions.nature": "自然景观",
+    "attractions.nature": "自���景观",
     "attractions.historicalsites": "历史遗迹",
     "attractions.themeparks": "主题公园",
     "attractions.shopping": "购物",
@@ -740,15 +740,12 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     setOptions(optionsResponse.split('\n'));
   };
 
-  const handleDrawerClose = () => {
-    setDrawerOpen(false);
+  const handleDrawerToggle = () => {
+    setDrawerOpen(!drawerOpen);
   };
 
-  const toggleDrawer = (open) => (event) => {
-    if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
-      return;
-    }
-    setDrawerOpen(open);
+  const handleDrawerClose = () => {
+    setDrawerOpen(false);
   };
 
   const handlePageChange = (day, page) => {
@@ -1028,78 +1025,6 @@ Format the response as a JSON object with the following structure:
     );
   };
 
-  const sidebarContent = (
-    <Box sx={{ width: isMobile ? '100vw' : 250, p: 2 }}>
-      {isMobile && (
-        <IconButton
-          onClick={handleDrawerClose}
-          sx={{ position: 'absolute', right: 8, top: 8 }}
-        >
-          <CloseIcon />
-        </IconButton>
-      )}
-      <Paper elevation={3} sx={{ p: 2, mb: 3, backgroundColor: '#f0f8ff' }}>
-        <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
-          {t('travelersInformation')}
-        </Typography>
-        
-        <FormControl fullWidth margin="normal">
-          <InputLabel id="travelers-label">{t('whosTraveling')}</InputLabel>
-          <Select
-            labelId="travelers-label"
-            value={travelers}
-            label={t('whosTraveling')}
-            onChange={handleTravelersChange}
-          >
-            <MenuItem value="Solo">{t('solo')}</MenuItem>
-            <MenuItem value="Couple">{t('couple')}</MenuItem>
-            <MenuItem value="Family">{t('family')}</MenuItem>
-            <MenuItem value="Group">{t('group')}</MenuItem>
-          </Select>
-        </FormControl>
-
-        {(travelers === 'Family' || travelers === 'Group') && (
-          <TextField
-            fullWidth
-            margin="normal"
-            label={t('groupSize')}
-            value={groupSize}
-            onChange={handleGroupSizeChange}
-            placeholder={t('enterNumberOfTravelers')}
-            type="number"
-            InputProps={{ inputProps: { min: travelers === 'Family' ? 3 : 5 } }}
-          />
-        )}
-
-        <TextField
-          fullWidth
-          margin="normal"
-          label={t('homeLocation')}
-          value={homeLocation}
-          onChange={handleHomeLocationChange}
-          placeholder={t('enterYourHomeCity')}
-        />
-
-        <FormControl fullWidth margin="normal">
-          <InputLabel id="budget-label">{t('budget')}</InputLabel>
-          <Select
-            labelId="budget-label"
-            value={budget}
-            label={t('budget')}
-            onChange={handleBudgetChange}
-          >
-            <MenuItem value="Budget">{t('budget')}</MenuItem>
-            <MenuItem value="Mid-range">{t('midRange')}</MenuItem>
-            <MenuItem value="Luxury">{t('luxury')}</MenuItem>
-          </Select>
-        </FormControl>
-      </Paper>
-
-      {/* Remove the Aspects to Consider section */}
-
-    </Box>
-  );
-
   // Define resetAllSettings using useCallback
   const resetAllSettings = useCallback(() => {
     logEvent("User Action", "Reset All Settings");
@@ -1139,6 +1064,71 @@ Format the response as a JSON object with the following structure:
     setTransportationMode, setSpecialRequirements, setFinalPlan
   ]); // Include all setter functions in the dependency array
 
+  const TravelerSection = () => (
+    <Paper elevation={3} sx={{ p: 2, mb: 3, backgroundColor: '#f0f8ff' }}>
+      <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
+        {t('travelersInformation')}
+      </Typography>
+      <Grid container spacing={2} alignItems="center">
+        <Grid item xs={12} sm={3}>
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="travelers-label">{t('whosTraveling')}</InputLabel>
+            <Select
+              labelId="travelers-label"
+              value={travelers}
+              label={t('whosTraveling')}
+              onChange={handleTravelersChange}
+            >
+              <MenuItem value="Solo">{t('solo')}</MenuItem>
+              <MenuItem value="Couple">{t('couple')}</MenuItem>
+              <MenuItem value="Family">{t('family')}</MenuItem>
+              <MenuItem value="Group">{t('group')}</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        {(travelers === 'Family' || travelers === 'Group') && (
+          <Grid item xs={12} sm={3}>
+            <TextField
+              fullWidth
+              margin="normal"
+              label={t('groupSize')}
+              value={groupSize}
+              onChange={handleGroupSizeChange}
+              placeholder={t('enterNumberOfTravelers')}
+              type="number"
+              InputProps={{ inputProps: { min: travelers === 'Family' ? 3 : 5 } }}
+            />
+          </Grid>
+        )}
+        <Grid item xs={12} sm={3}>
+          <TextField
+            fullWidth
+            margin="normal"
+            label={t('homeLocation')}
+            value={homeLocation}
+            onChange={handleHomeLocationChange}
+            placeholder={t('enterYourHomeCity')}
+          />
+        </Grid>
+        <Grid item xs={12} sm={3}>
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="budget-label">{t('budget')}</InputLabel>
+            <Select
+              labelId="budget-label"
+              value={budget}
+              label={t('budget')}
+              onChange={handleBudgetChange}
+            >
+              <MenuItem value="Budget">{t('budget')}</MenuItem>
+              <MenuItem value="Mid-range">{t('midRange')}</MenuItem>
+              <MenuItem value="Luxury">{t('luxury')}</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+      </Grid>
+    </Paper>
+  );
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <AppBar position="fixed">
@@ -1147,7 +1137,7 @@ Format the response as a JSON object with the following structure:
             <Tooltip title={t('travelersInformation')}>
               <IconButton
                 color="inherit"
-                onClick={toggleDrawer(true)}
+                onClick={handleDrawerToggle}
                 sx={{ mr: 2 }}
                 aria-label={t('travelersInformation')}
               >
@@ -1198,11 +1188,12 @@ Format the response as a JSON object with the following structure:
       <Toolbar /> {/* This empty Toolbar acts as a spacer */}
       <Grid container spacing={2} sx={{ p: 2, mt: 2 }}>
         {!isMobile && (
-          <Grid item xs={12} sm={3}>
-            {sidebarContent}
+          <Grid item xs={12}>
+            <TravelerSection />
           </Grid>
         )}
-        <Grid item xs={12} sm={isMobile ? 12 : 9}>
+        
+        <Grid item xs={12}>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6} md={4}>
               <TextField
@@ -1367,7 +1358,18 @@ Format the response as a JSON object with the following structure:
             keepMounted: true, // Better open performance on mobile
           }}
         >
-          {sidebarContent}
+          <Box
+            sx={{
+              width: 250,
+              p: 2,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+            }}
+            role="presentation"
+          >
+            <TravelerSection />
+          </Box>
         </Drawer>
       )}
       {process.env.NODE_ENV === 'production' && <GoogleAnalytics />}
