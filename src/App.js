@@ -49,21 +49,14 @@ const TravelPlannerApp = () => {
   const { language, setLanguage, t } = useLanguage();
   const [destination, setDestination] = useState('');
   const [homeLocation, setHomeLocation] = useState('');
-  const [currentAspect, setCurrentAspect] = useState('');
-  const [options, setOptions] = useState({});
-  const [selectedOptions, setSelectedOptions] = useState({});
   const [conversationHistory, setConversationHistory] = useState([]);
   const [finalPlan, setFinalPlan] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [aspectPreferences, setAspectPreferences] = useState({});
-  const [isGeneratingOptions, setIsGeneratingOptions] = useState({});
   const [showDebug, setShowDebug] = useState(false);
   const [currentPrompt, setCurrentPrompt] = useState('');
   const [travelers, setTravelers] = useState('Family');
   const [groupSize, setGroupSize] = useState('3');
   const [numDays, setNumDays] = useState('3');
-  const [newOptionIndices, setNewOptionIndices] = useState({});
-  const scrollRefs = useRef({});
   const [isRoundTrip, setIsRoundTrip] = useState(true);
   const [budget, setBudget] = useState('Mid-range');  // New state for budget
 
@@ -261,86 +254,6 @@ const TravelPlannerApp = () => {
     }
   };
 
-  const generateOptions = async (aspect) => {
-    setIsGeneratingOptions(prev => ({ ...prev, [aspect]: true }));
-    const aspectPreference = aspectPreferences[aspect] || '';
-    let travelersInfo = `Who's traveling: ${travelers}`;
-    if (travelers === 'Family' || travelers === 'Group') {
-      travelersInfo += `. Group size: ${groupSize}`;
-    }
-    const prompt = `For a ${numDays}-day trip to ${destination} from ${homeLocation}, provide 4 distinct options for ${aspect}. ${travelersInfo}. User's preference: "${aspectPreference}". Each option should be a brief markdown bullet point (no more than 30 words) and represent a different approach or choice, considering the type of travelers and trip duration. 
-
-When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this], not just individual words. For example, use "[Hollywood Classic Restaurant]" instead of just "[Hollywood]". Be as specific and descriptive as possible when marking these entities.
-
-Ensure each option is unique and provides a different experience or approach.`;
-
-    const optionsResponse = await getLLMResponse(prompt);
-    
-    // Filter and validate the options
-    const validOptions = optionsResponse.split('\n')
-      .map(option => option.trim())
-      .filter(option => option && option.startsWith('- ') && option.length > 5)
-      .map(option => {
-        // Process each option to wrap entities with links
-        return option.replace(/\[([^\]]+)\]/g, (_, entity) => {
-          return `[${entity}](${createGoogleSearchLink(entity)})`;
-        });
-      });
-
-    // If we don't have enough valid options, regenerate
-    if (validOptions.length < 3) {
-      setIsGeneratingOptions(prev => ({ ...prev, [aspect]: false }));
-      generateOptions(aspect); // Recursively call to try again
-      return;
-    }
-
-    setOptions(prevOptions => {
-      const existingOptions = prevOptions[aspect] || [];
-      const newOptions = [...validOptions];
-      const updatedOptions = [...existingOptions, ...newOptions];
-      
-      // Set the indices of new options
-      setNewOptionIndices(prev => ({
-        ...prev,
-        [aspect]: updatedOptions.map((_, index) => index >= existingOptions.length)
-      }));
-
-      return {
-        ...prevOptions,
-        [aspect]: updatedOptions
-      };
-    });
-    setIsGeneratingOptions(prev => ({ ...prev, [aspect]: false }));
-  };
-
-  useEffect(() => {
-    // Scroll to new options when they are generated
-    Object.keys(newOptionIndices).forEach(aspect => {
-      if (scrollRefs.current[aspect]) {
-        scrollRefs.current[aspect].scrollTop = scrollRefs.current[aspect].scrollHeight;
-      }
-    });
-
-    // Clear new option indices after a delay
-    const timer = setTimeout(() => {
-      setNewOptionIndices({});
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [newOptionIndices]);
-
-  const handleOptionToggle = (aspect, option) => {
-    setSelectedOptions(prev => {
-      const current = prev[aspect] || [];
-      const updated = current.includes(option)
-        ? current.filter(item => item !== option)
-        : [...current, option];
-      return {
-        ...prev,
-        [aspect]: updated
-      };
-    });
-  };
 
   const finalizePlan = async () => {
     logEvent("User Action", "Finalized Plan", `${destination} - ${numDays} days`);
@@ -478,23 +391,6 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
       }, 100);
     }
   }, [isLoading, isFullPlanGeneration]);
-
-  const handlePreferenceChange = (aspect, value) => {
-    setAspectPreferences(prev => ({ ...prev, [aspect]: value }));
-  };
-
-  const handleKeyPress = (aspect, event) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      generateOptions(aspect);
-    }
-  };
-
-  const handleAspectInput = async (input) => {
-    const prompt = `Based on the user's input about ${currentAspect}: '${input}', provide 5 distinct and mutually exclusive options for their trip to ${destination}. Each option should be succinct (no more than 15 words) and represent a different approach or choice.`;
-    const optionsResponse = await getLLMResponse(prompt);
-    setOptions(optionsResponse.split('\n'));
-  };
 
   const handleDrawerToggle = () => {
     setDrawerOpen(!drawerOpen);
