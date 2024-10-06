@@ -6,14 +6,14 @@ import { styled, useTheme } from '@mui/material/styles';
 import { keyframes } from '@mui/system';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import ReactMarkdown from 'react-markdown';
-import PersonIcon from '@mui/icons-material/Person'; // Add this import
-import Tooltip from '@mui/material/Tooltip'; // Add this import
-import RefreshIcon from '@mui/icons-material/Refresh'; // Replace DeleteIcon with RefreshIcon
-import Pagination from '@mui/material/Pagination'; // Add this import
+import PersonIcon from '@mui/icons-material/Person';
+import Tooltip from '@mui/material/Tooltip';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import Pagination from '@mui/material/Pagination';
 import GoogleAnalytics from './components/GoogleAnalytics';
-import { createLogger } from './utils/logger'; // We'll create this utility
+import { createLogger } from './utils/logger';
 import CardMedia from '@mui/material/CardMedia';
-import Skeleton from '@mui/material/Skeleton'; // Add this import
+import Skeleton from '@mui/material/Skeleton';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import TravelerSection from './components/TravelerSection';
 import TripDetailsSection from './components/TripDetailsSection';
@@ -32,17 +32,14 @@ const createGoogleSearchLink = (text) => {
   return `https://www.google.com/search?q=${searchQuery}`;
 };
 
-// Move commonPreferences here, before the TravelPlannerApp component
 const commonPreferences = {
-  // "Time to visit": ["timetovisit.spring", "timetovisit.summer", "timetovisit.fall", "timetovisit.winter", "timetovisit.holidays"],
-  // "Accommodations": ["accommodations.hotel", "accommodations.airbnb", "accommodations.resort", "accommodations.hostel", "accommodations.camping"],
   "Food": ["food.localcuisine", "food.finedining", "food.streetfood", "food.vegetarian", "food.familyfriendly"],
   "Attractions": ["attractions.museums", "attractions.nature", "attractions.historicalsites", "attractions.themeparks", "attractions.shopping"]
 };
 
 // Initialize Google Analytics only in production
 if (process.env.NODE_ENV === 'production') {
-  ReactGA.initialize("G-5FTTLPJ62P"); // Replace with your Google Analytics measurement ID
+  ReactGA.initialize("G-5FTTLPJ62P");
 }
 
 const TravelPlannerApp = () => {
@@ -58,40 +55,26 @@ const TravelPlannerApp = () => {
   const [groupSize, setGroupSize] = useState('3');
   const [numDays, setNumDays] = useState('3');
   const [isRoundTrip, setIsRoundTrip] = useState(true);
-  const [budget, setBudget] = useState('Mid-range');  // New state for budget
-
-  // Add this new state variable
+  const [budget, setBudget] = useState('Mid-range');
   const [specialRequirements, setSpecialRequirements] = useState('');
-
-  // Combine all common preferences
-  const allCommonPreferences = Object.values(commonPreferences).flat();
-
-  // Add a new state for time to visit
   const [timeToVisit, setTimeToVisit] = useState('flexible');
-
-  // Add a new state for accommodation type
   const [accommodationType, setAccommodationType] = useState('flexible');
-
-  // Add a new state for transportation mode
   const [transportationMode, setTransportationMode] = useState('flexible');
-
-  // Add this new state variable
   const [regeneratingItinerary, setRegeneratingItinerary] = useState({ day: null, timeOfDay: null });
+  const [dayVersions, setDayVersions] = useState({});
+  const [currentPages, setCurrentPages] = useState({});
+  const [attractionImages, setAttractionImages] = useState({});
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [drawerOpen, setDrawerOpen] = useState(false);
-
   const [isFullPlanGeneration, setIsFullPlanGeneration] = useState(false);
   const finalPlanRef = useRef(null);
 
-  const [dayVersions, setDayVersions] = useState({});
-  const [currentPages, setCurrentPages] = useState({});
-
-  // Add this near the top of the component
   const isProduction = process.env.NODE_ENV === 'production';
+  const logger = createLogger(process.env.NODE_ENV);
 
-  const [attractionImages, setAttractionImages] = useState({});
+  const allCommonPreferences = Object.values(commonPreferences).flat();
 
   const fetchAttractionImage = useCallback(async (attraction, day, timeOfDay) => {
     console.log(`Fetching image for: ${attraction}, Day: ${day}, Time: ${timeOfDay}`);
@@ -201,7 +184,6 @@ const TravelPlannerApp = () => {
     }
   }, [finalPlan, fetchAttractionImage, attractionImages]);
 
-  // Update the ReactGA event calls
   const logEvent = (category, action, label) => {
     if (process.env.NODE_ENV === 'production') {
       ReactGA.event({
@@ -212,7 +194,6 @@ const TravelPlannerApp = () => {
     }
   };
 
-  // Update this function to handle special requirements
   const handleCommonPreferenceClick = (prefKey) => {
     const translatedPreference = t(prefKey);
     setSpecialRequirements(prev => {
@@ -230,10 +211,6 @@ const TravelPlannerApp = () => {
     logEvent("User Input", "Clicked Common Preference", prefKey);
   };
 
-  // Create a logger instance
-  const logger = createLogger(process.env.NODE_ENV);
-
-  // Replace console.log, console.error, etc. with logger methods
   const getLLMResponse = async (prompt) => {
     setCurrentPrompt(prompt);
     const updatedHistory = [...conversationHistory, { role: "user", content: prompt }];
@@ -253,7 +230,6 @@ const TravelPlannerApp = () => {
       throw error;
     }
   };
-
 
   const finalizePlan = async () => {
     logEvent("User Action", "Finalized Plan", `${destination} - ${numDays} days`);
@@ -553,10 +529,8 @@ Format the response as a JSON object with the following structure:
     }
   };
 
-  // Define resetAllSettings using useCallback
   const resetAllSettings = useCallback(() => {
     logEvent("User Action", "Reset All Settings");
-    // Reset all state variables to their default values
     setDestination(t('defaultDestination'));
     setHomeLocation(t('defaultHomeLocation'));
     setTravelers('Family');
@@ -568,10 +542,8 @@ Format the response as a JSON object with the following structure:
     setAccommodationType('flexible');
     setTransportationMode('flexible');
     setSpecialRequirements('');
-
-    // Clear localStorage
     localStorage.clear();
-  }, []);
+  }, [t]);
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -624,12 +596,12 @@ Format the response as a JSON object with the following structure:
               sx={{ ml: 2 }}
               aria-label={t('resetAllSettings')}
             >
-              <RefreshIcon /> {/* Changed from DeleteIcon to RefreshIcon */}
+              <RefreshIcon />
             </IconButton>
           </Tooltip>
         </Toolbar>
       </AppBar>
-      <Toolbar /> {/* This empty Toolbar acts as a spacer */}
+      <Toolbar />
       <Grid container spacing={2} sx={{ p: 2, mt: 2 }}>
         {!isMobile && (
           <Grid item xs={12}>
@@ -701,7 +673,7 @@ Format the response as a JSON object with the following structure:
           open={drawerOpen}
           onClose={handleDrawerClose}
           ModalProps={{
-            keepMounted: true, // Better open performance on mobile
+            keepMounted: true,
           }}
         >
           <Box
@@ -718,12 +690,11 @@ Format the response as a JSON object with the following structure:
           </Box>
         </Drawer>
       )}
-      {process.env.NODE_ENV === 'production' && <GoogleAnalytics />}
+      {isProduction && <GoogleAnalytics />}
     </Box>
   );
 };
 
-// Wrap the exported component with the LanguageProvider
 export default () => (
   <LanguageProvider>
     <TravelPlannerApp />
