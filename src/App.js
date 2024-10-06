@@ -186,7 +186,7 @@ const translations = {
     "food.finedining": "高档餐厅",
     "food.streetfood": "街头小",
     "food.vegetarian": "素食",
-    "food.familyfriendly": "适合��庭",
+    "food.familyfriendly": "适合家庭",
     "attractions.museums": "博物馆",
     "attractions.nature": "自然景观",
     "attractions.historicalsites": "历史遗迹",
