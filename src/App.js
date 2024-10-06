@@ -27,43 +27,10 @@ const client = new OpenAI({
   dangerouslyAllowBrowser: true // This is not recommended for production use
 });
 
-// Define a highlight animation
-const highlightAnimation = keyframes`
-  0% { background-color: #fff9c4; }
-  100% { background-color: transparent; }
-`;
-
-// Custom styled component for the scrollable box
-const ScrollableBox = styled(Box)(({ theme }) => ({
-  height: '375px',
-  overflowY: 'auto',
-  marginTop: '10px',
-  // ... existing scrollbar styles ...
-}));
-
-// Styled component for highlighting new options
-const HighlightCard = styled(Card)(({ theme, isNew }) => ({
-  height: '170px',
-  display: 'flex',
-  flexDirection: 'column',
-  animation: isNew ? `${highlightAnimation} 2s ease-in-out` : 'none',
-}));
-
 const createGoogleSearchLink = (text) => {
   const searchQuery = encodeURIComponent(text);
   return `https://www.google.com/search?q=${searchQuery}`;
 };
-
-const StyledContent = styled('div')(({ theme }) => ({
-  '& a': {
-    color: theme.palette.primary.main,
-    textDecoration: 'underline',
-    fontWeight: 'bold',
-    '&:hover': {
-      color: theme.palette.primary.dark,
-    },
-  },
-}));
 
 // Move commonPreferences here, before the TravelPlannerApp component
 const commonPreferences = {
@@ -80,8 +47,8 @@ if (process.env.NODE_ENV === 'production') {
 
 const TravelPlannerApp = () => {
   const { language, setLanguage, t } = useLanguage();
-  const [destination, setDestination] = useState(t('defaultDestination'));
-  const [homeLocation, setHomeLocation] = useState(t('defaultHomeLocation'));
+  const [destination, setDestination] = useState('');
+  const [homeLocation, setHomeLocation] = useState('');
   const [currentAspect, setCurrentAspect] = useState('');
   const [options, setOptions] = useState({});
   const [selectedOptions, setSelectedOptions] = useState({});
@@ -114,11 +81,6 @@ const TravelPlannerApp = () => {
 
   // Add a new state for transportation mode
   const [transportationMode, setTransportationMode] = useState('flexible');
-
-  const [coveredAspects, setCoveredAspects] = useState(new Set());
-
-  // Add this new state variable
-  const [regeneratingAspect, setRegeneratingAspect] = useState(null);
 
   // Add this new state variable
   const [regeneratingItinerary, setRegeneratingItinerary] = useState({ day: null, timeOfDay: null });
@@ -246,48 +208,6 @@ const TravelPlannerApp = () => {
     }
   }, [finalPlan, fetchAttractionImage, attractionImages]);
 
-  // Load preferences from localStorage on initial render
-  useEffect(() => {
-    const loadedDestination = localStorage.getItem('destination') || t('defaultDestination');
-    const loadedHomeLocation = localStorage.getItem('homeLocation') || t('defaultHomeLocation');
-    const loadedTravelers = localStorage.getItem('travelers') || 'Family';
-    const loadedGroupSize = localStorage.getItem('groupSize') || '3';
-    const loadedNumDays = localStorage.getItem('numDays') || '3';
-    const loadedBudget = localStorage.getItem('budget') || 'Mid-range';
-    const loadedIsRoundTrip = localStorage.getItem('isRoundTrip');
-    const loadedTimeToVisit = localStorage.getItem('timeToVisit') || 'flexible';
-    const loadedAccommodationType = localStorage.getItem('accommodationType') || 'flexible';
-    const loadedTransportationMode = localStorage.getItem('transportationMode') || 'flexible';
-    const loadedSpecialRequirements = localStorage.getItem('specialRequirements') || '';
-
-    setDestination(loadedDestination);
-    setHomeLocation(loadedHomeLocation);
-    setTravelers(loadedTravelers);
-    setGroupSize(loadedGroupSize);
-    setNumDays(loadedNumDays);
-    setBudget(loadedBudget);
-    setIsRoundTrip(loadedIsRoundTrip === null ? true : loadedIsRoundTrip === 'true');
-    setTimeToVisit(loadedTimeToVisit);
-    setAccommodationType(loadedAccommodationType);
-    setTransportationMode(loadedTransportationMode);
-    setSpecialRequirements(loadedSpecialRequirements);
-  }, [t]); // Remove language from the dependency array
-
-  // Function to save preferences to localStorage
-  const savePreferencesToLocalStorage = () => {
-    localStorage.setItem('destination', destination);
-    localStorage.setItem('homeLocation', homeLocation);
-    localStorage.setItem('travelers', travelers);
-    localStorage.setItem('groupSize', groupSize);
-    localStorage.setItem('numDays', numDays);
-    localStorage.setItem('budget', budget);
-    localStorage.setItem('isRoundTrip', isRoundTrip.toString());
-    localStorage.setItem('timeToVisit', timeToVisit);
-    localStorage.setItem('accommodationType', accommodationType);
-    localStorage.setItem('transportationMode', transportationMode);
-    localStorage.setItem('specialRequirements', specialRequirements);
-  };
-
   // Update the ReactGA event calls
   const logEvent = (category, action, label) => {
     if (process.env.NODE_ENV === 'production') {
@@ -297,91 +217,6 @@ const TravelPlannerApp = () => {
         label
       });
     }
-  };
-
-  // Replace all ReactGA.event calls with logEvent
-  // For example:
-  const handleDestinationChange = (e) => {
-    setDestination(e.target.value);
-    localStorage.setItem('destination', e.target.value);
-    logEvent("User Input", "Changed Destination", e.target.value);
-  };
-
-  const handleHomeLocationChange = (e) => {
-    setHomeLocation(e.target.value);
-    localStorage.setItem('homeLocation', e.target.value);
-    logEvent("User Input", "Changed Home Location", e.target.value);
-  };
-
-  const handleTravelersChange = (event) => {
-    const value = event.target.value;
-    setTravelers(value);
-    localStorage.setItem('travelers', value);
-    if (value === 'Solo') {
-      setGroupSize('1');
-      localStorage.setItem('groupSize', '1');
-    } else if (value === 'Couple') {
-      setGroupSize('2');
-      localStorage.setItem('groupSize', '2');
-    } else if (value === 'Family') {
-      setGroupSize('3');
-      localStorage.setItem('groupSize', '3');
-    } else if (value === 'Group') {
-      setGroupSize('5');
-      localStorage.setItem('groupSize', '5');
-    }
-    if (isMobile) handleDrawerClose();
-    logEvent("User Input", "Changed Travelers", value);
-  };
-
-  const handleGroupSizeChange = (e) => {
-    setGroupSize(e.target.value);
-    localStorage.setItem('groupSize', e.target.value);
-    logEvent("User Input", "Changed Group Size", e.target.value);
-  };
-
-  const handleNumDaysChange = (e) => {
-    setNumDays(e.target.value);
-    localStorage.setItem('numDays', e.target.value);
-    logEvent("User Input", "Changed Number of Days", e.target.value);
-  };
-
-  const handleBudgetChange = (event) => {
-    setBudget(event.target.value);
-    localStorage.setItem('budget', event.target.value);
-    if (isMobile) handleDrawerClose();
-    logEvent("User Input", "Changed Budget", event.target.value);
-  };
-
-  const handleIsRoundTripChange = (e) => {
-    const newValue = e.target.checked;
-    setIsRoundTrip(newValue);
-    localStorage.setItem('isRoundTrip', newValue.toString());
-    logEvent("User Input", "Changed Round Trip", newValue ? "Yes" : "No");
-  };
-
-  const handleTimeToVisitChange = (e) => {
-    setTimeToVisit(e.target.value);
-    localStorage.setItem('timeToVisit', e.target.value);
-    logEvent("User Input", "Changed Time to Visit", e.target.value);
-  };
-
-  const handleAccommodationTypeChange = (e) => {
-    setAccommodationType(e.target.value);
-    localStorage.setItem('accommodationType', e.target.value);
-    logEvent("User Input", "Changed Accommodation Type", e.target.value);
-  };
-
-  const handleTransportationModeChange = (e) => {
-    setTransportationMode(e.target.value);
-    localStorage.setItem('transportationMode', e.target.value);
-    logEvent("User Input", "Changed Transportation Mode", e.target.value);
-  };
-
-  const handleSpecialRequirementsChange = (e) => {
-    setSpecialRequirements(e.target.value);
-    localStorage.setItem('specialRequirements', e.target.value);
-    logEvent("User Input", "Changed Special Requirements", e.target.value);
   };
 
   // Update this function to handle special requirements
@@ -852,28 +687,9 @@ Format the response as a JSON object with the following structure:
     setTransportationMode('flexible');
     setSpecialRequirements('');
 
-    // Clear all localStorage items
-    localStorage.removeItem('destination');
-    localStorage.removeItem('homeLocation');
-    localStorage.removeItem('travelers');
-    localStorage.removeItem('groupSize');
-    localStorage.removeItem('numDays');
-    localStorage.removeItem('budget');
-    localStorage.removeItem('timeToVisit');
-    localStorage.removeItem('accommodationType');
-    localStorage.removeItem('transportationMode');
-    localStorage.removeItem('specialRequirements');
-
-    // Update the localStorage for isRoundTrip
-    localStorage.setItem('isRoundTrip', 'true');
-
-    // Clear the final plan
-    setFinalPlan(null);
-  }, [
-    t, setDestination, setHomeLocation, setTravelers, setGroupSize, setNumDays,
-    setBudget, setIsRoundTrip, setTimeToVisit, setAccommodationType,
-    setTransportationMode, setSpecialRequirements, setFinalPlan
-  ]); // Include all setter functions in the dependency array
+    // Clear localStorage
+    localStorage.clear();
+  }, []);
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -950,21 +766,21 @@ Format the response as a JSON object with the following structure:
         
         <Grid item xs={12}>
           <TripDetailsSection 
-              destination={destination}
-              setDestination={setDestination}
-              numDays={numDays}
-              setNumDays={setNumDays}
-              timeToVisit={timeToVisit}
-              setTimeToVisit={setTimeToVisit}
-              transportationMode={transportationMode}
-              setTransportationMode={setTransportationMode}
-              accommodationType={accommodationType}
-              setAccommodationType={setAccommodationType}
-              isRoundTrip={isRoundTrip}
-              setIsRoundTrip={setIsRoundTrip}
-              isLoading={isLoading}
-            />
-
+            destination={destination}
+            setDestination={setDestination}
+            numDays={numDays}
+            setNumDays={setNumDays}
+            timeToVisit={timeToVisit}
+            setTimeToVisit={setTimeToVisit}
+            transportationMode={transportationMode}
+            setTransportationMode={setTransportationMode}
+            accommodationType={accommodationType}
+            setAccommodationType={setAccommodationType}
+            isRoundTrip={isRoundTrip}
+            setIsRoundTrip={setIsRoundTrip}
+            isLoading={isLoading}
+          />
+          
           <SpecialRequirementsSection 
             specialRequirements={specialRequirements}
             setSpecialRequirements={setSpecialRequirements}

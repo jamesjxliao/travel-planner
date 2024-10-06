@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Paper, Typography, Grid, FormControl, InputLabel, Select, MenuItem, TextField } from '@mui/material';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -13,6 +13,27 @@ const TravelerSection = ({
   setBudget 
 }) => {
   const { t } = useLanguage();
+
+  // Load data from localStorage on component mount
+  useEffect(() => {
+    const loadedTravelers = localStorage.getItem('travelers');
+    const loadedGroupSize = localStorage.getItem('groupSize');
+    const loadedHomeLocation = localStorage.getItem('homeLocation');
+    const loadedBudget = localStorage.getItem('budget');
+
+    if (loadedTravelers) setTravelers(loadedTravelers);
+    if (loadedGroupSize) setGroupSize(loadedGroupSize);
+    if (loadedHomeLocation) setHomeLocation(loadedHomeLocation);
+    if (loadedBudget) setBudget(loadedBudget);
+  }, []);
+
+  // Save data to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('travelers', travelers);
+    localStorage.setItem('groupSize', groupSize);
+    localStorage.setItem('homeLocation', homeLocation);
+    localStorage.setItem('budget', budget);
+  }, [travelers, groupSize, homeLocation, budget]);
 
   const handleTravelersChange = (event) => {
     const value = event.target.value;
