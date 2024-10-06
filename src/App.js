@@ -1,40 +1,263 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, createContext, useContext, useRef, useCallback } from 'react';
 import OpenAI from 'openai';
 import ReactGA from "react-ga4";
-import { Button, Card, CardContent, Typography, Grid, Box, useMediaQuery, Drawer, IconButton, AppBar, Toolbar, FormControl, Select, MenuItem, Tooltip, CircularProgress, Backdrop, Paper } from '@mui/material';
+import { Button, TextField, Card, CardContent, CardActions, Typography, Grid, FormControl, InputLabel, Select, MenuItem, Chip, Box, Switch, FormControlLabel, Paper, useMediaQuery, Drawer, IconButton, AppBar, Toolbar } from '@mui/material';
 import { styled, useTheme } from '@mui/material/styles';
-import PersonIcon from '@mui/icons-material/Person';
-import RefreshIcon from '@mui/icons-material/Refresh';
+import { keyframes } from '@mui/system';
+import MenuIcon from '@mui/icons-material/Menu';
+import CloseIcon from '@mui/icons-material/Close';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import ReactMarkdown from 'react-markdown';
-import CardMedia from '@mui/material/CardMedia';
-import Skeleton from '@mui/material/Skeleton';
-import Pagination from '@mui/material/Pagination';
-import { useLanguage, LanguageProvider } from './contexts/LanguageContext';
-import TravelerSection from './components/TravelerSection';
-import TripDetailsSection from './components/TripDetailsSection';
-import SpecialRequirementsSection from './components/SpecialRequirementsSection';
+import PersonIcon from '@mui/icons-material/Person'; // Add this import
+import Tooltip from '@mui/material/Tooltip'; // Add this import
+import RefreshIcon from '@mui/icons-material/Refresh'; // Replace DeleteIcon with RefreshIcon
+import CircularProgress from '@mui/material/CircularProgress';
+import Backdrop from '@mui/material/Backdrop';
+import InputAdornment from '@mui/material/InputAdornment';
+import Pagination from '@mui/material/Pagination'; // Add this import
 import GoogleAnalytics from './components/GoogleAnalytics';
-import { createLogger } from './utils/logger';
+import { createLogger } from './utils/logger'; // We'll create this utility
+import CardMedia from '@mui/material/CardMedia';
+import Skeleton from '@mui/material/Skeleton'; // Add this import
+
+// Create a language context
+const LanguageContext = createContext();
+
+// Create a custom hook to use the language context
+const useLanguage = () => useContext(LanguageContext);
+
+// Add translations
+const translations = {
+  en: {
+    title: "AI Travel Planner",
+    destination: "Destination",
+    startPlanning: "Start Planning",
+    travelersInformation: "Traveler",
+    whosTraveling: "Who's Traveling",
+    solo: "Solo",
+    couple: "Couple",
+    family: "Family",
+    group: "Group",
+    groupSize: "Group Size",
+    homeLocation: "Home Location",
+    numberOfDays: "Days",
+    aspectsToConsider: "Aspects to Consider:",
+    addCustomAspect: "Add Custom Aspect",
+    showDebugInfo: "Show Debug Info",
+    language: "Language",
+    choosingOptionsFor: "Choosing options for:",
+    generatingOptions: "Generating options...",
+    selected: "Selected",
+    select: "Select",
+    nextAspect: "Next Aspect",
+    finalizePlan: "Finalize Plan",
+    currentLLMPrompt: "Current LLM Prompt:",
+    generatingTravelPlan: "Generating your travel plan...",
+    yourTravelPlan: "Your Travel Plan",
+    enterNumberOfTravelers: "Enter number of travelers",
+    enterYourHomeCity: "Enter your home city/country",
+    enterNumberOfDays: "Enter number of days",
+    enterCustomAspect: "Enter custom aspect",
+    selectAtLeastOneAspect: "Please select at least one aspect to consider for your trip.",
+    preferencesFor: "Preferences for",
+    timetovisit: "Time to visit",
+    transportation: "Transportation",
+    accommodations: "Accommodations",
+    food: "Food",
+    attractions: "Attractions",
+    activities: "Activities",
+    budget: "Budget",
+    generateOptions: "Generate Options",
+    roundTrip: "Round Trip",
+    estimatedCostBreakdown: "Estimated Cost Breakdown",
+    totalEstimatedCost: "Total Estimated Cost",
+    accommodation: "Accommodation",
+    transportation: "Transportation",
+    food: "Food",
+    activities: "Activities",
+    other: "Other Expenses",
+    morning: "Morning",
+    afternoon: "Afternoon",
+    evening: "Evening",
+    day: "Day",
+    midRange: "Mid-range",
+    luxury: "Luxury",
+    "timetovisit.spring": "Spring",
+    "timetovisit.summer": "Summer",
+    "timetovisit.fall": "Fall",
+    "timetovisit.winter": "Winter",
+    "timetovisit.holidays": "Holidays",
+    "transportation.flight": "Flight",
+    "transportation.driving": "Driving",
+    "transportation.flexible": "Flexible",
+    "accommodations.hotel": "Hotel",
+    "accommodations.airbnb": "Airbnb",
+    "accommodations.resort": "Resort",
+    "accommodations.hostel": "Hostel",
+    "accommodations.camping": "Camping",
+    "accommodations.flexible": "Flexible",
+    "food.localcuisine": "Local cuisine",
+    "food.finedining": "Fine dining",
+    "food.streetfood": "Street food",
+    "food.vegetarian": "Vegetarian",
+    "food.familyfriendly": "Family-friendly",
+    "attractions.museums": "Museums",
+    "attractions.nature": "Nature",
+    "attractions.historicalsites": "Historical sites",
+    "attractions.themeparks": "Theme parks",
+    "attractions.shopping": "Shopping",
+    specialRequirements: "Select or type in any requirements",
+    regenerateDay: "Regenerate this day's itinerary",
+    regenerateTimeOfDay: "Regenerate this part of the day",
+    resetAllSettings: "Reset All Settings",
+    defaultHomeLocation: "San Carlos",
+    defaultDestination: "Los Angeles",
+    // selectOrTypeRequirements: "Select or type in any requirements",
+  },
+  zh: {
+    title: "AI旅行规划器",
+    destination: "目的地",
+    startPlanning: "开始规划",
+    travelersInformation: "旅行者",
+    whosTraveling: "谁在旅行",
+    solo: "单人",
+    couple: "情侣",
+    family: "家庭",
+    group: "团体",
+    groupSize: "团体人数",
+    homeLocation: "出发地",
+    numberOfDays: "旅行天数",
+    aspectsToConsider: "考虑方面：",
+    addCustomAspect: "添加自定义方面",
+    showDebugInfo: "显示调试信息",
+    language: "语言",
+    choosingOptionsFor: "正在为以下方面选择选项：",
+    generatingOptions: "正在生成选项...",
+    selected: "已选择",
+    select: "选择",
+    nextAspect: "下一个方面",
+    finalizePlan: "完成计划",
+    currentLLMPrompt: "当前LLM提示：",
+    generatingTravelPlan: "正在生成您的旅行计划...",
+    yourTravelPlan: "您的旅行计划",
+    enterNumberOfTravelers: "输入旅行者人数",
+    enterYourHomeCity: "您出发城市/国家",
+    enterNumberOfDays: "输入旅行天数",
+    enterCustomAspect: "添加自定义方面",
+    selectAtLeastOneAspect: "请至少选择一个考虑的旅行方面。",
+    preferencesFor: "对于以下方面的偏好",
+    timetovisit: "访问时间",
+    transportation: "交通",
+    accommodations: "住宿",
+    food: "美食",
+    attractions: "景点",
+    activities: "活动",
+    budget: "预算",
+    generateOptions: "生成选项",
+    roundTrip: "往返",
+    estimatedCostBreakdown: "预估费用明细",
+    totalEstimatedCost: "总预估费用",
+    accommodation: "住宿",
+    transportation: "交通",
+    food: "餐饮",
+    activities: "活动",
+    other: "其他开支",
+    morning: "上午",
+    afternoon: "下午",
+    evening: "晚上",
+    day: "第天",  // This will be used as a template
+    midRange: "中档",
+    luxury: "豪华",
+    "timetovisit.spring": "春季",
+    "timetovisit.summer": "夏季",
+    "timetovisit.fall": "秋季",
+    "timetovisit.winter": "冬季",
+    "timetovisit.holidays": "节假日",
+    "transportation.flight": "飞机",
+    "transportation.driving": "自驾",
+    "transportation.flexible": "任意",
+    "accommodations.hotel": "酒店",
+    "accommodations.airbnb": "Airbnb",
+    "accommodations.resort": "度假村",
+    "accommodations.hostel": "青年旅舍",
+    "accommodations.camping": "露营",
+    "accommodations.flexible": "任意",
+    "food.localcuisine": "当地美食",
+    "food.finedining": "高档餐厅",
+    "food.streetfood": "街头小",
+    "food.vegetarian": "素食",
+    "food.familyfriendly": "适合家庭",
+    "attractions.museums": "博物馆",
+    "attractions.nature": "自然景观",
+    "attractions.historicalsites": "历史遗迹",
+    "attractions.themeparks": "主题公园",
+    "attractions.shopping": "购物",
+    specialRequirements: "选择或输入任何要求",
+    regenerateDay: "重新生成这一天的行程",
+    regenerateTimeOfDay: "重新生成这部分的行程",
+    resetAllSettings: "重置所有设置",
+    defaultHomeLocation: "圣卡洛斯",
+    defaultDestination: "洛杉矶",
+    // selectOrTypeRequirements: "选择或输入任何要求",
+  }
+};
+
+// Add this function to determine the initial language
+const getInitialLanguage = () => {
+  const savedLanguage = localStorage.getItem('language');
+  if (savedLanguage) {
+    return savedLanguage;
+  }
+  
+  const browserLanguage = navigator.language.split('-')[0];
+  return browserLanguage === 'zh' ? 'zh' : 'en';
+};
+
+// Update the LanguageProvider component
+const LanguageProvider = ({ children }) => {
+  const [language, setLanguage] = useState(() => {
+    const initialLang = getInitialLanguage();
+    localStorage.setItem('language', initialLang);
+    return initialLang;
+  });
+
+  const value = { 
+    language, 
+    setLanguage: (lang) => {
+      setLanguage(lang);
+      localStorage.setItem('language', lang);
+    }, 
+    t: (key) => translations[language][key] 
+  };
+
+  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
+};
 
 const client = new OpenAI({
   apiKey: process.env.REACT_APP_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true
+  dangerouslyAllowBrowser: true // This is not recommended for production use
 });
 
-const commonPreferences = {
-  "Food": ["food.localcuisine", "food.finedining", "food.streetfood", "food.vegetarian", "food.familyfriendly"],
-  "Attractions": ["attractions.museums", "attractions.nature", "attractions.historicalsites", "attractions.themeparks", "attractions.shopping"]
-};
+// Define a highlight animation
+const highlightAnimation = keyframes`
+  0% { background-color: #fff9c4; }
+  100% { background-color: transparent; }
+`;
 
-if (process.env.NODE_ENV === 'production') {
-  ReactGA.initialize("G-5FTTLPJ62P");
-}
-
+// Custom styled component for the scrollable box
 const ScrollableBox = styled(Box)(({ theme }) => ({
   height: '375px',
   overflowY: 'auto',
   marginTop: '10px',
+  // ... existing scrollbar styles ...
+}));
+
+// Styled component for highlighting new options
+const HighlightCard = styled(Card)(({ theme, isNew }) => ({
+  height: '170px',
+  display: 'flex',
+  flexDirection: 'column',
+  animation: isNew ? `${highlightAnimation} 2s ease-in-out` : 'none',
 }));
 
 const createGoogleSearchLink = (text) => {
@@ -42,9 +265,34 @@ const createGoogleSearchLink = (text) => {
   return `https://www.google.com/search?q=${searchQuery}`;
 };
 
+const StyledContent = styled('div')(({ theme }) => ({
+  '& a': {
+    color: theme.palette.primary.main,
+    textDecoration: 'underline',
+    fontWeight: 'bold',
+    '&:hover': {
+      color: theme.palette.primary.dark,
+    },
+  },
+}));
+
+// Move commonPreferences here, before the TravelPlannerApp component
+const commonPreferences = {
+  // "Time to visit": ["timetovisit.spring", "timetovisit.summer", "timetovisit.fall", "timetovisit.winter", "timetovisit.holidays"],
+  // "Accommodations": ["accommodations.hotel", "accommodations.airbnb", "accommodations.resort", "accommodations.hostel", "accommodations.camping"],
+  "Food": ["food.localcuisine", "food.finedining", "food.streetfood", "food.vegetarian", "food.familyfriendly"],
+  "Attractions": ["attractions.museums", "attractions.nature", "attractions.historicalsites", "attractions.themeparks", "attractions.shopping"]
+};
+
+// Initialize Google Analytics only in production
+if (process.env.NODE_ENV === 'production') {
+  ReactGA.initialize("G-5FTTLPJ62P"); // Replace with your Google Analytics measurement ID
+}
+
 const TravelPlannerApp = () => {
-  const [destination, setDestination] = useState('');
-  const [homeLocation, setHomeLocation] = useState('');
+  const { language, setLanguage, t } = useLanguage();
+  const [destination, setDestination] = useState(t('defaultDestination'));
+  const [homeLocation, setHomeLocation] = useState(t('defaultHomeLocation'));
   const [currentAspect, setCurrentAspect] = useState('');
   const [options, setOptions] = useState({});
   const [selectedOptions, setSelectedOptions] = useState({});
@@ -61,26 +309,45 @@ const TravelPlannerApp = () => {
   const [newOptionIndices, setNewOptionIndices] = useState({});
   const scrollRefs = useRef({});
   const [isRoundTrip, setIsRoundTrip] = useState(true);
-  const [budget, setBudget] = useState('Mid-range');
+  const [budget, setBudget] = useState('Mid-range');  // New state for budget
+
+  // Add this new state variable
   const [specialRequirements, setSpecialRequirements] = useState('');
+
+  // Combine all common preferences
+  const allCommonPreferences = Object.values(commonPreferences).flat();
+
+  // Add a new state for time to visit
   const [timeToVisit, setTimeToVisit] = useState('flexible');
+
+  // Add a new state for accommodation type
   const [accommodationType, setAccommodationType] = useState('flexible');
+
+  // Add a new state for transportation mode
   const [transportationMode, setTransportationMode] = useState('flexible');
+
   const [coveredAspects, setCoveredAspects] = useState(new Set());
+
+  // Add this new state variable
   const [regeneratingAspect, setRegeneratingAspect] = useState(null);
+
+  // Add this new state variable
   const [regeneratingItinerary, setRegeneratingItinerary] = useState({ day: null, timeOfDay: null });
-  const [isFullPlanGeneration, setIsFullPlanGeneration] = useState(false);
-  const [dayVersions, setDayVersions] = useState({});
-  const [currentPages, setCurrentPages] = useState({});
-  const [attractionImages, setAttractionImages] = useState({});
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const [isFullPlanGeneration, setIsFullPlanGeneration] = useState(false);
   const finalPlanRef = useRef(null);
+
+  const [dayVersions, setDayVersions] = useState({});
+  const [currentPages, setCurrentPages] = useState({});
+
+  // Add this near the top of the component
   const isProduction = process.env.NODE_ENV === 'production';
-  const logger = createLogger(process.env.NODE_ENV);
-  const { language, setLanguage, t } = useLanguage();
+
+  const [attractionImages, setAttractionImages] = useState({});
 
   const fetchAttractionImage = useCallback(async (attraction, day, timeOfDay) => {
     console.log(`Fetching image for: ${attraction}, Day: ${day}, Time: ${timeOfDay}`);
@@ -132,15 +399,19 @@ const TravelPlannerApp = () => {
             });
           } else {
             console.log('Photo reference is missing');
+            // Handle missing photo reference (e.g., set a default image)
           }
         } else {
           console.log('No photos found for this place');
+          // Handle no photos case (e.g., set a default image)
         }
       } else {
         console.log('No place found for this attraction');
+        // Handle no place found case (e.g., set a default image)
       }
     } catch (error) {
       console.error('Error fetching image:', error);
+      // Handle error case (e.g., set a default image)
     }
   }, []);
 
@@ -155,16 +426,19 @@ const TravelPlannerApp = () => {
           const content = day[timeOfDay];
           console.log(`Full content for Day ${index + 1}, ${timeOfDay}:`, content);
           
+          // Create a temporary element to parse the HTML
           const tempDiv = document.createElement('div');
           tempDiv.innerHTML = content;
           const textContent = tempDiv.textContent || tempDiv.innerText || '';
 
+          // Extract all linked text
           const linkedAttractions = Array.from(tempDiv.querySelectorAll('a'))
             .map(a => a.textContent)
             .filter(text => text.trim() !== '');
 
           console.log(`Linked attractions:`, linkedAttractions);
 
+          // Use the first linked attraction, or the first sentence if no links
           let firstAttraction = linkedAttractions[0] || textContent.split('.')[0].trim().slice(0, 100);
           console.log(`Day ${index + 1}, ${timeOfDay}: First attraction - ${firstAttraction}`);
 
@@ -183,6 +457,7 @@ const TravelPlannerApp = () => {
     }
   }, [finalPlan, fetchAttractionImage, attractionImages]);
 
+  // Load preferences from localStorage on initial render
   useEffect(() => {
     const loadedDestination = localStorage.getItem('destination') || t('defaultDestination');
     const loadedHomeLocation = localStorage.getItem('homeLocation') || t('defaultHomeLocation');
@@ -207,8 +482,9 @@ const TravelPlannerApp = () => {
     setAccommodationType(loadedAccommodationType);
     setTransportationMode(loadedTransportationMode);
     setSpecialRequirements(loadedSpecialRequirements);
-  }, [t]);
+  }, [t]); // Remove language from the dependency array
 
+  // Function to save preferences to localStorage
   const savePreferencesToLocalStorage = () => {
     localStorage.setItem('destination', destination);
     localStorage.setItem('homeLocation', homeLocation);
@@ -223,6 +499,7 @@ const TravelPlannerApp = () => {
     localStorage.setItem('specialRequirements', specialRequirements);
   };
 
+  // Update the ReactGA event calls
   const logEvent = (category, action, label) => {
     if (process.env.NODE_ENV === 'production') {
       ReactGA.event({
@@ -233,6 +510,8 @@ const TravelPlannerApp = () => {
     }
   };
 
+  // Replace all ReactGA.event calls with logEvent
+  // For example:
   const handleDestinationChange = (e) => {
     setDestination(e.target.value);
     localStorage.setItem('destination', e.target.value);
@@ -316,6 +595,7 @@ const TravelPlannerApp = () => {
     logEvent("User Input", "Changed Special Requirements", e.target.value);
   };
 
+  // Update this function to handle special requirements
   const handleCommonPreferenceClick = (prefKey) => {
     const translatedPreference = t(prefKey);
     setSpecialRequirements(prev => {
@@ -333,6 +613,10 @@ const TravelPlannerApp = () => {
     logEvent("User Input", "Clicked Common Preference", prefKey);
   };
 
+  // Create a logger instance
+  const logger = createLogger(process.env.NODE_ENV);
+
+  // Replace console.log, console.error, etc. with logger methods
   const getLLMResponse = async (prompt) => {
     setCurrentPrompt(prompt);
     const updatedHistory = [...conversationHistory, { role: "user", content: prompt }];
@@ -340,7 +624,7 @@ const TravelPlannerApp = () => {
 
     try {
       const response = await client.chat.completions.create({
-        model: "gpt-4",
+        model: "gpt-4o-mini",
         messages: updatedHistory
       });
 
@@ -368,18 +652,21 @@ Ensure each option is unique and provides a different experience or approach.`;
 
     const optionsResponse = await getLLMResponse(prompt);
     
+    // Filter and validate the options
     const validOptions = optionsResponse.split('\n')
       .map(option => option.trim())
       .filter(option => option && option.startsWith('- ') && option.length > 5)
       .map(option => {
+        // Process each option to wrap entities with links
         return option.replace(/\[([^\]]+)\]/g, (_, entity) => {
           return `[${entity}](${createGoogleSearchLink(entity)})`;
         });
       });
 
+    // If we don't have enough valid options, regenerate
     if (validOptions.length < 3) {
       setIsGeneratingOptions(prev => ({ ...prev, [aspect]: false }));
-      generateOptions(aspect);
+      generateOptions(aspect); // Recursively call to try again
       return;
     }
 
@@ -388,6 +675,7 @@ Ensure each option is unique and provides a different experience or approach.`;
       const newOptions = [...validOptions];
       const updatedOptions = [...existingOptions, ...newOptions];
       
+      // Set the indices of new options
       setNewOptionIndices(prev => ({
         ...prev,
         [aspect]: updatedOptions.map((_, index) => index >= existingOptions.length)
@@ -402,12 +690,14 @@ Ensure each option is unique and provides a different experience or approach.`;
   };
 
   useEffect(() => {
+    // Scroll to new options when they are generated
     Object.keys(newOptionIndices).forEach(aspect => {
       if (scrollRefs.current[aspect]) {
         scrollRefs.current[aspect].scrollTop = scrollRefs.current[aspect].scrollHeight;
       }
     });
 
+    // Clear new option indices after a delay
     const timer = setTimeout(() => {
       setNewOptionIndices({});
     }, 2000);
@@ -452,6 +742,7 @@ Ensure each option is unique and provides a different experience or approach.`;
     finalPrompt += ` Accommodation: ${travelInfo.accommodation === 'flexible' ? 'flexible options' : t(`accommodations.${travelInfo.accommodation}`)}.`;
     finalPrompt += ` Time to visit: ${travelInfo.timeToVisit === 'flexible' ? 'flexible' : t(`timetovisit.${travelInfo.timeToVisit}`)}.`;
 
+    // Update this part to use only specialRequirements
     if (specialRequirements) {
       finalPrompt += ` Special Requirements: ${specialRequirements}.`;
     }
@@ -496,6 +787,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
         logger.error("Failed to parse LLM response:", parseError);
         logger.debug("Attempting to extract JSON from response...");
         
+        // Attempt to extract JSON from the response
         const jsonMatch = response.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           try {
@@ -507,6 +799,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
       }
 
       if (parsedResponse && parsedResponse.itinerary) {
+        // Process each day's activities to wrap entities with links
         for (let day of parsedResponse.itinerary) {
           ['morning', 'afternoon', 'evening'].forEach(timeOfDay => {
             day[timeOfDay] = day[timeOfDay].replace(/\[([^\]]+)\]/g, (_, entity) => {
@@ -517,13 +810,17 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
 
         logger.debug("Parsed response:", parsedResponse);
         
+        // Reset day versions and current pages when generating a new plan
         setDayVersions({});
         setCurrentPages({});
         
+        // Clear existing attraction images
         setAttractionImages({});
         
+        // Update the final plan state
         setFinalPlan(parsedResponse);
 
+        // Fetch new images for each day and time of day
         parsedResponse.itinerary.forEach((day, index) => {
           ['morning', 'afternoon', 'evening'].forEach(timeOfDay => {
             const content = day[timeOfDay];
@@ -548,7 +845,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
   useEffect(() => {
     if (!isLoading && isFullPlanGeneration && finalPlanRef.current) {
       setTimeout(() => {
-        const yOffset = -80;
+        const yOffset = -80; // Adjust this value as needed
         const element = finalPlanRef.current;
         const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
         
@@ -607,19 +904,21 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
       timeToVisit: timeToVisit
     };
 
+    // Function to remove HTML tags
     const stripHtml = (html) => {
       return html.replace(/<[^>]*>/g, '');
     };
 
+    // Create a context string from the existing itinerary
     let existingItineraryContext = '';
     finalPlan.itinerary.forEach((existingDay, index) => {
-      if (index + 1 !== day) {
+      if (index + 1 !== day) { // Other days
         existingItineraryContext += `Day ${existingDay.day}:\n`;
         ['morning', 'afternoon', 'evening'].forEach(tod => {
           existingItineraryContext += `${tod.charAt(0).toUpperCase() + tod.slice(1)}: ${stripHtml(existingDay[tod])}\n`;
         });
         existingItineraryContext += '\n';
-      } else if (timeOfDay) {
+      } else if (timeOfDay) { // The day being partially regenerated
         existingItineraryContext += `Current Day ${existingDay.day}:\n`;
         ['morning', 'afternoon', 'evening'].forEach(tod => {
           if (tod !== timeOfDay) {
@@ -638,6 +937,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     regeneratePrompt += ` Accommodation: ${travelInfo.accommodation === 'flexible' ? 'flexible options' : t(`accommodations.${travelInfo.accommodation}`)}.`;
     regeneratePrompt += ` Time to visit: ${travelInfo.timeToVisit === 'flexible' ? 'flexible' : t(`timetovisit.${travelInfo.timeToVisit}`)}.`;
 
+    // Update this part to use only specialRequirements
     if (specialRequirements) {
       regeneratePrompt += ` Special Requirements: ${specialRequirements}.`;
     }
@@ -654,94 +954,76 @@ Format the response as a JSON object with the following structure:
 {
   ${timeOfDay ? `
   "${timeOfDay}": "Description of ${timeOfDay} activities for Day ${day} with [specific attractions] marked"
-    ` : `
-  "morning": "Description of morning activities with [specific attractions] marked",
-  "afternoon": "Description of afternoon activities with [specific landmarks] marked",
-  "evening": "Description of evening activities with [unique experiences] marked"
+  ` : `
+  "morning": "Description of morning activities for Day ${day} with [specific attractions] marked",
+  "afternoon": "Description of afternoon activities for Day ${day} with [specific landmarks] marked",
+  "evening": "Description of evening activities for Day ${day} with [unique experiences] marked"
   `}
-}
-
-Do not include any text outside of this JSON structure. Ensure all JSON keys are enclosed in double quotes and that the JSON is valid.`;
+}`;
 
     try {
       const response = await getLLMResponse(regeneratePrompt);
-      logger.debug("Raw LLM response for regeneration:", response);
+      logger.debug("Raw LLM response:", response);
 
       let parsedResponse;
       try {
         parsedResponse = JSON.parse(response);
       } catch (parseError) {
-        logger.error("Failed to parse LLM response for regeneration:", parseError);
+        logger.error("Failed to parse LLM response:", parseError);
+        logger.debug("Attempting to extract JSON from response...");
+        
+        // Attempt to extract JSON from the response
         const jsonMatch = response.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           try {
             parsedResponse = JSON.parse(jsonMatch[0]);
           } catch (extractError) {
-            logger.error("Failed to extract and parse JSON for regeneration:", extractError);
+            logger.error("Failed to extract and parse JSON:", extractError);
           }
         }
       }
 
+      logger.debug("Parsed response:", parsedResponse);
+
       if (parsedResponse) {
-        const updatedItinerary = [...finalPlan.itinerary];
-        const dayIndex = day - 1;
+        setDayVersions(prev => {
+          const currentVersions = prev[day] || [finalPlan.itinerary[day - 1]];
+          const lastVersion = { ...currentVersions[currentVersions.length - 1] };
+          let newVersion = { ...lastVersion };
 
-        if (timeOfDay) {
-          updatedItinerary[dayIndex] = {
-            ...updatedItinerary[dayIndex],
-            [timeOfDay]: parsedResponse[timeOfDay].replace(/\[([^\]]+)\]/g, (_, entity) => {
+          if (timeOfDay) {
+            newVersion[timeOfDay] = parsedResponse[timeOfDay].replace(/\[([^\]]+)\]/g, (_, entity) => {
               return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer">${entity}</a>`;
-            })
-          };
-        } else {
-          updatedItinerary[dayIndex] = {
-            day,
-            morning: parsedResponse.morning.replace(/\[([^\]]+)\]/g, (_, entity) => {
-              return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer">${entity}</a>`;
-            }),
-            afternoon: parsedResponse.afternoon.replace(/\[([^\]]+)\]/g, (_, entity) => {
-              return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer">${entity}</a>`;
-            }),
-            evening: parsedResponse.evening.replace(/\[([^\]]+)\]/g, (_, entity) => {
-              return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer">${entity}</a>`;
-            })
-          };
-        }
+            });
+            // Fetch new image for the regenerated time of day
+            fetchAttractionImage(parsedResponse[timeOfDay].match(/\[([^\]]+)\]/)?.[1] || '', day, timeOfDay);
+          } else {
+            ['morning', 'afternoon', 'evening'].forEach(tod => {
+              if (parsedResponse[tod]) {
+                newVersion[tod] = parsedResponse[tod].replace(/\[([^\]]+)\]/g, (_, entity) => {
+                  return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer">${entity}</a>`;
+                });
+                // Fetch new image for each time of day
+                fetchAttractionImage(parsedResponse[tod].match(/\[([^\]]+)\]/)?.[1] || '', day, tod);
+              }
+            });
+          }
 
-        setFinalPlan(prevPlan => ({
-          ...prevPlan,
-          itinerary: updatedItinerary
-        }));
-
-        setDayVersions(prevVersions => {
-          const dayVersions = prevVersions[day] || [];
-          const newVersions = {
-            ...prevVersions,
-            [day]: [...dayVersions, updatedItinerary[dayIndex]]
-          };
+          const updatedVersions = [...currentVersions, newVersion];
           
-          // Update current page
+          // Set the current page to the newly generated version
           setCurrentPages(prevPages => ({
             ...prevPages,
-            [day]: newVersions[day].length
+            [day]: updatedVersions.length
           }));
 
-          return newVersions;
+          return {
+            ...prev,
+            [day]: updatedVersions
+          };
         });
-
-        // Fetch new images for the regenerated content
-        ['morning', 'afternoon', 'evening'].forEach(tod => {
-          if (!timeOfDay || timeOfDay === tod) {
-            const content = parsedResponse[tod];
-            const firstAttraction = content.match(/\[([^\]]+)\]/)?.[1] || '';
-            if (firstAttraction) {
-              fetchAttractionImage(firstAttraction, day, tod);
-            }
-          }
-        });
-
       } else {
-        logger.error("Invalid response structure for regeneration:", parsedResponse);
+        logger.error("Invalid response structure:", parsedResponse);
       }
     } catch (error) {
       logger.error("Error in regenerateItinerary:", error);
@@ -751,7 +1033,187 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     }
   };
 
-  const resetAllSettings = () => {
+  const renderItinerary = () => {
+    console.log('Rendering itinerary. attractionImages:', attractionImages);
+    if (!finalPlan || !finalPlan.itinerary) return null;
+
+    return (
+      <Box sx={{ mt: 2 }} key={JSON.stringify(finalPlan)}>
+        {finalPlan.itinerary.map((originalDay, index) => {
+          const day = originalDay.day;
+          const versions = dayVersions[day] || [originalDay];
+          const currentPage = currentPages[day] || 1;
+          const currentVersion = versions[currentPage - 1] || originalDay;
+
+          return (
+            <Card key={index} elevation={3} sx={{ mb: 2, overflow: 'hidden' }}>
+              <Box sx={{ 
+                bgcolor: 'primary.main', 
+                color: 'primary.contrastText', 
+                py: 1,
+                px: 2,
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center' 
+              }}>
+                <Typography variant="subtitle1" fontWeight="bold">
+                  {language === 'zh' 
+                    ? t('day').replace('天', `${day}天`) 
+                    : `${t('day')} ${day}`}
+                </Typography>
+                <Tooltip title={t('regenerateDay')}>
+                  <IconButton 
+                    size="small"
+                    onClick={() => regenerateItinerary(day)}
+                    disabled={isLoading || (regeneratingItinerary.day === day && !regeneratingItinerary.timeOfDay)}
+                    sx={{ color: 'primary.contrastText' }}
+                  >
+                    <RefreshIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+              <CardContent sx={{ pt: 1 }}>
+                <Grid container spacing={2}>
+                  {['morning', 'afternoon', 'evening'].map((timeOfDay) => {
+                    const content = currentVersion[timeOfDay];
+                    const firstAttraction = content.match(/\[([^\]]+)\]/)?.[1];
+                    const imageUrl = attractionImages[day]?.[timeOfDay];
+                    console.log(`Day ${day}, ${timeOfDay}: Image URL - ${imageUrl || 'Not found, loading'}`);
+
+                    return (
+                      <Grid item xs={12} sm={4} key={timeOfDay}>
+                        <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                          <Box sx={{ position: 'relative', paddingTop: '56.25%' }}>
+                            {imageUrl ? (
+                              <CardMedia
+                                component="img"
+                                image={imageUrl}
+                                alt={firstAttraction || "Attraction"}
+                                sx={{
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover',
+                                  objectPosition: 'center',
+                                }}
+                              />
+                            ) : (
+                              <Skeleton 
+                                variant="rectangular" 
+                                sx={{
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
+                                  width: '100%',
+                                  height: '100%',
+                                }}
+                              />
+                            )}
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                bottom: 8,
+                                left: 8,
+                                bgcolor: 'rgba(0, 0, 0, 0.6)',
+                                borderRadius: '16px',
+                                padding: '4px 8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                              }}
+                            >
+                              <Typography variant="body2" color="white" fontWeight="medium">
+                                {t(timeOfDay)}
+                              </Typography>
+                              <Tooltip title={t('regenerateTimeOfDay')}>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => regenerateItinerary(day, timeOfDay)}
+                                  disabled={isLoading || (regeneratingItinerary.day === day && regeneratingItinerary.timeOfDay === timeOfDay)}
+                                  sx={{ ml: 0.5, p: 0.5, color: 'white' }}
+                                >
+                                  <RefreshIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
+                          </Box>
+                          <CardContent sx={{ flexGrow: 1, p: 1 }}>
+                            <Typography 
+                              variant="body2" 
+                              component="div"
+                              dangerouslySetInnerHTML={{ __html: content }}
+                              sx={{
+                                '& a': {
+                                  color: 'primary.main',
+                                  textDecoration: 'underline',
+                                  fontWeight: 'bold',
+                                  '&:hover': {
+                                    color: 'primary.dark',
+                                  },
+                                },
+                              }}
+                            />
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+                {versions.length > 1 && (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                    <Pagination 
+                      count={versions.length} 
+                      page={currentPage} 
+                      onChange={(event, page) => handlePageChange(day, page)}
+                      color="primary"
+                    />
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+        <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>{t('estimatedCostBreakdown')}</Typography>
+        <Grid container spacing={2}>
+          {Object.entries(finalPlan.estimatedCost.breakdown).map(([category, cost]) => (
+            <Grid item xs={12} sm={6} md={4} key={category}>
+              <Paper elevation={2} sx={{ p: 2, height: '100%', bgcolor: 'background.default' }}>
+                <Typography variant="subtitle1" color="primary" gutterBottom>
+                  {t(category)}
+                </Typography>
+                <Typography variant="h6">{cost}</Typography>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
+        <Paper elevation={3} sx={{ mt: 3, p: 2, bgcolor: 'secondary.light' }}>
+          <Typography variant="h6" color="secondary.contrastText">
+            {t('totalEstimatedCost')}: <strong>{finalPlan.estimatedCost.total}</strong>
+          </Typography>
+        </Paper>
+      </Box>
+    );
+  };
+
+  const renderMarkdownWithLinks = (content) => {
+    return (
+      <ReactMarkdown
+        components={{
+          a: ({ node, ...props }) => (
+            <a target="_blank" rel="noopener noreferrer" {...props} />
+          ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    );
+  };
+
+  // Define resetAllSettings using useCallback
+  const resetAllSettings = useCallback(() => {
+    logEvent("User Action", "Reset All Settings");
+    // Reset all state variables to their default values
     setDestination(t('defaultDestination'));
     setHomeLocation(t('defaultHomeLocation'));
     setTravelers('Family');
@@ -763,138 +1225,94 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     setAccommodationType('flexible');
     setTransportationMode('flexible');
     setSpecialRequirements('');
-    setFinalPlan(null);
-    setOptions({});
-    setSelectedOptions({});
-    setConversationHistory([]);
-    setAspectPreferences({});
-    setCoveredAspects(new Set());
-    setDayVersions({});
-    setCurrentPages({});
-    setAttractionImages({});
 
+    // Clear all localStorage items
     localStorage.removeItem('destination');
     localStorage.removeItem('homeLocation');
     localStorage.removeItem('travelers');
     localStorage.removeItem('groupSize');
     localStorage.removeItem('numDays');
     localStorage.removeItem('budget');
-    localStorage.removeItem('isRoundTrip');
     localStorage.removeItem('timeToVisit');
     localStorage.removeItem('accommodationType');
     localStorage.removeItem('transportationMode');
     localStorage.removeItem('specialRequirements');
 
-    logEvent("User Action", "Reset All Settings", "");
-  };
+    // Update the localStorage for isRoundTrip
+    localStorage.setItem('isRoundTrip', 'true');
 
-  const renderItinerary = () => {
-    if (!finalPlan || !finalPlan.itinerary) return null;
+    // Clear the final plan
+    setFinalPlan(null);
+  }, [
+    t, setDestination, setHomeLocation, setTravelers, setGroupSize, setNumDays,
+    setBudget, setIsRoundTrip, setTimeToVisit, setAccommodationType,
+    setTransportationMode, setSpecialRequirements, setFinalPlan
+  ]); // Include all setter functions in the dependency array
 
-    return (
-      <Box>
-        {finalPlan.itinerary.map((day, index) => (
-          <Card key={index} sx={{ mb: 2, position: 'relative' }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                {t('day')} {day.day}
-              </Typography>
-              {['morning', 'afternoon', 'evening'].map((timeOfDay) => (
-                <Box key={timeOfDay} sx={{ mb: 2, position: 'relative' }}>
-                  <Typography variant="subtitle1" sx={{ textTransform: 'capitalize', fontWeight: 'bold' }}>
-                    {t(timeOfDay)}:
-                  </Typography>
-                  <ReactMarkdown components={{
-                    p: ({ children }) => <Typography variant="body1">{children}</Typography>,
-                    a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
-                  }}>
-                    {day[timeOfDay]}
-                  </ReactMarkdown>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => regenerateItinerary(day.day, timeOfDay)}
-                    sx={{ mt: 1, position: 'absolute', right: 0, bottom: 0 }}
-                    disabled={isLoading || (regeneratingItinerary.day === day.day && regeneratingItinerary.timeOfDay === timeOfDay)}
-                  >
-                    {isLoading && regeneratingItinerary.day === day.day && regeneratingItinerary.timeOfDay === timeOfDay ? (
-                      <CircularProgress size={24} />
-                    ) : (
-                      t('regenerate')
-                    )}
-                  </Button>
-                </Box>
-              ))}
-              {attractionImages[day.day] && (
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-                  {['morning', 'afternoon', 'evening'].map((timeOfDay) => (
-                    <Box key={timeOfDay} sx={{ width: '32%', position: 'relative' }}>
-                      {attractionImages[day.day][timeOfDay] ? (
-                        <CardMedia
-                          component="img"
-                          height="140"
-                          image={attractionImages[day.day][timeOfDay]}
-                          alt={`${t(timeOfDay)} attraction`}
-                          sx={{ borderRadius: 1 }}
-                        />
-                      ) : (
-                        <Skeleton variant="rectangular" height={140} sx={{ borderRadius: 1 }} />
-                      )}
-                      <Typography variant="caption" sx={{ position: 'absolute', bottom: 5, left: 5, color: 'white', backgroundColor: 'rgba(0,0,0,0.5)', padding: '2px 5px', borderRadius: 1 }}>
-                        {t(timeOfDay)}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Box>
-              )}
-            </CardContent>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, pb: 2 }}>
-              <Button
-                variant="contained"
-                onClick={() => regenerateItinerary(day.day)}
-                disabled={isLoading || (regeneratingItinerary.day === day.day && !regeneratingItinerary.timeOfDay)}
-              >
-                {isLoading && regeneratingItinerary.day === day.day && !regeneratingItinerary.timeOfDay ? (
-                  <CircularProgress size={24} />
-                ) : (
-                  t('regenerateFullDay')
-                )}
-              </Button>
-              {dayVersions[day.day] && dayVersions[day.day].length > 1 && (
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Typography variant="body2" sx={{ mr: 1 }}>
-                    {t('version')} {currentPages[day.day] || dayVersions[day.day].length} / {dayVersions[day.day].length}
-                  </Typography>
-                  <Pagination
-                    count={dayVersions[day.day].length}
-                    page={currentPages[day.day] || dayVersions[day.day].length}
-                    onChange={(event, page) => handlePageChange(day.day, page)}
-                    size="small"
-                  />
-                </Box>
-              )}
-            </Box>
-          </Card>
-        ))}
-        {finalPlan.estimatedCost && (
-          <Card sx={{ mt: 2 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>{t('estimatedCost')}</Typography>
-              <Typography variant="body1">{t('total')}: {finalPlan.estimatedCost.total}</Typography>
-              <Typography variant="subtitle1" sx={{ mt: 1 }}>{t('breakdown')}:</Typography>
-              <ul>
-                {Object.entries(finalPlan.estimatedCost.breakdown).map(([category, cost]) => (
-                  <li key={category}>
-                    <Typography variant="body2">{t(category)}: {cost}</Typography>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
+  const TravelerSection = () => (
+    <Paper elevation={3} sx={{ p: 2, mb: 3, backgroundColor: '#f0f8ff' }}>
+      <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
+        {t('travelersInformation')}
+      </Typography>
+      <Grid container spacing={2} alignItems="center">
+        <Grid item xs={12} sm={3}>
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="travelers-label">{t('whosTraveling')}</InputLabel>
+            <Select
+              labelId="travelers-label"
+              value={travelers}
+              label={t('whosTraveling')}
+              onChange={handleTravelersChange}
+            >
+              <MenuItem value="Solo">{t('solo')}</MenuItem>
+              <MenuItem value="Couple">{t('couple')}</MenuItem>
+              <MenuItem value="Family">{t('family')}</MenuItem>
+              <MenuItem value="Group">{t('group')}</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        {(travelers === 'Family' || travelers === 'Group') && (
+          <Grid item xs={12} sm={3}>
+            <TextField
+              fullWidth
+              margin="normal"
+              label={t('groupSize')}
+              value={groupSize}
+              onChange={handleGroupSizeChange}
+              placeholder={t('enterNumberOfTravelers')}
+              type="number"
+              InputProps={{ inputProps: { min: travelers === 'Family' ? 3 : 5 } }}
+            />
+          </Grid>
         )}
-      </Box>
-    );
-  };
+        <Grid item xs={12} sm={3}>
+          <TextField
+            fullWidth
+            margin="normal"
+            label={t('homeLocation')}
+            value={homeLocation}
+            onChange={handleHomeLocationChange}
+            placeholder={t('enterYourHomeCity')}
+          />
+        </Grid>
+        <Grid item xs={12} sm={3}>
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="budget-label">{t('budget')}</InputLabel>
+            <Select
+              labelId="budget-label"
+              value={budget}
+              label={t('budget')}
+              onChange={handleBudgetChange}
+            >
+              <MenuItem value="Budget">{t('budget')}</MenuItem>
+              <MenuItem value="Mid-range">{t('midRange')}</MenuItem>
+              <MenuItem value="Luxury">{t('luxury')}</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+      </Grid>
+    </Paper>
+  );
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -915,6 +1333,19 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             {t('title')}
           </Typography>
+          {!isMobile && !isProduction && (
+            <FormControlLabel
+              control={
+                <Switch 
+                  checked={showDebug} 
+                  onChange={(e) => setShowDebug(e.target.checked)}
+                  color="default"
+                />
+              }
+              label={<BugReportIcon />}
+              sx={{ mr: 2, color: 'white' }}
+            />
+          )}
           <FormControl sx={{ minWidth: 80 }} size="small">
             <Select
               value={language}
@@ -934,64 +1365,149 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
               sx={{ ml: 2 }}
               aria-label={t('resetAllSettings')}
             >
-              <RefreshIcon />
+              <RefreshIcon /> {/* Changed from DeleteIcon to RefreshIcon */}
             </IconButton>
           </Tooltip>
-          {!isProduction && (
-            <Tooltip title={t('toggleDebug')}>
-              <IconButton
-                color="inherit"
-                onClick={() => setShowDebug(!showDebug)}
-                sx={{ ml: 2 }}
-                aria-label={t('toggleDebug')}
-              >
-                <BugReportIcon />
-              </IconButton>
-            </Tooltip>
-          )}
         </Toolbar>
       </AppBar>
-      <Toolbar />
+      <Toolbar /> {/* This empty Toolbar acts as a spacer */}
       <Grid container spacing={2} sx={{ p: 2, mt: 2 }}>
         {!isMobile && (
           <Grid item xs={12}>
-            <TravelerSection
-              travelers={travelers}
-              groupSize={groupSize}
-              homeLocation={homeLocation}
-              budget={budget}
-              handleTravelersChange={handleTravelersChange}
-              handleGroupSizeChange={handleGroupSizeChange}
-              handleHomeLocationChange={handleHomeLocationChange}
-              handleBudgetChange={handleBudgetChange}
-            />
+            <TravelerSection />
           </Grid>
         )}
         
         <Grid item xs={12}>
-          <TripDetailsSection
-            destination={destination}
-            numDays={numDays}
-            timeToVisit={timeToVisit}
-            transportationMode={transportationMode}
-            accommodationType={accommodationType}
-            isRoundTrip={isRoundTrip}
-            isLoading={isLoading}
-            handleDestinationChange={handleDestinationChange}
-            handleNumDaysChange={handleNumDaysChange}
-            handleTimeToVisitChange={handleTimeToVisitChange}
-            handleTransportationModeChange={handleTransportationModeChange}
-            handleAccommodationTypeChange={handleAccommodationTypeChange}
-            handleIsRoundTripChange={handleIsRoundTripChange}
-          />
+          <Paper elevation={3} sx={{ p: 2, mb: 3 }}>
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} sm={6} md={3}>
+                <TextField
+                  label={t('destination')}
+                  value={destination}
+                  onChange={handleDestinationChange}
+                  fullWidth
+                  margin="normal"
+                  disabled={isLoading}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={6} sm={3} md={1}>
+                <TextField
+                  label={t('numberOfDays')}
+                  value={numDays}
+                  onChange={handleNumDaysChange}
+                  fullWidth
+                  margin="normal"
+                  type="number"
+                  InputProps={{ inputProps: { min: 1 } }}
+                  disabled={isLoading}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={2}>
+                <FormControl fullWidth margin="normal">
+                  <InputLabel id="time-to-visit-label">{t('timetovisit')}</InputLabel>
+                  <Select
+                    labelId="time-to-visit-label"
+                    value={timeToVisit}
+                    label={t('timetovisit')}
+                    onChange={handleTimeToVisitChange}
+                    disabled={isLoading}
+                  >
+                    <MenuItem value="flexible">{t('accommodations.flexible')}</MenuItem>
+                    <MenuItem value="spring">{t('timetovisit.spring')}</MenuItem>
+                    <MenuItem value="summer">{t('timetovisit.summer')}</MenuItem>
+                    <MenuItem value="fall">{t('timetovisit.fall')}</MenuItem>
+                    <MenuItem value="winter">{t('timetovisit.winter')}</MenuItem>
+                    <MenuItem value="holidays">{t('timetovisit.holidays')}</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6} md={2}>
+                <FormControl fullWidth margin="normal">
+                  <InputLabel id="transportation-label">{t('transportation')}</InputLabel>
+                  <Select
+                    labelId="transportation-label"
+                    value={transportationMode}
+                    label={t('transportation')}
+                    onChange={handleTransportationModeChange}
+                    disabled={isLoading}
+                  >
+                    <MenuItem value="flexible">{t('transportation.flexible')}</MenuItem>
+                    <MenuItem value="flight">{t('transportation.flight')}</MenuItem>
+                    <MenuItem value="driving">{t('transportation.driving')}</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6} md={2}>
+                <FormControl fullWidth margin="normal">
+                  <InputLabel id="accommodation-label">{t('accommodations')}</InputLabel>
+                  <Select
+                    labelId="accommodation-label"
+                    value={accommodationType}
+                    label={t('accommodations')}
+                    onChange={handleAccommodationTypeChange}
+                    disabled={isLoading}
+                  >
+                    <MenuItem value="flexible">{t('accommodations.flexible')}</MenuItem>
+                    <MenuItem value="hotel">{t('accommodations.hotel')}</MenuItem>
+                    <MenuItem value="airbnb">{t('accommodations.airbnb')}</MenuItem>
+                    <MenuItem value="resort">{t('accommodations.resort')}</MenuItem>
+                    <MenuItem value="hostel">{t('accommodations.hostel')}</MenuItem>
+                    <MenuItem value="camping">{t('accommodations.camping')}</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={6} sm={3} md={2}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={isRoundTrip}
+                      onChange={handleIsRoundTripChange}
+                      disabled={isLoading}
+                    />
+                  }
+                  label={
+                    <Typography noWrap>
+                      {t('roundTrip')}
+                    </Typography>
+                  }
+                  sx={{ mt: 2 }}
+                />
+              </Grid>
+            </Grid>
+          </Paper>
 
-          <SpecialRequirementsSection
-            specialRequirements={specialRequirements}
-            handleSpecialRequirementsChange={handleSpecialRequirementsChange}
-            handleCommonPreferenceClick={handleCommonPreferenceClick}
-            allCommonPreferences={Object.values(commonPreferences).flat()}
-            isLoading={isLoading}
-          />
+          {/* Add the Special Requirements section */}
+          <Card sx={{ mt: 2 }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {allCommonPreferences.map((prefKey, index) => (
+                    <Chip
+                      key={index}
+                      label={t(prefKey)}
+                      size="small"
+                      onClick={() => handleCommonPreferenceClick(prefKey)}
+                      color={specialRequirements.includes(t(prefKey)) ? "primary" : "default"}
+                      sx={{ '&:hover': { backgroundColor: 'primary.light', cursor: 'pointer' } }}
+                    />
+                  ))}
+                </Box>
+                <TextField
+                  label={t('specialRequirements')}
+                  value={specialRequirements}
+                  onChange={handleSpecialRequirementsChange}
+                  fullWidth
+                  margin="normal"
+                  disabled={isLoading}
+                  variant="outlined"
+                  rows={1}
+                />
+              </Box>
+            </CardContent>
+          </Card>
 
           <Button 
             variant="contained" 
@@ -1027,7 +1543,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
           open={drawerOpen}
           onClose={handleDrawerClose}
           ModalProps={{
-            keepMounted: true,
+            keepMounted: true, // Better open performance on mobile
           }}
         >
           <Box
@@ -1040,30 +1556,16 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
             }}
             role="presentation"
           >
-            <TravelerSection
-              travelers={travelers}
-              groupSize={groupSize}
-              homeLocation={homeLocation}
-              budget={budget}
-              handleTravelersChange={handleTravelersChange}
-              handleGroupSizeChange={handleGroupSizeChange}
-              handleHomeLocationChange={handleHomeLocationChange}
-              handleBudgetChange={handleBudgetChange}
-            />
+            <TravelerSection />
           </Box>
         </Drawer>
       )}
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={isLoading}
-      >
-        <CircularProgress color="inherit" />
-      </Backdrop>
       {process.env.NODE_ENV === 'production' && <GoogleAnalytics />}
     </Box>
   );
 };
 
+// Wrap the exported component with the LanguageProvider
 export default () => (
   <LanguageProvider>
     <TravelPlannerApp />
