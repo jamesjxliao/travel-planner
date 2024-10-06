@@ -681,7 +681,16 @@ Format the response as a JSON object with the following structure:
             }}
             role="presentation"
           >
-            <TravelerSection />
+            <TravelerSection 
+              travelers={travelers}
+              setTravelers={setTravelers}
+              groupSize={groupSize}
+              setGroupSize={setGroupSize}
+              homeLocation={homeLocation}
+              setHomeLocation={setHomeLocation}
+              budget={budget}
+              setBudget={setBudget}
+            />
           </Box>
         </Drawer>
       )}
