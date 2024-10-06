@@ -1,237 +1,21 @@
-import React, { useState, useEffect, createContext, useContext, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import OpenAI from 'openai';
 import ReactGA from "react-ga4";
-import { Button, TextField, Card, CardContent, CardActions, Typography, Grid, FormControl, InputLabel, Select, MenuItem, Chip, Box, Switch, FormControlLabel, Paper, useMediaQuery, Drawer, IconButton, AppBar, Toolbar } from '@mui/material';
+import { Button, TextField, Card, CardContent, Typography, Grid, FormControl, InputLabel, Select, MenuItem, Chip, Box, Switch, FormControlLabel, Paper, useMediaQuery, Drawer, IconButton, AppBar, Toolbar } from '@mui/material';
 import { styled, useTheme } from '@mui/material/styles';
 import { keyframes } from '@mui/system';
-import MenuIcon from '@mui/icons-material/Menu';
-import CloseIcon from '@mui/icons-material/Close';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import ReactMarkdown from 'react-markdown';
 import PersonIcon from '@mui/icons-material/Person'; // Add this import
 import Tooltip from '@mui/material/Tooltip'; // Add this import
 import RefreshIcon from '@mui/icons-material/Refresh'; // Replace DeleteIcon with RefreshIcon
-import CircularProgress from '@mui/material/CircularProgress';
-import Backdrop from '@mui/material/Backdrop';
-import InputAdornment from '@mui/material/InputAdornment';
 import Pagination from '@mui/material/Pagination'; // Add this import
 import GoogleAnalytics from './components/GoogleAnalytics';
 import { createLogger } from './utils/logger'; // We'll create this utility
 import CardMedia from '@mui/material/CardMedia';
 import Skeleton from '@mui/material/Skeleton'; // Add this import
-
-// Create a language context
-const LanguageContext = createContext();
-
-// Create a custom hook to use the language context
-const useLanguage = () => useContext(LanguageContext);
-
-// Add translations
-const translations = {
-  en: {
-    title: "AI Travel Planner",
-    destination: "Destination",
-    startPlanning: "Start Planning",
-    travelersInformation: "Traveler",
-    whosTraveling: "Who's Traveling",
-    solo: "Solo",
-    couple: "Couple",
-    family: "Family",
-    group: "Group",
-    groupSize: "Group Size",
-    homeLocation: "Home Location",
-    numberOfDays: "Days",
-    aspectsToConsider: "Aspects to Consider:",
-    addCustomAspect: "Add Custom Aspect",
-    showDebugInfo: "Show Debug Info",
-    language: "Language",
-    choosingOptionsFor: "Choosing options for:",
-    generatingOptions: "Generating options...",
-    selected: "Selected",
-    select: "Select",
-    nextAspect: "Next Aspect",
-    finalizePlan: "Finalize Plan",
-    currentLLMPrompt: "Current LLM Prompt:",
-    generatingTravelPlan: "Generating your travel plan...",
-    yourTravelPlan: "Your Travel Plan",
-    enterNumberOfTravelers: "Enter number of travelers",
-    enterYourHomeCity: "Enter your home city/country",
-    enterNumberOfDays: "Enter number of days",
-    enterCustomAspect: "Enter custom aspect",
-    selectAtLeastOneAspect: "Please select at least one aspect to consider for your trip.",
-    preferencesFor: "Preferences for",
-    timetovisit: "Time to visit",
-    transportation: "Transportation",
-    accommodations: "Accommodations",
-    food: "Food",
-    attractions: "Attractions",
-    activities: "Activities",
-    budget: "Budget",
-    generateOptions: "Generate Options",
-    roundTrip: "Round Trip",
-    estimatedCostBreakdown: "Estimated Cost Breakdown",
-    totalEstimatedCost: "Total Estimated Cost",
-    accommodation: "Accommodation",
-    transportation: "Transportation",
-    food: "Food",
-    activities: "Activities",
-    other: "Other Expenses",
-    morning: "Morning",
-    afternoon: "Afternoon",
-    evening: "Evening",
-    day: "Day",
-    midRange: "Mid-range",
-    luxury: "Luxury",
-    "timetovisit.spring": "Spring",
-    "timetovisit.summer": "Summer",
-    "timetovisit.fall": "Fall",
-    "timetovisit.winter": "Winter",
-    "timetovisit.holidays": "Holidays",
-    "transportation.flight": "Flight",
-    "transportation.driving": "Driving",
-    "transportation.flexible": "Flexible",
-    "accommodations.hotel": "Hotel",
-    "accommodations.airbnb": "Airbnb",
-    "accommodations.resort": "Resort",
-    "accommodations.hostel": "Hostel",
-    "accommodations.camping": "Camping",
-    "accommodations.flexible": "Flexible",
-    "food.localcuisine": "Local cuisine",
-    "food.finedining": "Fine dining",
-    "food.streetfood": "Street food",
-    "food.vegetarian": "Vegetarian",
-    "food.familyfriendly": "Family-friendly",
-    "attractions.museums": "Museums",
-    "attractions.nature": "Nature",
-    "attractions.historicalsites": "Historical sites",
-    "attractions.themeparks": "Theme parks",
-    "attractions.shopping": "Shopping",
-    specialRequirements: "Select or type in any requirements",
-    regenerateDay: "Regenerate this day's itinerary",
-    regenerateTimeOfDay: "Regenerate this part of the day",
-    resetAllSettings: "Reset All Settings",
-    defaultHomeLocation: "San Carlos",
-    defaultDestination: "Los Angeles",
-    // selectOrTypeRequirements: "Select or type in any requirements",
-  },
-  zh: {
-    title: "AI旅行规划器",
-    destination: "目的地",
-    startPlanning: "开始规划",
-    travelersInformation: "旅行者",
-    whosTraveling: "谁在旅行",
-    solo: "单人",
-    couple: "情侣",
-    family: "家庭",
-    group: "团体",
-    groupSize: "团体人数",
-    homeLocation: "出发地",
-    numberOfDays: "旅行天数",
-    aspectsToConsider: "考虑方面：",
-    addCustomAspect: "添加自定义方面",
-    showDebugInfo: "显示调试信息",
-    language: "语言",
-    choosingOptionsFor: "正在为以下方面选择选项：",
-    generatingOptions: "正在生成选项...",
-    selected: "已选择",
-    select: "选择",
-    nextAspect: "下一个方面",
-    finalizePlan: "完成计划",
-    currentLLMPrompt: "当前LLM提示：",
-    generatingTravelPlan: "正在生成您的旅行计划...",
-    yourTravelPlan: "您的旅行计划",
-    enterNumberOfTravelers: "输入旅行者人数",
-    enterYourHomeCity: "您出发城市/国家",
-    enterNumberOfDays: "输入旅行天数",
-    enterCustomAspect: "添加自定义方面",
-    selectAtLeastOneAspect: "请至少选择一个考虑的旅行方面。",
-    preferencesFor: "对于以下方面的偏好",
-    timetovisit: "访问时间",
-    transportation: "交通",
-    accommodations: "住宿",
-    food: "美食",
-    attractions: "景点",
-    activities: "活动",
-    budget: "预算",
-    generateOptions: "生成选项",
-    roundTrip: "往返",
-    estimatedCostBreakdown: "预估费用明细",
-    totalEstimatedCost: "总预估费用",
-    accommodation: "住宿",
-    transportation: "交通",
-    food: "餐饮",
-    activities: "活动",
-    other: "其他开支",
-    morning: "上午",
-    afternoon: "下午",
-    evening: "晚上",
-    day: "第天",  // This will be used as a template
-    midRange: "中档",
-    luxury: "豪华",
-    "timetovisit.spring": "春季",
-    "timetovisit.summer": "夏季",
-    "timetovisit.fall": "秋季",
-    "timetovisit.winter": "冬季",
-    "timetovisit.holidays": "节假日",
-    "transportation.flight": "飞机",
-    "transportation.driving": "自驾",
-    "transportation.flexible": "任意",
-    "accommodations.hotel": "酒店",
-    "accommodations.airbnb": "Airbnb",
-    "accommodations.resort": "度假村",
-    "accommodations.hostel": "青年旅舍",
-    "accommodations.camping": "露营",
-    "accommodations.flexible": "任意",
-    "food.localcuisine": "当地美食",
-    "food.finedining": "高档餐厅",
-    "food.streetfood": "街头小",
-    "food.vegetarian": "素食",
-    "food.familyfriendly": "适合家庭",
-    "attractions.museums": "博物馆",
-    "attractions.nature": "自然景观",
-    "attractions.historicalsites": "历史遗迹",
-    "attractions.themeparks": "主题公园",
-    "attractions.shopping": "购物",
-    specialRequirements: "选择或输入任何要求",
-    regenerateDay: "重新生成这一天的行程",
-    regenerateTimeOfDay: "重新生成这部分的行程",
-    resetAllSettings: "重置所有设置",
-    defaultHomeLocation: "圣卡洛斯",
-    defaultDestination: "洛杉矶",
-    // selectOrTypeRequirements: "选择或输入任何要求",
-  }
-};
-
-// Add this function to determine the initial language
-const getInitialLanguage = () => {
-  const savedLanguage = localStorage.getItem('language');
-  if (savedLanguage) {
-    return savedLanguage;
-  }
-  
-  const browserLanguage = navigator.language.split('-')[0];
-  return browserLanguage === 'zh' ? 'zh' : 'en';
-};
-
-// Update the LanguageProvider component
-const LanguageProvider = ({ children }) => {
-  const [language, setLanguage] = useState(() => {
-    const initialLang = getInitialLanguage();
-    localStorage.setItem('language', initialLang);
-    return initialLang;
-  });
-
-  const value = { 
-    language, 
-    setLanguage: (lang) => {
-      setLanguage(lang);
-      localStorage.setItem('language', lang);
-    }, 
-    t: (key) => translations[language][key] 
-  };
-
-  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
-};
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
+import TravelerSection from './components/TravelerSection';
 
 const client = new OpenAI({
   apiKey: process.env.REACT_APP_OPENAI_API_KEY,
@@ -1249,71 +1033,6 @@ Format the response as a JSON object with the following structure:
     setTransportationMode, setSpecialRequirements, setFinalPlan
   ]); // Include all setter functions in the dependency array
 
-  const TravelerSection = () => (
-    <Paper elevation={3} sx={{ p: 2, mb: 3, backgroundColor: '#f0f8ff' }}>
-      <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
-        {t('travelersInformation')}
-      </Typography>
-      <Grid container spacing={2} alignItems="center">
-        <Grid item xs={12} sm={3}>
-          <FormControl fullWidth margin="normal">
-            <InputLabel id="travelers-label">{t('whosTraveling')}</InputLabel>
-            <Select
-              labelId="travelers-label"
-              value={travelers}
-              label={t('whosTraveling')}
-              onChange={handleTravelersChange}
-            >
-              <MenuItem value="Solo">{t('solo')}</MenuItem>
-              <MenuItem value="Couple">{t('couple')}</MenuItem>
-              <MenuItem value="Family">{t('family')}</MenuItem>
-              <MenuItem value="Group">{t('group')}</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-        {(travelers === 'Family' || travelers === 'Group') && (
-          <Grid item xs={12} sm={3}>
-            <TextField
-              fullWidth
-              margin="normal"
-              label={t('groupSize')}
-              value={groupSize}
-              onChange={handleGroupSizeChange}
-              placeholder={t('enterNumberOfTravelers')}
-              type="number"
-              InputProps={{ inputProps: { min: travelers === 'Family' ? 3 : 5 } }}
-            />
-          </Grid>
-        )}
-        <Grid item xs={12} sm={3}>
-          <TextField
-            fullWidth
-            margin="normal"
-            label={t('homeLocation')}
-            value={homeLocation}
-            onChange={handleHomeLocationChange}
-            placeholder={t('enterYourHomeCity')}
-          />
-        </Grid>
-        <Grid item xs={12} sm={3}>
-          <FormControl fullWidth margin="normal">
-            <InputLabel id="budget-label">{t('budget')}</InputLabel>
-            <Select
-              labelId="budget-label"
-              value={budget}
-              label={t('budget')}
-              onChange={handleBudgetChange}
-            >
-              <MenuItem value="Budget">{t('budget')}</MenuItem>
-              <MenuItem value="Mid-range">{t('midRange')}</MenuItem>
-              <MenuItem value="Luxury">{t('luxury')}</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-      </Grid>
-    </Paper>
-  );
-
   return (
     <Box sx={{ flexGrow: 1 }}>
       <AppBar position="fixed">
@@ -1374,7 +1093,16 @@ Format the response as a JSON object with the following structure:
       <Grid container spacing={2} sx={{ p: 2, mt: 2 }}>
         {!isMobile && (
           <Grid item xs={12}>
-            <TravelerSection />
+            <TravelerSection 
+              travelers={travelers}
+              setTravelers={setTravelers}
+              groupSize={groupSize}
+              setGroupSize={setGroupSize}
+              homeLocation={homeLocation}
+              setHomeLocation={setHomeLocation}
+              budget={budget}
+              setBudget={setBudget}
+            />
           </Grid>
         )}
         
