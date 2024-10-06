@@ -553,20 +553,6 @@ Format the response as a JSON object with the following structure:
     }
   };
 
-  const renderMarkdownWithLinks = (content) => {
-    return (
-      <ReactMarkdown
-        components={{
-          a: ({ node, ...props }) => (
-            <a target="_blank" rel="noopener noreferrer" {...props} />
-          ),
-        }}
-      >
-        {content}
-      </ReactMarkdown>
-    );
-  };
-
   // Define resetAllSettings using useCallback
   const resetAllSettings = useCallback(() => {
     logEvent("User Action", "Reset All Settings");
