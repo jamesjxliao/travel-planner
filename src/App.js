@@ -17,6 +17,8 @@ import Skeleton from '@mui/material/Skeleton'; // Add this import
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import TravelerSection from './components/TravelerSection';
 import TripDetailsSection from './components/TripDetailsSection';
+import SpecialRequirementsSection from './components/SpecialRequirementsSection';
+import FinalizePlanButton from './components/FinalizePlanButton';
 
 const client = new OpenAI({
   apiKey: process.env.REACT_APP_OPENAI_API_KEY,
@@ -1124,44 +1126,18 @@ Format the response as a JSON object with the following structure:
               isLoading={isLoading}
             />
 
-          {/* Add the Special Requirements section */}
-          <Card sx={{ mt: 2 }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {allCommonPreferences.map((prefKey, index) => (
-                    <Chip
-                      key={index}
-                      label={t(prefKey)}
-                      size="small"
-                      onClick={() => handleCommonPreferenceClick(prefKey)}
-                      color={specialRequirements.includes(t(prefKey)) ? "primary" : "default"}
-                      sx={{ '&:hover': { backgroundColor: 'primary.light', cursor: 'pointer' } }}
-                    />
-                  ))}
-                </Box>
-                <TextField
-                  label={t('specialRequirements')}
-                  value={specialRequirements}
-                  onChange={handleSpecialRequirementsChange}
-                  fullWidth
-                  margin="normal"
-                  disabled={isLoading}
-                  variant="outlined"
-                  rows={1}
-                />
-              </Box>
-            </CardContent>
-          </Card>
+          <SpecialRequirementsSection 
+            specialRequirements={specialRequirements}
+            setSpecialRequirements={setSpecialRequirements}
+            isLoading={isLoading}
+            commonPreferences={allCommonPreferences}
+            handleCommonPreferenceClick={handleCommonPreferenceClick}
+          />
 
-          <Button 
-            variant="contained" 
+          <FinalizePlanButton 
             onClick={finalizePlan}
-            sx={{ mt: 2, width: '100%', mb: 4 }}
-            disabled={isLoading}
-          >
-            {isLoading ? t('generatingTravelPlan') : t('finalizePlan')}
-          </Button>
+            isLoading={isLoading}
+          />
 
           {showDebug && !isProduction && currentPrompt && (
             <Card sx={{ mt: 2, backgroundColor: '#f0f0f0' }}>
