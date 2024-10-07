@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import OpenAI from 'openai';
+import axios from 'axios';
 import ReactGA from "react-ga4";
 import { Typography, Grid, FormControl, Select, MenuItem, Box, Switch, FormControlLabel, useMediaQuery, Drawer, IconButton, AppBar, Toolbar } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -16,11 +16,6 @@ import SpecialRequirementsSection from './components/SpecialRequirementsSection'
 import FinalizePlanButton from './components/FinalizePlanButton';
 import DebugSection from './components/DebugSection';
 import FinalPlanSection from './components/FinalPlanSection';
-
-const client = new OpenAI({
-  apiKey: process.env.REACT_APP_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true // This is not recommended for production use
-});
 
 const createGoogleSearchLink = (text) => {
   const searchQuery = encodeURIComponent(text);
@@ -41,7 +36,6 @@ const TravelPlannerApp = () => {
   const { language, setLanguage, t } = useLanguage();
   const [destination, setDestination] = useState('');
   const [homeLocation, setHomeLocation] = useState('');
-  const [conversationHistory, setConversationHistory] = useState([]);
   const [finalPlan, setFinalPlan] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
@@ -212,17 +206,12 @@ const TravelPlannerApp = () => {
 
   const getLLMResponse = async (prompt) => {
     setCurrentPrompt(prompt);
-    const updatedHistory = [...conversationHistory, { role: "user", content: prompt }];
-    setConversationHistory(updatedHistory);
-
     try {
-      const response = await client.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: updatedHistory
-      });
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
+      const response = await axios.post(`${backendUrl}/api/llm`, { prompt });
 
-      const llmResponse = response.choices[0].message.content;
-      setConversationHistory([...updatedHistory, { role: "assistant", content: llmResponse }]);
+      const llmResponse = response.data.content;
+      setDebugInfo({ currentPrompt: prompt, llmResponse: llmResponse });
       return llmResponse;
     } catch (error) {
       logger.error("Error in getLLMResponse:", error);
