@@ -317,6 +317,75 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     return prompt;
   };
 
+  const processLLMResponse = (response, isRegeneration = false, day = null, timeOfDay = null) => {
+    let parsedResponse;
+    try {
+      parsedResponse = JSON.parse(response);
+    } catch (parseError) {
+      logger.error("Failed to parse LLM response:", parseError);
+      logger.debug("Attempting to extract JSON from response...");
+      
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          parsedResponse = JSON.parse(jsonMatch[0]);
+        } catch (extractError) {
+          logger.error("Failed to extract and parse JSON:", extractError);
+          return null;
+        }
+      }
+    }
+
+    if (!parsedResponse) {
+      logger.error("Invalid response structure:", parsedResponse);
+      return null;
+    }
+
+    const processTimeOfDay = (tod, dayIndex) => {
+      if (parsedResponse[tod] || (parsedResponse.itinerary && parsedResponse.itinerary[dayIndex][tod])) {
+        const content = parsedResponse[tod] || parsedResponse.itinerary[dayIndex][tod];
+        const processedContent = content.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, entity, attribute) => {
+          return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer" data-attr="${attribute}">${entity}</a>`;
+        });
+
+        const linkedAttractions = content.match(/\[([^\]]+)\]\(([^)]+)\)/g) || [];
+        const attractions = linkedAttractions.map(item => {
+          const [_, text, attribute] = item.match(/\[([^\]]+)\]\(([^)]+)\)/);
+          return { text, attribute };
+        });
+
+        const prioritizedAttractions = attractions.sort((a, b) => {
+          if (a.attribute === 'restaurant' && b.attribute !== 'restaurant') return 1;
+          if (a.attribute !== 'restaurant' && b.attribute === 'restaurant') return -1;
+          return 0;
+        });
+
+        if (prioritizedAttractions.length > 0) {
+          fetchAttractionImage(prioritizedAttractions[0].text, dayIndex + 1, tod);
+        }
+
+        return processedContent;
+      }
+      return null;
+    };
+
+    if (isRegeneration) {
+      return ['morning', 'afternoon', 'evening'].reduce((acc, tod) => {
+        const content = processTimeOfDay(tod, day - 1);
+        if (content) acc[tod] = content;
+        return acc;
+      }, {});
+    } else {
+      parsedResponse.itinerary = parsedResponse.itinerary.map((day, index) => {
+        return ['morning', 'afternoon', 'evening'].reduce((acc, tod) => {
+          acc[tod] = processTimeOfDay(tod, index);
+          return acc;
+        }, { day: day.day });
+      });
+      return parsedResponse;
+    }
+  };
+
   const finalizePlan = async () => {
     logEvent("User Action", "Finalized Plan", `${destination} - ${numDays} days`);
     setIsLoading(true);
@@ -326,71 +395,63 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     try {
       const response = await getLLMResponse(finalPrompt);
       logger.debug("Raw LLM response:", response);
-
-      // Update debug info
       setDebugInfo({ currentPrompt: finalPrompt, llmResponse: response });
 
-      let parsedResponse;
-      try {
-        parsedResponse = JSON.parse(response);
-      } catch (parseError) {
-        logger.error("Failed to parse LLM response:", parseError);
-        logger.debug("Attempting to extract JSON from response...");
-        
-        // Attempt to extract JSON from the response
-        const jsonMatch = response.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          try {
-            parsedResponse = JSON.parse(jsonMatch[0]);
-          } catch (extractError) {
-            logger.error("Failed to extract and parse JSON:", extractError);
-          }
-        }
-      }
-
-      if (parsedResponse && parsedResponse.itinerary) {
-        // Process each day's activities to wrap entities with links and attributes
-        for (let day of parsedResponse.itinerary) {
-          ['morning', 'afternoon', 'evening'].forEach(timeOfDay => {
-            day[timeOfDay] = day[timeOfDay].replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, entity, attribute) => {
-              return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer" data-attr="${attribute}">${entity}</a>`;
-            });
-          });
-        }
-
-        logger.debug("Parsed response:", parsedResponse);
-        
-        // Reset day versions and current pages when generating a new plan
+      const processedResponse = processLLMResponse(response);
+      if (processedResponse) {
         setDayVersions({});
         setCurrentPages({});
-        
-        // Clear existing attraction images
         setAttractionImages({});
-        
-        // Update the final plan state
-        setFinalPlan(parsedResponse);
-
-        // Fetch new images for each day and time of day
-        parsedResponse.itinerary.forEach((day, index) => {
-          ['morning', 'afternoon', 'evening'].forEach(timeOfDay => {
-            const content = day[timeOfDay];
-            const firstAttraction = content.match(/<a[^>]*>([^<]+)<\/a>/)?.[1] || '';
-            if (firstAttraction) {
-              fetchAttractionImage(firstAttraction, index + 1, timeOfDay);
-            }
-          });
-        });
+        setFinalPlan(processedResponse);
       } else {
-        logger.error("Invalid response structure:", parsedResponse);
         setFinalPlan({ error: "Failed to generate a valid itinerary. Please try again." });
       }
     } catch (error) {
       logger.error("Error in finalizePlan:", error);
       setFinalPlan({ error: "An error occurred while generating the travel plan. Please try again." });
-      // Update debug info with error
       setDebugInfo(prev => ({ ...prev, llmResponse: `Error: ${error.message}` }));
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const regenerateItinerary = async (day, timeOfDay = null) => {
+    logEvent("User Action", "Regenerated Itinerary", `Day ${day}${timeOfDay ? ` - ${timeOfDay}` : ''}`);
+    setRegeneratingItinerary({ day, timeOfDay });
+    setIsLoading(true);
+
+    const regeneratePrompt = generatePrompt(true, day, timeOfDay);
+
+    try {
+      const response = await getLLMResponse(regeneratePrompt);
+      logger.debug("Raw LLM response:", response);
+      setDebugInfo({ currentPrompt: regeneratePrompt, llmResponse: response });
+
+      const processedResponse = processLLMResponse(response, true, day, timeOfDay);
+      if (processedResponse) {
+        setDayVersions(prev => {
+          const currentVersions = prev[day] || [finalPlan.itinerary[day - 1]];
+          const lastVersion = { ...currentVersions[currentVersions.length - 1] };
+          const newVersion = { ...lastVersion, ...processedResponse };
+          const updatedVersions = [...currentVersions, newVersion];
+          
+          setCurrentPages(prevPages => ({
+            ...prevPages,
+            [day]: updatedVersions.length
+          }));
+
+          return {
+            ...prev,
+            [day]: updatedVersions
+          };
+        });
+      }
+    } catch (error) {
+      logger.error("Error in regenerateItinerary:", error);
+      setDebugInfo(prev => ({ ...prev, llmResponse: `Error: ${error.message}` }));
+    } finally {
+      setIsLoading(false);
+      setRegeneratingItinerary({ day: null, timeOfDay: null });
     }
   };
 
@@ -420,105 +481,6 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
       ...prev,
       [day]: page
     }));
-  };
-
-  const regenerateItinerary = async (day, timeOfDay = null) => {
-    logEvent("User Action", "Regenerated Itinerary", `Day ${day}${timeOfDay ? ` - ${timeOfDay}` : ''}`);
-    setRegeneratingItinerary({ day, timeOfDay });
-    setIsLoading(true);
-
-    const regeneratePrompt = generatePrompt(true, day, timeOfDay);
-
-    try {
-      const response = await getLLMResponse(regeneratePrompt);
-      logger.debug("Raw LLM response:", response);
-
-      // Update debug info
-      setDebugInfo({ currentPrompt: regeneratePrompt, llmResponse: response });
-
-      let parsedResponse;
-      try {
-        parsedResponse = JSON.parse(response);
-      } catch (parseError) {
-        logger.error("Failed to parse LLM response:", parseError);
-        logger.debug("Attempting to extract JSON from response...");
-        
-        // Attempt to extract JSON from the response
-        const jsonMatch = response.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          try {
-            parsedResponse = JSON.parse(jsonMatch[0]);
-          } catch (extractError) {
-            logger.error("Failed to extract and parse JSON:", extractError);
-          }
-        }
-      }
-
-      logger.debug("Parsed response:", parsedResponse);
-
-      if (parsedResponse) {
-        setDayVersions(prev => {
-          const currentVersions = prev[day] || [finalPlan.itinerary[day - 1]];
-          const lastVersion = { ...currentVersions[currentVersions.length - 1] };
-          let newVersion = { ...lastVersion };
-
-          const processTimeOfDay = (tod) => {
-            if (parsedResponse[tod]) {
-              newVersion[tod] = parsedResponse[tod].replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, entity, attribute) => {
-                return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer" data-attr="${attribute}">${entity}</a>`;
-              });
-
-              // Extract all linked attractions with attributes
-              const linkedAttractions = parsedResponse[tod].match(/\[([^\]]+)\]\(([^)]+)\)/g) || [];
-              const attractions = linkedAttractions.map(item => {
-                const [_, text, attribute] = item.match(/\[([^\]]+)\]\(([^)]+)\)/);
-                return { text, attribute };
-              });
-
-              // Prioritize non-restaurant attractions
-              const prioritizedAttractions = attractions.sort((a, b) => {
-                if (a.attribute === 'restaurant' && b.attribute !== 'restaurant') return 1;
-                if (a.attribute !== 'restaurant' && b.attribute === 'restaurant') return -1;
-                return 0;
-              });
-
-              // Fetch image for the first prioritized attraction
-              if (prioritizedAttractions.length > 0) {
-                fetchAttractionImage(prioritizedAttractions[0].text, day, tod);
-              }
-            }
-          };
-
-          if (timeOfDay) {
-            processTimeOfDay(timeOfDay);
-          } else {
-            ['morning', 'afternoon', 'evening'].forEach(processTimeOfDay);
-          }
-
-          const updatedVersions = [...currentVersions, newVersion];
-          
-          // Set the current page to the newly generated version
-          setCurrentPages(prevPages => ({
-            ...prevPages,
-            [day]: updatedVersions.length
-          }));
-
-          return {
-            ...prev,
-            [day]: updatedVersions
-          };
-        });
-      } else {
-        logger.error("Invalid response structure:", parsedResponse);
-      }
-    } catch (error) {
-      logger.error("Error in regenerateItinerary:", error);
-      // Update debug info with error
-      setDebugInfo(prev => ({ ...prev, llmResponse: `Error: ${error.message}` }));
-    } finally {
-      setIsLoading(false);
-      setRegeneratingItinerary({ day: null, timeOfDay: null });
-    }
   };
 
   const resetAllSettings = useCallback(() => {
