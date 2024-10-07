@@ -18,7 +18,7 @@ const TripDetailsSection = ({
   setIsRoundTrip,
   isLoading
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage(); // Add language to the destructured object
   const [autocompleteOptions, setAutocompleteOptions] = useState([]);
   const autocompleteRef = useRef(null);
 
@@ -41,7 +41,8 @@ const TripDetailsSection = ({
     // Initialize Google Places Autocomplete
     if (window.google && window.google.maps && window.google.maps.places) {
       const autocomplete = new window.google.maps.places.Autocomplete(autocompleteRef.current, {
-        types: ['(cities)']
+        types: ['(cities)'],
+        language: language // Add the current language
       });
 
       autocomplete.addListener('place_changed', () => {
@@ -51,7 +52,7 @@ const TripDetailsSection = ({
         }
       });
     }
-  }, []);
+  }, [language]); // Add language as a dependency
 
   // Save data to localStorage whenever it changes
   useEffect(() => {
@@ -71,7 +72,13 @@ const TripDetailsSection = ({
     if (newInputValue.length > 2) {
       try {
         const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
-        const response = await axios.get(`${backendUrl}/api/autocomplete?input=${encodeURIComponent(newInputValue)}&apiKey=${process.env.REACT_APP_GOOGLE_PLACES_API_KEY}`);
+        const response = await axios.get(`${backendUrl}/api/autocomplete`, {
+          params: {
+            input: newInputValue,
+            apiKey: process.env.REACT_APP_GOOGLE_PLACES_API_KEY,
+            language: language // Add the current language
+          }
+        });
         const predictions = response.data.predictions.map(prediction => prediction.description);
         setAutocompleteOptions(predictions);
       } catch (error) {
