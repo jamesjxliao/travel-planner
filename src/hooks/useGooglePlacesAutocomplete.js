@@ -22,7 +22,7 @@ const useGooglePlacesAutocomplete = (initialValue = '') => {
     if (language === 'en' && newInputValue.length > 2) {
       try {
         const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
-        const response = await axios.get(`${backendUrl}/api/autocomplete?input=${encodeURIComponent(newInputValue)}&apiKey=${process.env.REACT_APP_GOOGLE_PLACES_API_KEY}`);
+        const response = await axios.get(`${backendUrl}/api/autocomplete?input=${encodeURIComponent(newInputValue)}`);
         const predictions = response.data.predictions.map(prediction => prediction.description);
         setOptions(predictions);
       } catch (error) {

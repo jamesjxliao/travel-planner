@@ -74,17 +74,10 @@ const TravelPlannerApp = () => {
 
   const fetchAttractionImage = useCallback(async (attraction, day, timeOfDay) => {
     console.log(`Fetching image for: ${attraction}, Day: ${day}, Time: ${timeOfDay}`);
-    const apiKey = process.env.REACT_APP_GOOGLE_PLACES_API_KEY;
-    console.log('API Key:', apiKey ? 'Set' : 'Not set');
     
-    if (!apiKey) {
-      console.error('API key is not set');
-      return;
-    }
-
     try {
       const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
-      const searchUrl = `${backendUrl}/api/places?input=${encodeURIComponent(attraction)}&apiKey=${apiKey}`;
+      const searchUrl = `${backendUrl}/api/places?input=${encodeURIComponent(attraction)}`;
       console.log('Search URL:', searchUrl);
       
       const searchResponse = await fetch(searchUrl);
@@ -106,7 +99,7 @@ const TravelPlannerApp = () => {
           console.log('Photo Reference:', photoReference);
           
           if (photoReference) {
-            const imageUrl = `${backendUrl}/api/photo?maxwidth=600&photoreference=${photoReference}&key=${apiKey}`;
+            const imageUrl = `${backendUrl}/api/photo?maxwidth=600&photoreference=${photoReference}`;
             console.log('Image URL:', imageUrl);
 
             setAttractionImages(prev => {
