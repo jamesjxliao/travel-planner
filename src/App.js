@@ -16,7 +16,6 @@ import SpecialRequirementsSection from './components/SpecialRequirementsSection'
 import FinalizePlanButton from './components/FinalizePlanButton';
 import DebugSection from './components/DebugSection';
 import FinalPlanSection from './components/FinalPlanSection';
-import { cacheImage, getCachedImage } from './utils/cacheUtils';
 
 const client = new OpenAI({
   apiKey: process.env.REACT_APP_OPENAI_API_KEY,
@@ -82,23 +81,6 @@ const TravelPlannerApp = () => {
       return;
     }
 
-    const imageName = `attractionImage_${attraction}`;
-
-    // Check if the image is already in the cache
-    const cachedImage = await getCachedImage(imageName);
-    if (cachedImage) {
-      console.log('Using cached image for:', attraction);
-      const imageUrl = URL.createObjectURL(cachedImage);
-      setAttractionImages(prev => ({
-        ...prev,
-        [day]: {
-          ...(prev[day] || {}),
-          [timeOfDay]: imageUrl
-        }
-      }));
-      return;
-    }
-
     try {
       const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
       const searchUrl = `${backendUrl}/api/places?input=${encodeURIComponent(attraction)}&apiKey=${apiKey}`;
@@ -125,9 +107,6 @@ const TravelPlannerApp = () => {
           if (photoReference) {
             const imageUrl = `${backendUrl}/api/photo?maxwidth=600&photoreference=${photoReference}&key=${apiKey}`;
             console.log('Image URL:', imageUrl);
-
-            // Cache the image
-            await cacheImage(imageUrl, imageName);
 
             setAttractionImages(prev => {
               const newState = {
