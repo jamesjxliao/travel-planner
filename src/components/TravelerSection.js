@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
-import { Paper, Typography, Grid, FormControl, InputLabel, Select, MenuItem, TextField } from '@mui/material';
+import React, { useEffect, useRef } from 'react';
+import { Paper, Typography, Grid, FormControl, InputLabel, Select, MenuItem, TextField, Autocomplete } from '@mui/material';
 import { useLanguage } from '../contexts/LanguageContext';
+import useGooglePlacesAutocomplete from '../hooks/useGooglePlacesAutocomplete';
 
 const TravelerSection = ({ 
   travelers, 
@@ -12,7 +13,14 @@ const TravelerSection = ({
   budget, 
   setBudget 
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const autocompleteRef = useRef(null);
+  const {
+    value: autocompleteValue,
+    options: autocompleteOptions,
+    handleChange: handleAutocompleteChange,
+    handleInputChange: handleAutocompleteInputChange,
+  } = useGooglePlacesAutocomplete(homeLocation);
 
   // Load data from localStorage on component mount
   useEffect(() => {
@@ -53,8 +61,9 @@ const TravelerSection = ({
     setGroupSize(e.target.value);
   };
 
-  const handleHomeLocationChange = (e) => {
-    setHomeLocation(e.target.value);
+  const handleHomeLocationChange = (event, newValue) => {
+    setHomeLocation(newValue);
+    handleAutocompleteChange(event, newValue);
   };
 
   const handleBudgetChange = (e) => {
@@ -98,14 +107,34 @@ const TravelerSection = ({
           </Grid>
         )}
         <Grid item xs={12} sm={3}>
-          <TextField
-            fullWidth
-            margin="normal"
-            label={t('homeLocation')}
-            value={homeLocation}
-            onChange={handleHomeLocationChange}
-            placeholder={t('enterYourHomeCity')}
-          />
+          {language === 'en' ? (
+            <Autocomplete
+              value={autocompleteValue}
+              onChange={handleHomeLocationChange}
+              onInputChange={handleAutocompleteInputChange}
+              options={autocompleteOptions}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  inputRef={autocompleteRef}
+                  label={t('homeLocation')}
+                  fullWidth
+                  margin="normal"
+                  variant="outlined"
+                />
+              )}
+              freeSolo
+            />
+          ) : (
+            <TextField
+              fullWidth
+              margin="normal"
+              label={t('homeLocation')}
+              value={homeLocation}
+              onChange={(e) => setHomeLocation(e.target.value)}
+              placeholder={t('enterYourHomeCity')}
+            />
+          )}
         </Grid>
         <Grid item xs={12} sm={3}>
           <FormControl fullWidth margin="normal">

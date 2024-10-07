@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Paper, Grid, FormControl, InputLabel, Select, MenuItem, FormControlLabel, Switch, Typography, Autocomplete, TextField } from '@mui/material';
 import { useLanguage } from '../contexts/LanguageContext';
-import axios from 'axios';
+import useGooglePlacesAutocomplete from '../hooks/useGooglePlacesAutocomplete';
 
 const TripDetailsSection = ({
   destination,
@@ -19,8 +19,13 @@ const TripDetailsSection = ({
   isLoading
 }) => {
   const { t, language } = useLanguage();
-  const [autocompleteOptions, setAutocompleteOptions] = useState([]);
   const autocompleteRef = useRef(null);
+  const {
+    value: autocompleteValue,
+    options: autocompleteOptions,
+    handleChange: handleAutocompleteChange,
+    handleInputChange: handleAutocompleteInputChange,
+  } = useGooglePlacesAutocomplete(destination);
 
   // Load data from localStorage on component mount
   useEffect(() => {
@@ -63,21 +68,9 @@ const TripDetailsSection = ({
     localStorage.setItem('isRoundTrip', isRoundTrip.toString());
   }, [destination, numDays, timeToVisit, transportationMode, accommodationType, isRoundTrip]);
 
-  const handleDestinationChange = async (event, newValue) => {
+  const handleDestinationChange = (event, newValue) => {
     setDestination(newValue);
-  };
-
-  const handleAutocompleteInputChange = async (event, newInputValue) => {
-    if (language === 'en' && newInputValue.length > 2) {
-      try {
-        const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
-        const response = await axios.get(`${backendUrl}/api/autocomplete?input=${encodeURIComponent(newInputValue)}&apiKey=${process.env.REACT_APP_GOOGLE_PLACES_API_KEY}`);
-        const predictions = response.data.predictions.map(prediction => prediction.description);
-        setAutocompleteOptions(predictions);
-      } catch (error) {
-        console.error('Error fetching autocomplete suggestions:', error);
-      }
-    }
+    handleAutocompleteChange(event, newValue);
   };
 
   const handleNumDaysChange = (e) => {
@@ -106,7 +99,7 @@ const TripDetailsSection = ({
         <Grid item xs={12} sm={6} md={3}>
           {language === 'en' ? (
             <Autocomplete
-              value={destination}
+              value={autocompleteValue}
               onChange={handleDestinationChange}
               onInputChange={handleAutocompleteInputChange}
               options={autocompleteOptions}
