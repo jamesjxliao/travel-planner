@@ -237,10 +237,7 @@ const TravelPlannerApp = () => {
     }
   };
 
-  const finalizePlan = async () => {
-    logEvent("User Action", "Finalized Plan", `${destination} - ${numDays} days`);
-    setIsLoading(true);
-    setIsFullPlanGeneration(true);
+  const generatePrompt = (isRegeneration = false, day = null, timeOfDay = null) => {
     const travelInfo = {
       type: `${numDays}-day ${isRoundTrip ? 'round trip' : 'one-way trip'}`,
       from: homeLocation,
@@ -253,27 +250,45 @@ const TravelPlannerApp = () => {
       timeToVisit: timeToVisit
     };
 
-    let finalPrompt = `Please respond in ${language === 'zh' ? 'Chinese' : 'English'}. `;
-    finalPrompt += `Plan a ${travelInfo.type} from ${travelInfo.from} to ${travelInfo.to} for ${travelInfo.travelers}`;
-    if (travelInfo.groupSize) finalPrompt += ` (group of ${travelInfo.groupSize})`;
-    finalPrompt += `. Budget: ${travelInfo.budget}.`;
-    finalPrompt += ` Transportation: ${travelInfo.transportation === 'flexible' ? 'flexible options' : travelInfo.transportation}.`;
-    finalPrompt += ` Accommodation: ${travelInfo.accommodation === 'flexible' ? 'flexible options' : t(`accommodations.${travelInfo.accommodation}`)}.`;
-    finalPrompt += ` Time to visit: ${travelInfo.timeToVisit === 'flexible' ? 'flexible' : t(`timetovisit.${travelInfo.timeToVisit}`)}.`;
+    let prompt = `Please respond in ${language === 'zh' ? 'Chinese' : 'English'}. `;
+    prompt += `${isRegeneration ? `Regenerate the itinerary for ${timeOfDay ? `the ${timeOfDay} of ` : ''}Day ${day} of the ` : 'Plan a '}${travelInfo.type} from ${travelInfo.from} to ${travelInfo.to} for ${travelInfo.travelers}`;
+    if (travelInfo.groupSize) prompt += ` (group of ${travelInfo.groupSize})`;
+    prompt += `. Budget: ${travelInfo.budget}.`;
+    prompt += ` Transportation: ${travelInfo.transportation === 'flexible' ? 'flexible options' : travelInfo.transportation}.`;
+    prompt += ` Accommodation: ${travelInfo.accommodation === 'flexible' ? 'flexible options' : t(`accommodations.${travelInfo.accommodation}`)}.`;
+    prompt += ` Time to visit: ${travelInfo.timeToVisit === 'flexible' ? 'flexible' : t(`timetovisit.${travelInfo.timeToVisit}`)}.`;
 
     if (specialRequirements) {
-      finalPrompt += ` Special Requirements: ${specialRequirements}.`;
+      prompt += ` Special Requirements: ${specialRequirements}.`;
     }
 
-    finalPrompt += ` Please provide a comprehensive ${numDays}-day travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip, with a breakdown for major categories (e.g., accommodation, transportation, food, activities). 
+    if (isRegeneration) {
+      // Add regeneration-specific instructions
+      prompt += ` Please provide a ${timeOfDay ? '' : 'full day '}itinerary based on these choices and preferences, ensuring it complements the existing plan without duplicating activities. ${timeOfDay ? `Focus on creating a coherent plan for the ${timeOfDay} of Day ${day}, considering the other activities planned for this day.` : ''} Keep each time period description to about 30-50 words.`;
+    } else {
+      // Add full plan generation instructions
+      prompt += ` Please provide a comprehensive ${numDays}-day travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip, with a breakdown for major categories (e.g., accommodation, transportation, food, activities).`;
+    }
 
-When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this], not just individual words. For example, use "[Hollywood Classic Restaurant]" instead of just "[Hollywood]". Be as specific and descriptive as possible when marking these entities. Do not mark general activities or common nouns.
+    prompt += ` When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this], not just individual words. For example, use "[Hollywood Classic Restaurant]" instead of just "[Hollywood]". Be as specific and descriptive as possible when marking these entities. Do not mark general activities or common nouns.
 
 Additionally, for each marked attraction, add an attribute to categorize it. Use the following format: [Attraction Name](attribute). The attributes should be one of the following: restaurant, landmark, museum, park, activity, or other. For example: [Hollywood Classic Restaurant](restaurant) or [Griffith Observatory](landmark).
 
-Important: Please focus on recommending well-known attractions, popular restaurants, and established businesses. Avoid suggesting small local stores or lesser-known establishments, as we want to ensure the recommendations are suitable for a wide range of travelers.
+Important: Please focus on recommending well-known attractions, popular restaurants, and established businesses. Avoid suggesting small local stores or lesser-known establishments, as we want to ensure the recommendations are suitable for a wide range of travelers.`;
 
-Your response must be a valid JSON object with the following structure:
+    if (isRegeneration) {
+      prompt += `\n\nFormat the response as a JSON object with the following structure:
+{
+  ${timeOfDay ? `
+  "${timeOfDay}": "Description of ${timeOfDay} activities for Day ${day} with [specific attractions](attribute) marked"
+  ` : `
+  "morning": "Description of morning activities for Day ${day} with [specific attractions](attribute) marked",
+  "afternoon": "Description of afternoon activities for Day ${day} with [specific landmarks](attribute) marked",
+  "evening": "Description of evening activities for Day ${day} with [unique experiences](attribute) marked"
+  `}
+}`;
+    } else {
+      prompt += `\n\nYour response must be a valid JSON object with the following structure:
 {
   "itinerary": [
     {
@@ -297,6 +312,16 @@ Your response must be a valid JSON object with the following structure:
 }
 
 Do not include any text outside of this JSON structure. Ensure all JSON keys are enclosed in double quotes and that the JSON is valid.`;
+    }
+
+    return prompt;
+  };
+
+  const finalizePlan = async () => {
+    logEvent("User Action", "Finalized Plan", `${destination} - ${numDays} days`);
+    setIsLoading(true);
+    setIsFullPlanGeneration(true);
+    const finalPrompt = generatePrompt();
 
     try {
       const response = await getLLMResponse(finalPrompt);
@@ -402,77 +427,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     setRegeneratingItinerary({ day, timeOfDay });
     setIsLoading(true);
 
-    const travelInfo = {
-      type: `${numDays}-day ${isRoundTrip ? 'round trip' : 'one-way trip'}`,
-      from: homeLocation,
-      to: destination,
-      travelers: travelers,
-      groupSize: travelers === 'Family' || travelers === 'Group' ? groupSize : null,
-      budget: budget,
-      transportation: transportationMode,
-      accommodation: accommodationType,
-      timeToVisit: timeToVisit
-    };
-
-    // Function to remove HTML tags
-    const stripHtml = (html) => {
-      return html.replace(/<[^>]*>/g, '');
-    };
-
-    // Create a context string from the existing itinerary
-    let existingItineraryContext = '';
-    finalPlan.itinerary.forEach((existingDay, index) => {
-      if (index + 1 !== day) { // Other days
-        existingItineraryContext += `Day ${existingDay.day}:\n`;
-        ['morning', 'afternoon', 'evening'].forEach(tod => {
-          existingItineraryContext += `${tod.charAt(0).toUpperCase() + tod.slice(1)}: ${stripHtml(existingDay[tod])}\n`;
-        });
-        existingItineraryContext += '\n';
-      } else if (timeOfDay) { // The day being partially regenerated
-        existingItineraryContext += `Current Day ${existingDay.day}:\n`;
-        ['morning', 'afternoon', 'evening'].forEach(tod => {
-          if (tod !== timeOfDay) {
-            existingItineraryContext += `${tod.charAt(0).toUpperCase() + tod.slice(1)}: ${stripHtml(existingDay[tod])}\n`;
-          }
-        });
-        existingItineraryContext += '\n';
-      }
-    });
-
-    let regeneratePrompt = `Please respond in ${language === 'zh' ? 'Chinese' : 'English'}. `;
-    regeneratePrompt += `Regenerate the itinerary for ${timeOfDay ? `the ${timeOfDay} of ` : ''}Day ${day} of the ${travelInfo.type} from ${travelInfo.from} to ${travelInfo.to} for ${travelInfo.travelers}`;
-    if (travelInfo.groupSize) regeneratePrompt += ` (group of ${travelInfo.groupSize})`;
-    regeneratePrompt += `. Budget: ${travelInfo.budget}.`;
-    regeneratePrompt += ` Transportation: ${travelInfo.transportation === 'flexible' ? 'flexible options' : travelInfo.transportation}.`;
-    regeneratePrompt += ` Accommodation: ${travelInfo.accommodation === 'flexible' ? 'flexible options' : t(`accommodations.${travelInfo.accommodation}`)}.`;
-    regeneratePrompt += ` Time to visit: ${travelInfo.timeToVisit === 'flexible' ? 'flexible' : t(`timetovisit.${travelInfo.timeToVisit}`)}.`;
-
-    if (specialRequirements) {
-      regeneratePrompt += ` Special Requirements: ${specialRequirements}.`;
-    }
-
-    regeneratePrompt += ` Here's the context of the existing itinerary:
-
-${existingItineraryContext}
-
-Please provide a ${timeOfDay ? '' : 'full day '}itinerary based on these choices and preferences, ensuring it complements the existing plan without duplicating activities. ${timeOfDay ? `Focus on creating a coherent plan for the ${timeOfDay} of Day ${day}, considering the other activities planned for this day.` : ''} Keep each time period description to about 30-50 words.
-
-When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this]. Be specific but brief when marking these entities. Do not mark general activities or common nouns.
-
-Additionally, for each marked attraction, add an attribute to categorize it. Use the following format: [Attraction Name](attribute). The attributes should be one of the following: restaurant, landmark, museum, park, activity, or other. For example: [Hollywood Classic Restaurant](restaurant) or [Griffith Observatory](landmark).
-
-Important: Please focus on recommending well-known attractions, popular restaurants, and established businesses. Avoid suggesting small local stores or lesser-known establishments, as we want to ensure the recommendations are suitable for a wide range of travelers.
-
-Format the response as a JSON object with the following structure:
-{
-  ${timeOfDay ? `
-  "${timeOfDay}": "Description of ${timeOfDay} activities for Day ${day} with [specific attractions](attribute) marked"
-  ` : `
-  "morning": "Description of morning activities for Day ${day} with [specific attractions](attribute) marked",
-  "afternoon": "Description of afternoon activities for Day ${day} with [specific landmarks](attribute) marked",
-  "evening": "Description of evening activities for Day ${day} with [unique experiences](attribute) marked"
-  `}
-}`;
+    const regeneratePrompt = generatePrompt(true, day, timeOfDay);
 
     try {
       const response = await getLLMResponse(regeneratePrompt);
