@@ -18,7 +18,7 @@ const TripDetailsSection = ({
   setIsRoundTrip,
   isLoading
 }) => {
-  const { t, language } = useLanguage(); // Add language to the destructured object
+  const { t, language } = useLanguage();
   const [autocompleteOptions, setAutocompleteOptions] = useState([]);
   const autocompleteRef = useRef(null);
 
@@ -41,8 +41,7 @@ const TripDetailsSection = ({
     // Initialize Google Places Autocomplete
     if (window.google && window.google.maps && window.google.maps.places) {
       const autocomplete = new window.google.maps.places.Autocomplete(autocompleteRef.current, {
-        types: ['(cities)'],
-        language: language // Add the current language
+        types: ['(cities)']
       });
 
       autocomplete.addListener('place_changed', () => {
@@ -52,7 +51,7 @@ const TripDetailsSection = ({
         }
       });
     }
-  }, [language]); // Add language as a dependency
+  }, []);
 
   // Save data to localStorage whenever it changes
   useEffect(() => {
@@ -69,16 +68,10 @@ const TripDetailsSection = ({
   };
 
   const handleAutocompleteInputChange = async (event, newInputValue) => {
-    if (newInputValue.length > 2) {
+    if (language === 'en' && newInputValue.length > 2) {
       try {
         const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
-        const response = await axios.get(`${backendUrl}/api/autocomplete`, {
-          params: {
-            input: newInputValue,
-            apiKey: process.env.REACT_APP_GOOGLE_PLACES_API_KEY,
-            language: language // Add the current language
-          }
-        });
+        const response = await axios.get(`${backendUrl}/api/autocomplete?input=${encodeURIComponent(newInputValue)}&apiKey=${process.env.REACT_APP_GOOGLE_PLACES_API_KEY}`);
         const predictions = response.data.predictions.map(prediction => prediction.description);
         setAutocompleteOptions(predictions);
       } catch (error) {
@@ -111,25 +104,37 @@ const TripDetailsSection = ({
     <Paper elevation={3} sx={{ p: 2, mb: 3 }}>
       <Grid container spacing={2} alignItems="center">
         <Grid item xs={12} sm={6} md={3}>
-          <Autocomplete
-            value={destination}
-            onChange={handleDestinationChange}
-            onInputChange={handleAutocompleteInputChange}
-            options={autocompleteOptions}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                inputRef={autocompleteRef}
-                label={t('destination')}
-                fullWidth
-                margin="normal"
-                disabled={isLoading}
-                variant="outlined"
-              />
-            )}
-            disabled={isLoading}
-            freeSolo
-          />
+          {language === 'en' ? (
+            <Autocomplete
+              value={destination}
+              onChange={handleDestinationChange}
+              onInputChange={handleAutocompleteInputChange}
+              options={autocompleteOptions}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  inputRef={autocompleteRef}
+                  label={t('destination')}
+                  fullWidth
+                  margin="normal"
+                  disabled={isLoading}
+                  variant="outlined"
+                />
+              )}
+              disabled={isLoading}
+              freeSolo
+            />
+          ) : (
+            <TextField
+              label={t('destination')}
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
+              fullWidth
+              margin="normal"
+              disabled={isLoading}
+              variant="outlined"
+            />
+          )}
         </Grid>
         <Grid item xs={6} sm={3} md={1}>
           <TextField
