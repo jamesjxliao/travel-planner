@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Paper, Grid, FormControl, InputLabel, Select, MenuItem, FormControlLabel, Switch, Typography, Autocomplete, TextField } from '@mui/material';
 import { useLanguage } from '../contexts/LanguageContext';
 import axios from 'axios';
@@ -20,6 +20,7 @@ const TripDetailsSection = ({
 }) => {
   const { t } = useLanguage();
   const [autocompleteOptions, setAutocompleteOptions] = useState([]);
+  const autocompleteRef = useRef(null);
 
   // Load data from localStorage on component mount
   useEffect(() => {
@@ -69,7 +70,8 @@ const TripDetailsSection = ({
   const handleAutocompleteInputChange = async (event, newInputValue) => {
     if (newInputValue.length > 2) {
       try {
-        const response = await axios.get(`/api/autocomplete?input=${encodeURIComponent(newInputValue)}&apiKey=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`);
+        const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
+        const response = await axios.get(`${backendUrl}/api/autocomplete?input=${encodeURIComponent(newInputValue)}&apiKey=${process.env.REACT_APP_GOOGLE_PLACES_API_KEY}`);
         const predictions = response.data.predictions.map(prediction => prediction.description);
         setAutocompleteOptions(predictions);
       } catch (error) {
@@ -110,6 +112,7 @@ const TripDetailsSection = ({
             renderInput={(params) => (
               <TextField
                 {...params}
+                inputRef={autocompleteRef}
                 label={t('destination')}
                 fullWidth
                 margin="normal"
