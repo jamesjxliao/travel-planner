@@ -153,15 +153,25 @@ const TravelPlannerApp = () => {
           tempDiv.innerHTML = content;
           const textContent = tempDiv.textContent || tempDiv.innerText || '';
 
-          // Extract all linked text
+          // Extract all linked text with attributes
           const linkedAttractions = Array.from(tempDiv.querySelectorAll('a'))
-            .map(a => a.textContent)
-            .filter(text => text.trim() !== '');
+            .map(a => ({
+              text: a.textContent,
+              attribute: a.getAttribute('data-attr') || 'unknown'
+            }))
+            .filter(item => item.text.trim() !== '');
 
           console.log(`Linked attractions:`, linkedAttractions);
 
-          // Use the first linked attraction, or the first sentence if no links
-          let firstAttraction = linkedAttractions[0] || textContent.split('.')[0].trim().slice(0, 100);
+          // Prioritize non-restaurant attractions
+          const prioritizedAttractions = linkedAttractions.sort((a, b) => {
+            if (a.attribute === 'restaurant' && b.attribute !== 'restaurant') return 1;
+            if (a.attribute !== 'restaurant' && b.attribute === 'restaurant') return -1;
+            return 0;
+          });
+
+          // Use the first prioritized attraction, or the first sentence if no links
+          let firstAttraction = prioritizedAttractions[0]?.text || textContent.split('.')[0].trim().slice(0, 100);
           console.log(`Day ${index + 1}, ${timeOfDay}: First attraction - ${firstAttraction}`);
 
           if (firstAttraction && !attractionImages[index + 1]?.[timeOfDay]) {
@@ -258,6 +268,8 @@ const TravelPlannerApp = () => {
 
 When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this], not just individual words. For example, use "[Hollywood Classic Restaurant]" instead of just "[Hollywood]". Be as specific and descriptive as possible when marking these entities. Do not mark general activities or common nouns.
 
+Additionally, for each marked attraction, add an attribute to categorize it. Use the following format: [Attraction Name](attribute). The attributes should be one of the following: restaurant, landmark, museum, park, activity, or other. For example: [Hollywood Classic Restaurant](restaurant) or [Griffith Observatory](landmark).
+
 Important: Please focus on recommending well-known attractions, popular restaurants, and established businesses. Avoid suggesting small local stores or lesser-known establishments, as we want to ensure the recommendations are suitable for a wide range of travelers.
 
 Your response must be a valid JSON object with the following structure:
@@ -265,9 +277,9 @@ Your response must be a valid JSON object with the following structure:
   "itinerary": [
     {
       "day": 1,
-      "morning": "Description of morning activities with [specific attractions] marked",
-      "afternoon": "Description of afternoon activities with [specific landmarks] marked",
-      "evening": "Description of evening activities with [unique experiences] marked"
+      "morning": "Description of morning activities with [specific attractions](attribute) marked",
+      "afternoon": "Description of afternoon activities with [specific landmarks](attribute) marked",
+      "evening": "Description of evening activities with [unique experiences](attribute) marked"
     },
     // ... repeat for each day
   ],
@@ -308,11 +320,11 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
       }
 
       if (parsedResponse && parsedResponse.itinerary) {
-        // Process each day's activities to wrap entities with links
+        // Process each day's activities to wrap entities with links and attributes
         for (let day of parsedResponse.itinerary) {
           ['morning', 'afternoon', 'evening'].forEach(timeOfDay => {
-            day[timeOfDay] = day[timeOfDay].replace(/\[([^\]]+)\]/g, (_, entity) => {
-              return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer">${entity}</a>`;
+            day[timeOfDay] = day[timeOfDay].replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, entity, attribute) => {
+              return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer" data-attr="${attribute}">${entity}</a>`;
             });
           });
         }
@@ -429,7 +441,6 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     regeneratePrompt += ` Accommodation: ${travelInfo.accommodation === 'flexible' ? 'flexible options' : t(`accommodations.${travelInfo.accommodation}`)}.`;
     regeneratePrompt += ` Time to visit: ${travelInfo.timeToVisit === 'flexible' ? 'flexible' : t(`timetovisit.${travelInfo.timeToVisit}`)}.`;
 
-    // Update this part to use only specialRequirements
     if (specialRequirements) {
       regeneratePrompt += ` Special Requirements: ${specialRequirements}.`;
     }
@@ -442,16 +453,18 @@ Please provide a ${timeOfDay ? '' : 'full day '}itinerary based on these choices
 
 When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this]. Be specific but brief when marking these entities. Do not mark general activities or common nouns.
 
+Additionally, for each marked attraction, add an attribute to categorize it. Use the following format: [Attraction Name](attribute). The attributes should be one of the following: restaurant, landmark, museum, park, activity, or other. For example: [Hollywood Classic Restaurant](restaurant) or [Griffith Observatory](landmark).
+
 Important: Please focus on recommending well-known attractions, popular restaurants, and established businesses. Avoid suggesting small local stores or lesser-known establishments, as we want to ensure the recommendations are suitable for a wide range of travelers.
 
 Format the response as a JSON object with the following structure:
 {
   ${timeOfDay ? `
-  "${timeOfDay}": "Description of ${timeOfDay} activities for Day ${day} with [specific attractions] marked"
+  "${timeOfDay}": "Description of ${timeOfDay} activities for Day ${day} with [specific attractions](attribute) marked"
   ` : `
-  "morning": "Description of morning activities for Day ${day} with [specific attractions] marked",
-  "afternoon": "Description of afternoon activities for Day ${day} with [specific landmarks] marked",
-  "evening": "Description of evening activities for Day ${day} with [unique experiences] marked"
+  "morning": "Description of morning activities for Day ${day} with [specific attractions](attribute) marked",
+  "afternoon": "Description of afternoon activities for Day ${day} with [specific landmarks](attribute) marked",
+  "evening": "Description of evening activities for Day ${day} with [unique experiences](attribute) marked"
   `}
 }`;
 
@@ -485,22 +498,37 @@ Format the response as a JSON object with the following structure:
           const lastVersion = { ...currentVersions[currentVersions.length - 1] };
           let newVersion = { ...lastVersion };
 
-          if (timeOfDay) {
-            newVersion[timeOfDay] = parsedResponse[timeOfDay].replace(/\[([^\]]+)\]/g, (_, entity) => {
-              return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer">${entity}</a>`;
-            });
-            // Fetch new image for the regenerated time of day
-            fetchAttractionImage(parsedResponse[timeOfDay].match(/\[([^\]]+)\]/)?.[1] || '', day, timeOfDay);
-          } else {
-            ['morning', 'afternoon', 'evening'].forEach(tod => {
-              if (parsedResponse[tod]) {
-                newVersion[tod] = parsedResponse[tod].replace(/\[([^\]]+)\]/g, (_, entity) => {
-                  return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer">${entity}</a>`;
-                });
-                // Fetch new image for each time of day
-                fetchAttractionImage(parsedResponse[tod].match(/\[([^\]]+)\]/)?.[1] || '', day, tod);
+          const processTimeOfDay = (tod) => {
+            if (parsedResponse[tod]) {
+              newVersion[tod] = parsedResponse[tod].replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, entity, attribute) => {
+                return `<a href="${createGoogleSearchLink(entity)}" target="_blank" rel="noopener noreferrer" data-attr="${attribute}">${entity}</a>`;
+              });
+
+              // Extract all linked attractions with attributes
+              const linkedAttractions = parsedResponse[tod].match(/\[([^\]]+)\]\(([^)]+)\)/g) || [];
+              const attractions = linkedAttractions.map(item => {
+                const [_, text, attribute] = item.match(/\[([^\]]+)\]\(([^)]+)\)/);
+                return { text, attribute };
+              });
+
+              // Prioritize non-restaurant attractions
+              const prioritizedAttractions = attractions.sort((a, b) => {
+                if (a.attribute === 'restaurant' && b.attribute !== 'restaurant') return 1;
+                if (a.attribute !== 'restaurant' && b.attribute === 'restaurant') return -1;
+                return 0;
+              });
+
+              // Fetch image for the first prioritized attraction
+              if (prioritizedAttractions.length > 0) {
+                fetchAttractionImage(prioritizedAttractions[0].text, day, tod);
               }
-            });
+            }
+          };
+
+          if (timeOfDay) {
+            processTimeOfDay(timeOfDay);
+          } else {
+            ['morning', 'afternoon', 'evening'].forEach(processTimeOfDay);
           }
 
           const updatedVersions = [...currentVersions, newVersion];
