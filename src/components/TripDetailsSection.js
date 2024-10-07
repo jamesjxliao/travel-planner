@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
-import { Paper, Grid, TextField, FormControl, InputLabel, Select, MenuItem, FormControlLabel, Switch, Typography } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { Paper, Grid, FormControl, InputLabel, Select, MenuItem, FormControlLabel, Switch, Typography, Autocomplete, TextField } from '@mui/material';
 import { useLanguage } from '../contexts/LanguageContext';
+import axios from 'axios';
 
 const TripDetailsSection = ({
   destination,
@@ -18,6 +19,7 @@ const TripDetailsSection = ({
   isLoading
 }) => {
   const { t } = useLanguage();
+  const [autocompleteOptions, setAutocompleteOptions] = useState([]);
 
   // Load data from localStorage on component mount
   useEffect(() => {
@@ -34,6 +36,20 @@ const TripDetailsSection = ({
     if (loadedTransportationMode) setTransportationMode(loadedTransportationMode);
     if (loadedAccommodationType) setAccommodationType(loadedAccommodationType);
     if (loadedIsRoundTrip !== null) setIsRoundTrip(loadedIsRoundTrip === 'true');
+
+    // Initialize Google Places Autocomplete
+    if (window.google && window.google.maps && window.google.maps.places) {
+      const autocomplete = new window.google.maps.places.Autocomplete(autocompleteRef.current, {
+        types: ['(cities)']
+      });
+
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        if (place.formatted_address) {
+          setDestination(place.formatted_address);
+        }
+      });
+    }
   }, []);
 
   // Save data to localStorage whenever it changes
@@ -46,8 +62,20 @@ const TripDetailsSection = ({
     localStorage.setItem('isRoundTrip', isRoundTrip.toString());
   }, [destination, numDays, timeToVisit, transportationMode, accommodationType, isRoundTrip]);
 
-  const handleDestinationChange = (e) => {
-    setDestination(e.target.value);
+  const handleDestinationChange = async (event, newValue) => {
+    setDestination(newValue);
+  };
+
+  const handleAutocompleteInputChange = async (event, newInputValue) => {
+    if (newInputValue.length > 2) {
+      try {
+        const response = await axios.get(`/api/autocomplete?input=${encodeURIComponent(newInputValue)}&apiKey=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`);
+        const predictions = response.data.predictions.map(prediction => prediction.description);
+        setAutocompleteOptions(predictions);
+      } catch (error) {
+        console.error('Error fetching autocomplete suggestions:', error);
+      }
+    }
   };
 
   const handleNumDaysChange = (e) => {
@@ -74,14 +102,23 @@ const TripDetailsSection = ({
     <Paper elevation={3} sx={{ p: 2, mb: 3 }}>
       <Grid container spacing={2} alignItems="center">
         <Grid item xs={12} sm={6} md={3}>
-          <TextField
-            label={t('destination')}
+          <Autocomplete
             value={destination}
             onChange={handleDestinationChange}
-            fullWidth
-            margin="normal"
+            onInputChange={handleAutocompleteInputChange}
+            options={autocompleteOptions}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label={t('destination')}
+                fullWidth
+                margin="normal"
+                disabled={isLoading}
+                variant="outlined"
+              />
+            )}
             disabled={isLoading}
-            variant="outlined"
+            freeSolo
           />
         </Grid>
         <Grid item xs={6} sm={3} md={1}>
