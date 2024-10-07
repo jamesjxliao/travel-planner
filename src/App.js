@@ -250,7 +250,6 @@ const TravelPlannerApp = () => {
     finalPrompt += ` Accommodation: ${travelInfo.accommodation === 'flexible' ? 'flexible options' : t(`accommodations.${travelInfo.accommodation}`)}.`;
     finalPrompt += ` Time to visit: ${travelInfo.timeToVisit === 'flexible' ? 'flexible' : t(`timetovisit.${travelInfo.timeToVisit}`)}.`;
 
-    // Update this part to use only specialRequirements
     if (specialRequirements) {
       finalPrompt += ` Special Requirements: ${specialRequirements}.`;
     }
@@ -258,6 +257,8 @@ const TravelPlannerApp = () => {
     finalPrompt += ` Please provide a comprehensive ${numDays}-day travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip, with a breakdown for major categories (e.g., accommodation, transportation, food, activities). 
 
 When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this], not just individual words. For example, use "[Hollywood Classic Restaurant]" instead of just "[Hollywood]". Be as specific and descriptive as possible when marking these entities. Do not mark general activities or common nouns.
+
+Important: Please focus on recommending well-known attractions, popular restaurants, and established businesses. Avoid suggesting small local stores or lesser-known establishments, as we want to ensure the recommendations are suitable for a wide range of travelers.
 
 Your response must be a valid JSON object with the following structure:
 {
@@ -440,6 +441,8 @@ ${existingItineraryContext}
 Please provide a ${timeOfDay ? '' : 'full day '}itinerary based on these choices and preferences, ensuring it complements the existing plan without duplicating activities. ${timeOfDay ? `Focus on creating a coherent plan for the ${timeOfDay} of Day ${day}, considering the other activities planned for this day.` : ''} Keep each time period description to about 30-50 words.
 
 When mentioning specific attractions, landmarks, unique experiences, or notable places, enclose the entire relevant phrase in square brackets [like this]. Be specific but brief when marking these entities. Do not mark general activities or common nouns.
+
+Important: Please focus on recommending well-known attractions, popular restaurants, and established businesses. Avoid suggesting small local stores or lesser-known establishments, as we want to ensure the recommendations are suitable for a wide range of travelers.
 
 Format the response as a JSON object with the following structure:
 {
