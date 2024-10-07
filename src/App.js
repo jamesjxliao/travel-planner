@@ -59,6 +59,7 @@ const TravelPlannerApp = () => {
   const [dayVersions, setDayVersions] = useState({});
   const [currentPages, setCurrentPages] = useState({});
   const [attractionImages, setAttractionImages] = useState({});
+  const [debugInfo, setDebugInfo] = useState({ currentPrompt: '', llmResponse: '' });
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -301,6 +302,9 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
       const response = await getLLMResponse(finalPrompt);
       logger.debug("Raw LLM response:", response);
 
+      // Update debug info
+      setDebugInfo({ currentPrompt: finalPrompt, llmResponse: response });
+
       let parsedResponse;
       try {
         parsedResponse = JSON.parse(response);
@@ -358,6 +362,8 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     } catch (error) {
       logger.error("Error in finalizePlan:", error);
       setFinalPlan({ error: "An error occurred while generating the travel plan. Please try again." });
+      // Update debug info with error
+      setDebugInfo(prev => ({ ...prev, llmResponse: `Error: ${error.message}` }));
     } finally {
       setIsLoading(false);
     }
@@ -472,6 +478,9 @@ Format the response as a JSON object with the following structure:
       const response = await getLLMResponse(regeneratePrompt);
       logger.debug("Raw LLM response:", response);
 
+      // Update debug info
+      setDebugInfo({ currentPrompt: regeneratePrompt, llmResponse: response });
+
       let parsedResponse;
       try {
         parsedResponse = JSON.parse(response);
@@ -549,6 +558,8 @@ Format the response as a JSON object with the following structure:
       }
     } catch (error) {
       logger.error("Error in regenerateItinerary:", error);
+      // Update debug info with error
+      setDebugInfo(prev => ({ ...prev, llmResponse: `Error: ${error.message}` }));
     } finally {
       setIsLoading(false);
       setRegeneratingItinerary({ day: null, timeOfDay: null });
@@ -674,8 +685,11 @@ Format the response as a JSON object with the following structure:
             isLoading={isLoading}
           />
 
-          {showDebug && !isProduction && currentPrompt && (
-            <DebugSection currentPrompt={currentPrompt} />
+          {showDebug && !isProduction && (
+            <DebugSection 
+              currentPrompt={debugInfo.currentPrompt} 
+              llmResponse={debugInfo.llmResponse}
+            />
           )}
 
           {finalPlan && (
