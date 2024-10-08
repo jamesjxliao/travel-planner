@@ -22,6 +22,7 @@ const TripDetailsSection = ({
   const autocompleteRef = useRef(null);
   const {
     value: autocompleteValue,
+    setValue: setAutocompleteValue,
     options: autocompleteOptions,
     handleChange: handleAutocompleteChange,
     handleInputChange: handleAutocompleteInputChange,
@@ -36,27 +37,16 @@ const TripDetailsSection = ({
     const loadedAccommodationType = localStorage.getItem('accommodationType');
     const loadedIsRoundTrip = localStorage.getItem('isRoundTrip');
 
-    if (loadedDestination) setDestination(loadedDestination);
+    if (loadedDestination) {
+      setDestination(loadedDestination);
+      setAutocompleteValue(loadedDestination);
+    }
     if (loadedNumDays) setNumDays(loadedNumDays);
     if (loadedTimeToVisit) setTimeToVisit(loadedTimeToVisit);
     if (loadedTransportationMode) setTransportationMode(loadedTransportationMode);
     if (loadedAccommodationType) setAccommodationType(loadedAccommodationType);
     if (loadedIsRoundTrip !== null) setIsRoundTrip(loadedIsRoundTrip === 'true');
-
-    // Initialize Google Places Autocomplete
-    if (window.google && window.google.maps && window.google.maps.places) {
-      const autocomplete = new window.google.maps.places.Autocomplete(autocompleteRef.current, {
-        types: ['(cities)']
-      });
-
-      autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
-        if (place.formatted_address) {
-          setDestination(place.formatted_address);
-        }
-      });
-    }
-  }, []);
+  }, [setDestination, setAutocompleteValue, setNumDays, setTimeToVisit, setTransportationMode, setAccommodationType, setIsRoundTrip]);
 
   // Save data to localStorage whenever it changes
   useEffect(() => {

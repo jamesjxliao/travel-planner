@@ -17,6 +17,7 @@ const TravelerSection = ({
   const autocompleteRef = useRef(null);
   const {
     value: autocompleteValue,
+    setValue: setAutocompleteValue,
     options: autocompleteOptions,
     handleChange: handleAutocompleteChange,
     handleInputChange: handleAutocompleteInputChange,
@@ -31,9 +32,12 @@ const TravelerSection = ({
 
     if (loadedTravelers) setTravelers(loadedTravelers);
     if (loadedGroupSize) setGroupSize(loadedGroupSize);
-    if (loadedHomeLocation) setHomeLocation(loadedHomeLocation);
+    if (loadedHomeLocation) {
+      setHomeLocation(loadedHomeLocation);
+      setAutocompleteValue(loadedHomeLocation);
+    }
     if (loadedBudget) setBudget(loadedBudget);
-  }, []);
+  }, [setTravelers, setGroupSize, setHomeLocation, setAutocompleteValue, setBudget]);
 
   // Save data to localStorage whenever it changes
   useEffect(() => {

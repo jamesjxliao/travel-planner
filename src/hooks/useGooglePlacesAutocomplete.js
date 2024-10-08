@@ -8,6 +8,10 @@ const useGooglePlacesAutocomplete = (initialValue = '') => {
   const { language } = useLanguage();
 
   useEffect(() => {
+    setValue(initialValue);
+  }, [initialValue]);
+
+  useEffect(() => {
     if (!window.google || !window.google.maps || !window.google.maps.places) {
       console.error('Google Maps JavaScript API is not loaded');
       return;
@@ -33,6 +37,7 @@ const useGooglePlacesAutocomplete = (initialValue = '') => {
 
   return {
     value,
+    setValue,
     options,
     handleChange,
     handleInputChange,
