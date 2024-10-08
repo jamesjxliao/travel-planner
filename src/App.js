@@ -8,6 +8,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import Tooltip from '@mui/material/Tooltip';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import FeedbackIcon from '@mui/icons-material/Feedback';
+import ListAltIcon from '@mui/icons-material/ListAlt';
 import GoogleAnalytics from './components/GoogleAnalytics';
 import { createLogger } from './utils/logger';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
@@ -623,7 +624,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
                 sx={{ ml: 2 }}
                 aria-label="Show Feedback List"
               >
-                <FeedbackIcon />
+                <ListAltIcon />
               </IconButton>
             </Tooltip>
           )}
