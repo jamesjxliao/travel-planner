@@ -54,6 +54,8 @@ const TravelPlannerApp = () => {
   const [currentPages, setCurrentPages] = useState({});
   const [attractionImages, setAttractionImages] = useState({});
   const [debugInfo, setDebugInfo] = useState({ currentPrompt: '', llmResponse: '' });
+  const [generationsCount, setGenerationsCount] = useState(0);
+  const [isGenerationLimitReached, setIsGenerationLimitReached] = useState(false);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -368,13 +370,49 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     }
   };
 
+  useEffect(() => {
+    const today = new Date().toDateString();
+    const storedData = JSON.parse(localStorage.getItem('generationData') || '{}');
+    
+    if (storedData.date === today) {
+      setGenerationsCount(storedData.count || 0);
+      setIsGenerationLimitReached(storedData.count >= 20);
+    } else {
+      localStorage.setItem('generationData', JSON.stringify({ date: today, count: 0 }));
+      setGenerationsCount(0);
+      setIsGenerationLimitReached(false);
+    }
+  }, []);
+
+  const incrementGenerationCount = useCallback(() => {
+    const today = new Date().toDateString();
+    const storedData = JSON.parse(localStorage.getItem('generationData') || '{}');
+    
+    if (storedData.date === today) {
+      const newCount = (storedData.count || 0) + 1;
+      localStorage.setItem('generationData', JSON.stringify({ date: today, count: newCount }));
+      setGenerationsCount(newCount);
+      setIsGenerationLimitReached(newCount >= 20);
+    } else {
+      localStorage.setItem('generationData', JSON.stringify({ date: today, count: 1 }));
+      setGenerationsCount(1);
+      setIsGenerationLimitReached(false);
+    }
+  }, []);
+
   const finalizePlan = async () => {
+    if (isGenerationLimitReached) {
+      alert(t('generationLimitReached'));
+      return;
+    }
+
     logEvent("User Action", "Finalized Plan", `${destination} - ${numDays} days`);
     setIsLoading(true);
     setIsFullPlanGeneration(true);
     const finalPrompt = generatePrompt();
 
     try {
+      incrementGenerationCount();
       const response = await getLLMResponse(finalPrompt);
       logger.debug("Raw LLM response:", response);
       setDebugInfo({ currentPrompt: finalPrompt, llmResponse: response });
@@ -398,6 +436,11 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
   };
 
   const regenerateItinerary = async (day, timeOfDay = null) => {
+    if (isGenerationLimitReached) {
+      alert(t('generationLimitReached'));
+      return;
+    }
+
     logEvent("User Action", "Regenerated Itinerary", `Day ${day}${timeOfDay ? ` - ${timeOfDay}` : ''}`);
     setRegeneratingItinerary({ day, timeOfDay });
     setIsLoading(true);
@@ -405,6 +448,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     const regeneratePrompt = generatePrompt(true, day, timeOfDay);
 
     try {
+      incrementGenerationCount();
       const response = await getLLMResponse(regeneratePrompt);
       logger.debug("Raw LLM response:", response);
       setDebugInfo({ currentPrompt: regeneratePrompt, llmResponse: response });
@@ -582,7 +626,13 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
           <FinalizePlanButton 
             onClick={finalizePlan}
             isLoading={isLoading}
+            isDisabled={isGenerationLimitReached}
           />
+          {isGenerationLimitReached && (
+            <Typography color="error" sx={{ mt: 2 }}>
+              {t('generationLimitReached')}
+            </Typography>
+          )}
 
           {showDebug && !isProduction && (
             <DebugSection 

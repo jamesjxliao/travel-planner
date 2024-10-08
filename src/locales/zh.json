@@ -78,5 +78,6 @@
     "regenerateTimeOfDay": "重新生成这部分的行程",
     "resetAllSettings": "重置所有设置",
     "defaultHomeLocation": "圣卡洛斯",
-    "defaultDestination": "洛杉矶"
+    "defaultDestination": "洛杉矶",
+    "generationLimitReached": "您已达到每日20次生成限制。请明天再试。"
 }

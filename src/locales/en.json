@@ -78,5 +78,6 @@
     "regenerateTimeOfDay": "Regenerate this part of the day",
     "resetAllSettings": "Reset All Settings",
     "defaultHomeLocation": "San Carlos",
-    "defaultDestination": "Los Angeles"
+    "defaultDestination": "Los Angeles",
+    "generationLimitReached": "You have reached the daily limit of 20 generations. Please try again tomorrow."
   }
