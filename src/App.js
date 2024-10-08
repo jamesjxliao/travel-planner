@@ -385,6 +385,8 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
   }, []);
 
   const incrementGenerationCount = useCallback(() => {
+    if (!isProduction) return; // Skip increment if not in production
+
     const today = new Date().toDateString();
     const storedData = JSON.parse(localStorage.getItem('generationData') || '{}');
     
@@ -398,10 +400,17 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
       setGenerationsCount(1);
       setIsGenerationLimitReached(false);
     }
-  }, []);
+  }, [isProduction]);
+
+  const checkAndIncrementGenerationCount = useCallback(() => {
+    if (!isProduction) return true; // Always allow if not in production
+    if (isGenerationLimitReached) return false;
+    incrementGenerationCount();
+    return true;
+  }, [isProduction, isGenerationLimitReached, incrementGenerationCount]);
 
   const finalizePlan = async () => {
-    if (isGenerationLimitReached) {
+    if (!checkAndIncrementGenerationCount()) {
       alert(t('generationLimitReached'));
       return;
     }
@@ -412,7 +421,6 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     const finalPrompt = generatePrompt();
 
     try {
-      incrementGenerationCount();
       const response = await getLLMResponse(finalPrompt);
       logger.debug("Raw LLM response:", response);
       setDebugInfo({ currentPrompt: finalPrompt, llmResponse: response });
@@ -436,7 +444,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
   };
 
   const regenerateItinerary = async (day, timeOfDay = null) => {
-    if (isGenerationLimitReached) {
+    if (!checkAndIncrementGenerationCount()) {
       alert(t('generationLimitReached'));
       return;
     }
@@ -448,7 +456,6 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     const regeneratePrompt = generatePrompt(true, day, timeOfDay);
 
     try {
-      incrementGenerationCount();
       const response = await getLLMResponse(regeneratePrompt);
       logger.debug("Raw LLM response:", response);
       setDebugInfo({ currentPrompt: regeneratePrompt, llmResponse: response });
@@ -626,9 +633,9 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
           <FinalizePlanButton 
             onClick={finalizePlan}
             isLoading={isLoading}
-            isDisabled={isGenerationLimitReached}
+            isDisabled={isProduction && isGenerationLimitReached}
           />
-          {isGenerationLimitReached && (
+          {isProduction && isGenerationLimitReached && (
             <Typography color="error" sx={{ mt: 2 }}>
               {t('generationLimitReached')}
             </Typography>
