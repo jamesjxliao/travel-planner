@@ -79,5 +79,12 @@
     "resetAllSettings": "Reset All Settings",
     "defaultHomeLocation": "San Carlos",
     "defaultDestination": "Los Angeles",
-    "generationLimitReached": "You have reached the daily limit of 20 generations. Please try again tomorrow."
-  }
+    "generationLimitReached": "You have reached the daily limit of 20 generations. Please try again tomorrow.",
+    "provideFeedback": "Provide Feedback",
+    "rateExperience": "Rate your experience",
+    "comments": "Comments",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "feedbackSubmitted": "Thank you for your feedback!",
+    "feedbackError": "An error occurred while submitting feedback. Please try again."
+}

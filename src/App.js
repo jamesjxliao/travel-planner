@@ -7,6 +7,7 @@ import BugReportIcon from '@mui/icons-material/BugReport';
 import PersonIcon from '@mui/icons-material/Person';
 import Tooltip from '@mui/material/Tooltip';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import FeedbackIcon from '@mui/icons-material/Feedback';
 import GoogleAnalytics from './components/GoogleAnalytics';
 import { createLogger } from './utils/logger';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
@@ -16,6 +17,7 @@ import SpecialRequirementsSection from './components/SpecialRequirementsSection'
 import FinalizePlanButton from './components/FinalizePlanButton';
 import DebugSection from './components/DebugSection';
 import FinalPlanSection from './components/FinalPlanSection';
+import FeedbackDialog from './components/FeedbackDialog';
 
 const createGoogleSearchLink = (text) => {
   const searchQuery = encodeURIComponent(text);
@@ -56,6 +58,7 @@ const TravelPlannerApp = () => {
   const [debugInfo, setDebugInfo] = useState({ currentPrompt: '', llmResponse: '' });
   const [generationsCount, setGenerationsCount] = useState(0);
   const [isGenerationLimitReached, setIsGenerationLimitReached] = useState(false);
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -532,6 +535,20 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     localStorage.clear();
   }, [t]);
 
+  const handleFeedbackSubmit = async (feedbackData) => {
+    try {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
+      const response = await axios.post(`${backendUrl}/api/feedback`, feedbackData);
+      if (response.status === 200) {
+        alert(t('feedbackSubmitted'));
+        setFeedbackDialogOpen(false);
+      }
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      alert(t('feedbackError'));
+    }
+  };
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <AppBar position="fixed">
@@ -584,6 +601,16 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
               aria-label={t('resetAllSettings')}
             >
               <RefreshIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t('provideFeedback')}>
+            <IconButton
+              color="inherit"
+              onClick={() => setFeedbackDialogOpen(true)}
+              sx={{ ml: 2 }}
+              aria-label={t('provideFeedback')}
+            >
+              <FeedbackIcon />
             </IconButton>
           </Tooltip>
         </Toolbar>
@@ -696,6 +723,11 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
         </Drawer>
       )}
       {isProduction && <GoogleAnalytics />}
+      <FeedbackDialog
+        open={feedbackDialogOpen}
+        onClose={() => setFeedbackDialogOpen(false)}
+        onSubmit={handleFeedbackSubmit}
+      />
     </Box>
   );
 };

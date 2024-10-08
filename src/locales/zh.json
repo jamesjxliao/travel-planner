@@ -79,5 +79,12 @@
     "resetAllSettings": "重置所有设置",
     "defaultHomeLocation": "圣卡洛斯",
     "defaultDestination": "洛杉矶",
-    "generationLimitReached": "您已达到每日20次生成限制。请明天再试。"
+    "generationLimitReached": "您已达到每日20次生成限制。请明天再试。",
+    "provideFeedback": "提供反馈",
+    "rateExperience": "评价您的体验",
+    "comments": "评论",
+    "cancel": "取消",
+    "submit": "提交",
+    "feedbackSubmitted": "感谢您的反馈！",
+    "feedbackError": "提交反馈时发生错误。请重试。"
 }
