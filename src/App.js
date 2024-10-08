@@ -18,6 +18,7 @@ import FinalizePlanButton from './components/FinalizePlanButton';
 import DebugSection from './components/DebugSection';
 import FinalPlanSection from './components/FinalPlanSection';
 import FeedbackDialog from './components/FeedbackDialog';
+import FeedbackList from './components/FeedbackList';
 
 const createGoogleSearchLink = (text) => {
   const searchQuery = encodeURIComponent(text);
@@ -59,6 +60,7 @@ const TravelPlannerApp = () => {
   const [generationsCount, setGenerationsCount] = useState(0);
   const [isGenerationLimitReached, setIsGenerationLimitReached] = useState(false);
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+  const [showFeedbackList, setShowFeedbackList] = useState(false);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -613,6 +615,18 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
               <FeedbackIcon />
             </IconButton>
           </Tooltip>
+          {!isProduction && (
+            <Tooltip title="Show Feedback List">
+              <IconButton
+                color="inherit"
+                onClick={() => setShowFeedbackList(true)}
+                sx={{ ml: 2 }}
+                aria-label="Show Feedback List"
+              >
+                <FeedbackIcon />
+              </IconButton>
+            </Tooltip>
+          )}
         </Toolbar>
       </AppBar>
       <Toolbar />
@@ -728,6 +742,12 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
         onClose={() => setFeedbackDialogOpen(false)}
         onSubmit={handleFeedbackSubmit}
       />
+      {!isProduction && (
+        <FeedbackList
+          open={showFeedbackList}
+          onClose={() => setShowFeedbackList(false)}
+        />
+      )}
     </Box>
   );
 };
