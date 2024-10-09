@@ -87,8 +87,9 @@
     "submit": "提交",
     "feedbackSubmitted": "感谢您的反馈！",
     "feedbackError": "提交反馈时发生错误。请重试。",
-    "tripSummary": "��程摘要",
+    "tripSummary": "行程摘要",
     "bestTimeToVisit": "最佳访问时间",
     "recommendedTransportation": "推荐交通方式",
-    "howToGetThere": "如何到达"
+    "howToGetThere": "如何到达",
+    "feedbackPrompt": "您的反馈很重要！您想分享您的想法吗？"
 }

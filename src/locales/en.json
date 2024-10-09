@@ -90,5 +90,6 @@
     "tripSummary": "Trip Summary",
     "bestTimeToVisit": "Best Time to Visit",
     "recommendedTransportation": "Recommended Transportation",
-    "howToGetThere": "How to Get There"
+    "howToGetThere": "How to Get There",
+    "feedbackPrompt": "Your feedback is valuable! Would you like to share your thoughts?"
 }

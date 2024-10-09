@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import ReactGA from "react-ga4";
-import { Typography, Grid, FormControl, Select, MenuItem, Box, Switch, FormControlLabel, useMediaQuery, Drawer, IconButton, AppBar, Toolbar } from '@mui/material';
+import { Typography, Grid, FormControl, Select, MenuItem, Box, Switch, FormControlLabel, useMediaQuery, Drawer, IconButton, AppBar, Toolbar, Snackbar, Button } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import PersonIcon from '@mui/icons-material/Person';
@@ -9,6 +9,7 @@ import Tooltip from '@mui/material/Tooltip';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import FeedbackIcon from '@mui/icons-material/Feedback';
 import ListAltIcon from '@mui/icons-material/ListAlt';
+import CloseIcon from '@mui/icons-material/Close';
 import GoogleAnalytics from './components/GoogleAnalytics';
 import { createLogger } from './utils/logger';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
@@ -63,6 +64,8 @@ const TravelPlannerApp = () => {
   const [isGenerationLimitReached, setIsGenerationLimitReached] = useState(false);
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [showFeedbackList, setShowFeedbackList] = useState(false);
+  const [feedbackPromptCount, setFeedbackPromptCount] = useState(0);
+  const [showFeedbackPrompt, setShowFeedbackPrompt] = useState(false);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -442,12 +445,28 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     return true;
   }, [isProduction, isGenerationLimitReached, incrementGenerationCount]);
 
+  const incrementFeedbackPromptCount = useCallback(() => {
+    const hasShownFeedbackPrompt = localStorage.getItem('hasShownFeedbackPrompt') === 'true';
+    
+    if (!hasShownFeedbackPrompt) {
+      setFeedbackPromptCount(prevCount => {
+        const newCount = prevCount + 1;
+        if (newCount === 5) {
+          setShowFeedbackPrompt(true);
+          localStorage.setItem('hasShownFeedbackPrompt', 'true');
+        }
+        return newCount;
+      });
+    }
+  }, []);
+
   const finalizePlan = async () => {
     if (!checkAndIncrementGenerationCount()) {
       alert(t('generationLimitReached'));
       return;
     }
 
+    incrementFeedbackPromptCount();
     logEvent("User Action", "Finalized Plan", `${destination} - ${numDays} days`);
     setIsLoading(true);
     setIsFullPlanGeneration(true);
@@ -482,6 +501,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
       return;
     }
 
+    incrementFeedbackPromptCount();
     logEvent("User Action", "Regenerated Itinerary", `Day ${day}${timeOfDay ? ` - ${timeOfDay}` : ''}`);
     setRegeneratingItinerary({ day, timeOfDay });
     setIsLoading(true);
@@ -591,7 +611,9 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     setAccommodationType('flexible');
     setTransportationMode('flexible');
     setSpecialRequirements('');
-    localStorage.clear();
+    localStorage.removeItem('hasShownFeedbackPrompt');
+    setFeedbackPromptCount(0);
+    setShowFeedbackPrompt(false);
   }, [t]);
 
   const handleFeedbackSubmit = async (feedbackData) => {
@@ -606,6 +628,18 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
       console.error('Error submitting feedback:', error);
       alert(t('feedbackError'));
     }
+  };
+
+  const handleFeedbackPromptClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setShowFeedbackPrompt(false);
+  };
+
+  const handleOpenFeedbackDialog = () => {
+    setShowFeedbackPrompt(false);
+    setFeedbackDialogOpen(true);
   };
 
   return (
@@ -807,6 +841,31 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
           onClose={() => setShowFeedbackList(false)}
         />
       )}
+      <Snackbar
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'center',
+        }}
+        open={showFeedbackPrompt}
+        autoHideDuration={null}
+        onClose={handleFeedbackPromptClose}
+        message={t('feedbackPrompt')}
+        action={
+          <>
+            <Button color="secondary" size="small" onClick={handleOpenFeedbackDialog}>
+              {t('provideFeedback')}
+            </Button>
+            <IconButton
+              size="small"
+              aria-label="close"
+              color="inherit"
+              onClick={handleFeedbackPromptClose}
+            >
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </>
+        }
+      />
     </Box>
   );
 };
