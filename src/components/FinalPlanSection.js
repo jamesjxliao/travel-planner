@@ -12,9 +12,36 @@ const FinalPlanSection = ({
   isLoading, 
   regeneratingItinerary,
   attractionImages,
-  finalPlanRef
+  finalPlanRef,
+  timeToVisit,
+  transportationMode
 }) => {
   const { t, language } = useLanguage();
+
+  const renderSummary = () => {
+    if (!finalPlan || !finalPlan.summary) return null;
+
+    return (
+      <Card elevation={3} sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>{t('tripSummary')}</Typography>
+          <Typography variant="body1" paragraph>{finalPlan.summary.introduction}</Typography>
+          
+          {timeToVisit === 'flexible' && finalPlan.summary.bestTimeToVisit && (
+            <Typography variant="body1" paragraph>
+              <strong>{t('bestTimeToVisit')}:</strong> {finalPlan.summary.bestTimeToVisit}
+            </Typography>
+          )}
+          
+          {transportationMode === 'flexible' && finalPlan.summary.howToGetThere && (
+            <Typography variant="body1" paragraph>
+              <strong>{t('howToGetThere')}:</strong> {finalPlan.summary.howToGetThere}
+            </Typography>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
 
   const renderItinerary = () => {
     if (!finalPlan || !finalPlan.itinerary) return null;
@@ -180,6 +207,7 @@ const FinalPlanSection = ({
   return (
     <Box sx={{ mt: 4 }} ref={finalPlanRef}>
       <Typography variant="h5" gutterBottom>{t('yourTravelPlan')}</Typography>
+      {renderSummary()}
       {renderItinerary()}
     </Box>
   );

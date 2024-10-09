@@ -302,6 +302,11 @@ Important: Please focus on recommending well-known attractions, popular restaura
     } else {
       prompt += `\n\nYour response must be a valid JSON object with the following structure:
 {
+  "summary": {
+    "introduction": "Brief introduction to the destination",
+    "bestTimeToVisit": "Information about the best time to visit (only if timeToVisit is flexible)",
+    "howToGetThere": "Information on how to get to the destination (only if transportationMode is flexible)"
+  },
   "itinerary": [
     {
       "day": 1,
@@ -752,6 +757,8 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
               regeneratingItinerary={regeneratingItinerary}
               attractionImages={attractionImages}
               finalPlanRef={finalPlanRef}
+              timeToVisit={timeToVisit}
+              transportationMode={transportationMode}
             />
           )}
         </Grid>

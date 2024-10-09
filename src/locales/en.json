@@ -86,5 +86,9 @@
     "cancel": "Cancel",
     "submit": "Submit",
     "feedbackSubmitted": "Thank you for your feedback!",
-    "feedbackError": "An error occurred while submitting feedback. Please try again."
+    "feedbackError": "An error occurred while submitting feedback. Please try again.",
+    "tripSummary": "Trip Summary",
+    "bestTimeToVisit": "Best Time to Visit",
+    "recommendedTransportation": "Recommended Transportation",
+    "howToGetThere": "How to Get There"
 }
