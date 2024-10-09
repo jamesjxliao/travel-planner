@@ -57,6 +57,7 @@ const TravelPlannerApp = () => {
   const [dayVersions, setDayVersions] = useState({});
   const [currentPages, setCurrentPages] = useState({});
   const [attractionImages, setAttractionImages] = useState({});
+  const [versionImages, setVersionImages] = useState({});
   const [debugInfo, setDebugInfo] = useState({ currentPrompt: '', llmResponse: '' });
   const [generationsCount, setGenerationsCount] = useState(0);
   const [isGenerationLimitReached, setIsGenerationLimitReached] = useState(false);
@@ -74,9 +75,22 @@ const TravelPlannerApp = () => {
 
   const allCommonPreferences = Object.values(commonPreferences).flat();
 
-  const fetchAttractionImage = useCallback(async (attraction, day, timeOfDay) => {
-    console.log(`Fetching image for: ${attraction}, Day: ${day}, Time: ${timeOfDay}`);
+  const fetchAttractionImage = useCallback(async (attraction, day, timeOfDay, version = 1) => {
+    console.log(`Fetching image for: ${attraction}, Day: ${day}, Time: ${timeOfDay}, Version: ${version}`);
     
+    // Check if the image for this version already exists
+    if (versionImages[day]?.[version]?.[timeOfDay]) {
+      console.log('Image already exists for this version, reusing');
+      setAttractionImages(prev => ({
+        ...prev,
+        [day]: {
+          ...(prev[day] || {}),
+          [timeOfDay]: versionImages[day][version][timeOfDay]
+        }
+      }));
+      return;
+    }
+
     try {
       const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
       const searchUrl = `${backendUrl}/api/places?input=${encodeURIComponent(attraction)}`;
@@ -104,17 +118,25 @@ const TravelPlannerApp = () => {
             const imageUrl = `${backendUrl}/api/photo?maxwidth=600&photoreference=${photoReference}`;
             console.log('Image URL:', imageUrl);
 
-            setAttractionImages(prev => {
-              const newState = {
-                ...prev,
-                [day]: {
-                  ...(prev[day] || {}),
+            setAttractionImages(prev => ({
+              ...prev,
+              [day]: {
+                ...(prev[day] || {}),
+                [timeOfDay]: imageUrl
+              }
+            }));
+
+            // Store the image URL for this version
+            setVersionImages(prev => ({
+              ...prev,
+              [day]: {
+                ...(prev[day] || {}),
+                [version]: {
+                  ...(prev[day]?.[version] || {}),
                   [timeOfDay]: imageUrl
                 }
-              };
-              console.log('Updated attractionImages state:', newState);
-              return newState;
-            });
+              }
+            }));
           } else {
             console.log('Photo reference is missing');
             // Handle missing photo reference (e.g., set a default image)
@@ -515,12 +537,41 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     setDrawerOpen(false);
   };
 
-  const handlePageChange = (day, page) => {
+  const handlePageChange = useCallback((day, page) => {
     setCurrentPages(prev => ({
       ...prev,
       [day]: page
     }));
-  };
+
+    // Reuse or fetch new images for the selected version
+    const selectedVersion = dayVersions[day][page - 1];
+    if (selectedVersion) {
+      ['morning', 'afternoon', 'evening'].forEach(timeOfDay => {
+        const content = selectedVersion[timeOfDay];
+        if (content) {
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = content;
+
+          const linkedAttractions = Array.from(tempDiv.querySelectorAll('a'))
+            .map(a => ({
+              text: a.textContent,
+              attribute: a.getAttribute('data-attr') || 'unknown'
+            }))
+            .filter(item => item.text.trim() !== '');
+
+          const prioritizedAttractions = linkedAttractions.sort((a, b) => {
+            if (a.attribute === 'restaurant' && b.attribute !== 'restaurant') return 1;
+            if (a.attribute !== 'restaurant' && b.attribute === 'restaurant') return -1;
+            return 0;
+          });
+
+          if (prioritizedAttractions.length > 0) {
+            fetchAttractionImage(prioritizedAttractions[0].text, day, timeOfDay, page);
+          }
+        }
+      });
+    }
+  }, [dayVersions, fetchAttractionImage]);
 
   const resetAllSettings = useCallback(() => {
     logEvent("User Action", "Reset All Settings");
