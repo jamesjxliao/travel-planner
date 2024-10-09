@@ -22,21 +22,37 @@ const FinalPlanSection = ({
     if (!finalPlan || !finalPlan.summary) return null;
 
     return (
-      <Card elevation={3} sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>{t('tripSummary')}</Typography>
-          <Typography variant="body1" paragraph>{finalPlan.summary.introduction}</Typography>
+      <Card elevation={3} sx={{ mb: 3, bgcolor: 'background.paper' }}>
+        <CardContent sx={{ '&:last-child': { pb: 2 } }}>
+          <Typography variant="h5" color="primary" sx={{ fontWeight: 'bold', mb: 1.5 }}>
+            {t('tripSummary')}
+          </Typography>
+          <Box sx={{ mb: 2, p: 1.5, bgcolor: 'grey.100', borderRadius: 1 }}>
+            <Typography variant="body2" sx={{ lineHeight: 1.5 }}>
+              {finalPlan.summary.introduction}
+            </Typography>
+          </Box>
           
           {timeToVisit === 'flexible' && finalPlan.summary.bestTimeToVisit && (
-            <Typography variant="body1" paragraph>
-              <strong>{t('bestTimeToVisit')}:</strong> {finalPlan.summary.bestTimeToVisit}
-            </Typography>
+            <Box sx={{ mb: 1.5 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', display: 'inline' }}>
+                {t('bestTimeToVisit')}:
+              </Typography>
+              <Typography variant="body2" sx={{ display: 'inline', ml: 1 }}>
+                {finalPlan.summary.bestTimeToVisit}
+              </Typography>
+            </Box>
           )}
           
           {transportationMode === 'flexible' && finalPlan.summary.howToGetThere && (
-            <Typography variant="body1" paragraph>
-              <strong>{t('howToGetThere')}:</strong> {finalPlan.summary.howToGetThere}
-            </Typography>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', display: 'inline' }}>
+                {t('howToGetThere')}:
+              </Typography>
+              <Typography variant="body2" sx={{ display: 'inline', ml: 1 }}>
+                {finalPlan.summary.howToGetThere}
+              </Typography>
+            </Box>
           )}
         </CardContent>
       </Card>
