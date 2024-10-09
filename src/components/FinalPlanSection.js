@@ -222,7 +222,7 @@ const FinalPlanSection = ({
 
   return (
     <Box sx={{ mt: 4 }} ref={finalPlanRef}>
-      <Typography variant="h5" gutterBottom>{t('yourTravelPlan')}</Typography>
+      {/* <Typography variant="h5" gutterBottom>{t('yourTravelPlan')}</Typography> */}
       {renderSummary()}
       {renderItinerary()}
     </Box>
