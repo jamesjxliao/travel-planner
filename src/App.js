@@ -625,7 +625,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
             </Tooltip>
           )}
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            {t('title')}
+            Bon Voyage
           </Typography>
           {!isMobile && !isProduction && (
             <FormControlLabel
