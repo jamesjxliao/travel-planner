@@ -183,7 +183,7 @@ const TravelPlannerApp = () => {
     } else {
       console.log('No finalPlan or itinerary found');
     }
-  }, [finalPlan, fetchAttractionImage, attractionImages]);
+  }, [finalPlan, fetchAttractionImage]);
 
   const logEvent = (category, action, label) => {
     if (process.env.NODE_ENV === 'production') {
