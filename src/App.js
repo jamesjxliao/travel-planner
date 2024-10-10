@@ -780,7 +780,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
             />
           )}
 
-          {finalPlan && (
+          {(finalPlan || isLoading) && (
             <FinalPlanSection 
               finalPlan={finalPlan}
               dayVersions={dayVersions}
@@ -793,6 +793,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
               finalPlanRef={finalPlanRef}
               timeToVisit={timeToVisit}
               transportationMode={transportationMode}
+              numDays={parseInt(numDays)} // Add this line
             />
           )}
         </Grid>

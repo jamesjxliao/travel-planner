@@ -14,13 +14,12 @@ const FinalPlanSection = ({
   attractionImages,
   finalPlanRef,
   timeToVisit,
-  transportationMode
+  transportationMode,
+  numDays // Add this prop
 }) => {
   const { t, language } = useLanguage();
 
   const renderSummary = () => {
-    if (!finalPlan || !finalPlan.summary) return null;
-
     return (
       <Card elevation={3} sx={{ mb: 3, bgcolor: 'background.paper' }}>
         <CardContent sx={{ '&:last-child': { pb: 2 } }}>
@@ -28,30 +27,42 @@ const FinalPlanSection = ({
             {t('tripSummary')}
           </Typography>
           <Box sx={{ mb: 2, p: 1.5, bgcolor: 'grey.100', borderRadius: 1 }}>
-            <Typography variant="body2" sx={{ lineHeight: 1.5 }}>
-              {finalPlan.summary.introduction}
-            </Typography>
+            {isLoading ? (
+              <Skeleton variant="text" width="100%" height={80} />
+            ) : (
+              <Typography variant="body2" sx={{ lineHeight: 1.5 }}>
+                {finalPlan?.summary?.introduction || ''}
+              </Typography>
+            )}
           </Box>
           
-          {timeToVisit === 'flexible' && finalPlan.summary.bestTimeToVisit && (
+          {timeToVisit === 'flexible' && (
             <Box sx={{ mb: 1.5 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 'bold', display: 'inline' }}>
                 {t('bestTimeToVisit')}:
               </Typography>
-              <Typography variant="body2" sx={{ display: 'inline', ml: 1 }}>
-                {finalPlan.summary.bestTimeToVisit}
-              </Typography>
+              {isLoading ? (
+                <Skeleton variant="text" width="70%" sx={{ display: 'inline-block', ml: 1 }} />
+              ) : (
+                <Typography variant="body2" sx={{ display: 'inline', ml: 1 }}>
+                  {finalPlan?.summary?.bestTimeToVisit || ''}
+                </Typography>
+              )}
             </Box>
           )}
           
-          {transportationMode === 'flexible' && finalPlan.summary.howToGetThere && (
+          {transportationMode === 'flexible' && (
             <Box>
               <Typography variant="subtitle2" sx={{ fontWeight: 'bold', display: 'inline' }}>
                 {t('howToGetThere')}:
               </Typography>
-              <Typography variant="body2" sx={{ display: 'inline', ml: 1 }}>
-                {finalPlan.summary.howToGetThere}
-              </Typography>
+              {isLoading ? (
+                <Skeleton variant="text" width="70%" sx={{ display: 'inline-block', ml: 1 }} />
+              ) : (
+                <Typography variant="body2" sx={{ display: 'inline', ml: 1 }}>
+                  {finalPlan?.summary?.howToGetThere || ''}
+                </Typography>
+              )}
             </Box>
           )}
         </CardContent>
@@ -60,15 +71,15 @@ const FinalPlanSection = ({
   };
 
   const renderItinerary = () => {
-    if (!finalPlan || !finalPlan.itinerary) return null;
+    const daysToRender = isLoading ? Array.from({ length: numDays }, (_, i) => i + 1) : finalPlan?.itinerary || [];
 
     return (
       <Box sx={{ mt: 2 }} key={JSON.stringify(finalPlan)}>
-        {finalPlan.itinerary.map((originalDay, index) => {
-          const day = originalDay.day;
-          const versions = dayVersions[day] || [originalDay];
-          const currentPage = currentPages[day] || 1;
-          const currentVersion = versions[currentPage - 1] || originalDay;
+        {daysToRender.map((day, index) => {
+          const dayNumber = isLoading ? day : day.day;
+          const versions = dayVersions[dayNumber] || [day];
+          const currentPage = currentPages[dayNumber] || 1;
+          const currentVersion = versions[currentPage - 1] || day;
 
           return (
             <Card key={index} elevation={3} sx={{ mb: 2, overflow: 'hidden' }}>
@@ -83,14 +94,14 @@ const FinalPlanSection = ({
               }}>
                 <Typography variant="subtitle1" fontWeight="bold">
                   {language === 'zh' 
-                    ? t('day').replace('天', `${day}天`) 
-                    : `${t('day')} ${day}`}
+                    ? t('day').replace('天', `${dayNumber}天`) 
+                    : `${t('day')} ${dayNumber}`}
                 </Typography>
                 <Tooltip title={t('regenerateDay')}>
                   <IconButton 
                     size="small"
-                    onClick={() => regenerateItinerary(day)}
-                    disabled={isLoading || (regeneratingItinerary.day === day && !regeneratingItinerary.timeOfDay)}
+                    onClick={() => regenerateItinerary(dayNumber)}
+                    disabled={isLoading || (regeneratingItinerary.day === dayNumber && !regeneratingItinerary.timeOfDay)}
                     sx={{ color: 'primary.contrastText' }}
                   >
                     <RefreshIcon fontSize="small" />
@@ -100,30 +111,14 @@ const FinalPlanSection = ({
               <CardContent sx={{ pt: 1 }}>
                 <Grid container spacing={2}>
                   {['morning', 'afternoon', 'evening'].map((timeOfDay) => {
-                    const content = currentVersion[timeOfDay];
-                    const firstAttraction = content.match(/\[([^\]]+)\]/)?.[1];
-                    const imageUrl = attractionImages[day]?.[timeOfDay];
+                    const content = isLoading ? '' : currentVersion[timeOfDay];
+                    const imageUrl = attractionImages[dayNumber]?.[timeOfDay];
 
                     return (
                       <Grid item xs={12} sm={4} key={timeOfDay}>
                         <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                           <Box sx={{ position: 'relative', paddingTop: '56.25%' }}>
-                            {imageUrl ? (
-                              <CardMedia
-                                component="img"
-                                image={imageUrl}
-                                alt={firstAttraction || "Attraction"}
-                                sx={{
-                                  position: 'absolute',
-                                  top: 0,
-                                  left: 0,
-                                  width: '100%',
-                                  height: '100%',
-                                  objectFit: 'cover',
-                                  objectPosition: 'center',
-                                }}
-                              />
-                            ) : (
+                            {isLoading || !imageUrl ? (
                               <Skeleton 
                                 variant="rectangular" 
                                 sx={{
@@ -132,6 +127,21 @@ const FinalPlanSection = ({
                                   left: 0,
                                   width: '100%',
                                   height: '100%',
+                                }}
+                              />
+                            ) : (
+                              <CardMedia
+                                component="img"
+                                image={imageUrl}
+                                alt={t(timeOfDay)}
+                                sx={{
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover',
+                                  objectPosition: 'center',
                                 }}
                               />
                             )}
@@ -153,8 +163,8 @@ const FinalPlanSection = ({
                               <Tooltip title={t('regenerateTimeOfDay')}>
                                 <IconButton
                                   size="small"
-                                  onClick={() => regenerateItinerary(day, timeOfDay)}
-                                  disabled={isLoading || (regeneratingItinerary.day === day && regeneratingItinerary.timeOfDay === timeOfDay)}
+                                  onClick={() => regenerateItinerary(dayNumber, timeOfDay)}
+                                  disabled={isLoading || (regeneratingItinerary.day === dayNumber && regeneratingItinerary.timeOfDay === timeOfDay)}
                                   sx={{ ml: 0.5, p: 0.5, color: 'white' }}
                                 >
                                   <RefreshIcon fontSize="small" />
@@ -163,21 +173,29 @@ const FinalPlanSection = ({
                             </Box>
                           </Box>
                           <CardContent sx={{ flexGrow: 1, p: 1 }}>
-                            <Typography 
-                              variant="body2" 
-                              component="div"
-                              dangerouslySetInnerHTML={{ __html: content }}
-                              sx={{
-                                '& a': {
-                                  color: 'primary.main',
-                                  textDecoration: 'underline',
-                                  fontWeight: 'bold',
-                                  '&:hover': {
-                                    color: 'primary.dark',
+                            {isLoading ? (
+                              <>
+                                <Skeleton variant="text" />
+                                <Skeleton variant="text" />
+                                <Skeleton variant="text" />
+                              </>
+                            ) : (
+                              <Typography 
+                                variant="body2" 
+                                component="div"
+                                dangerouslySetInnerHTML={{ __html: content }}
+                                sx={{
+                                  '& a': {
+                                    color: 'primary.main',
+                                    textDecoration: 'underline',
+                                    fontWeight: 'bold',
+                                    '&:hover': {
+                                      color: 'primary.dark',
+                                    },
                                   },
-                                },
-                              }}
-                            />
+                                }}
+                              />
+                            )}
                           </CardContent>
                         </Card>
                       </Grid>
@@ -189,7 +207,7 @@ const FinalPlanSection = ({
                     <Pagination 
                       count={versions.length} 
                       page={currentPage} 
-                      onChange={(event, page) => handlePageChange(day, page)}
+                      onChange={(event, page) => handlePageChange(dayNumber, page)}
                       color="primary"
                     />
                   </Box>
@@ -200,20 +218,29 @@ const FinalPlanSection = ({
         })}
         <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>{t('estimatedCostBreakdown')}</Typography>
         <Grid container spacing={2}>
-          {Object.entries(finalPlan.estimatedCost.breakdown).map(([category, cost]) => (
+          {['accommodation', 'transportation', 'food', 'activities', 'other'].map((category) => (
             <Grid item xs={12} sm={6} md={4} key={category}>
               <Paper elevation={2} sx={{ p: 2, height: '100%', bgcolor: 'background.default' }}>
                 <Typography variant="subtitle1" color="primary" gutterBottom>
                   {t(category)}
                 </Typography>
-                <Typography variant="h6">{cost}</Typography>
+                {isLoading ? (
+                  <Skeleton variant="text" width="60%" />
+                ) : (
+                  <Typography variant="h6">{finalPlan?.estimatedCost?.breakdown[category] || ''}</Typography>
+                )}
               </Paper>
             </Grid>
           ))}
         </Grid>
         <Paper elevation={3} sx={{ mt: 3, p: 2, bgcolor: 'secondary.light' }}>
           <Typography variant="h6" color="secondary.contrastText">
-            {t('totalEstimatedCost')}: <strong>{finalPlan.estimatedCost.total}</strong>
+            {t('totalEstimatedCost')}: {' '}
+            {isLoading ? (
+              <Skeleton variant="text" width="30%" sx={{ display: 'inline-block' }} />
+            ) : (
+              <strong>{finalPlan?.estimatedCost?.total || ''}</strong>
+            )}
           </Typography>
         </Paper>
       </Box>
@@ -222,7 +249,6 @@ const FinalPlanSection = ({
 
   return (
     <Box sx={{ mt: 4 }} ref={finalPlanRef}>
-      {/* <Typography variant="h5" gutterBottom>{t('yourTravelPlan')}</Typography> */}
       {renderSummary()}
       {renderItinerary()}
     </Box>
