@@ -100,10 +100,9 @@ const FinalPlanSection = ({
               <CardContent sx={{ pt: 1 }}>
                 <Grid container spacing={2}>
                   {['morning', 'afternoon', 'evening'].map((timeOfDay) => {
-                    const content = currentVersion[timeOfDay];
+                    const content = isDayLoading ? '' : currentVersion[timeOfDay];
                     const imageUrl = attractionImages[dayNumber]?.[timeOfDay];
-                    const isTimeOfDayLoading = regeneratingItinerary.day === dayNumber && 
-                      (regeneratingItinerary.timeOfDay === timeOfDay || !regeneratingItinerary.timeOfDay);
+                    const isTimeOfDayLoading = regeneratingItinerary.day === dayNumber && regeneratingItinerary.timeOfDay === timeOfDay;
 
                     return (
                       <Grid item xs={12} sm={4} key={timeOfDay}>
