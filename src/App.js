@@ -70,7 +70,6 @@ const TravelPlannerApp = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [isFullPlanGeneration, setIsFullPlanGeneration] = useState(false);
   const finalPlanRef = useRef(null);
 
   const isProduction = process.env.NODE_ENV === 'production';
@@ -469,7 +468,18 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     incrementFeedbackPromptCount();
     logEvent("User Action", "Finalized Plan", `${destination} - ${numDays} days`);
     setIsLoading(true);
-    setIsFullPlanGeneration(true);
+
+    // Scroll to the plan section immediately
+    setTimeout(() => {
+      if (finalPlanRef.current) {
+        const yOffset = -80; // Adjust this value as needed
+        const y = finalPlanRef.current.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({top: y, behavior: 'smooth'});
+      } else {
+        console.error('finalPlanRef is not available');
+      }
+    }, 100);
+
     const finalPrompt = generatePrompt();
 
     try {
@@ -540,19 +550,6 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
       setRegeneratingItinerary({ day: null, timeOfDay: null });
     }
   };
-
-  useEffect(() => {
-    if (!isLoading && isFullPlanGeneration && finalPlanRef.current) {
-      setTimeout(() => {
-        const yOffset = -80; // Adjust this value as needed
-        const element = finalPlanRef.current;
-        const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
-        
-        window.scrollTo({top: y, behavior: 'smooth'});
-        setIsFullPlanGeneration(false);
-      }, 100);
-    }
-  }, [isLoading, isFullPlanGeneration]);
 
   const handleDrawerToggle = () => {
     setDrawerOpen(!drawerOpen);
@@ -793,7 +790,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
               finalPlanRef={finalPlanRef}
               timeToVisit={timeToVisit}
               transportationMode={transportationMode}
-              numDays={parseInt(numDays)} // Add this line
+              numDays={parseInt(numDays)}
             />
           )}
         </Grid>
