@@ -28,7 +28,7 @@ const createGoogleSearchLink = (text) => {
 };
 
 const commonPreferences = {
-  "Food": ["food.localcuisine", "food.finedining", "food.streetfood", "food.vegetarian", "food.familyfriendly"],
+  "Food": ["food.localcuisine", "food.streetfood", "food.vegetarian", "food.familyfriendly"],
   "Attractions": ["attractions.museums", "attractions.nature", "attractions.historicalsites", "attractions.themeparks", "attractions.shopping"]
 };
 
