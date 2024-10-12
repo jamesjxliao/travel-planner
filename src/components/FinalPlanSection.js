@@ -15,7 +15,7 @@ const FinalPlanSection = ({
   finalPlanRef,
   timeToVisit,
   transportationMode,
-  numDays // Add this prop
+  numDays
 }) => {
   const { t, language } = useLanguage();
 
@@ -71,6 +71,45 @@ const FinalPlanSection = ({
   };
 
   const renderItinerary = () => {
+    // If isLoading is true and there's no finalPlan yet, render skeleton for all days
+    if (isLoading && !finalPlan) {
+      return Array.from({ length: numDays }, (_, index) => (
+        <Card key={index} elevation={3} sx={{ mb: 2, overflow: 'hidden' }}>
+          <Box sx={{ 
+            bgcolor: 'primary.main', 
+            color: 'primary.contrastText', 
+            py: 1,
+            px: 2,
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center' 
+          }}>
+            <Typography variant="subtitle1" fontWeight="bold">
+              {language === 'zh' 
+                ? t('day').replace('天', `${index + 1}天`) 
+                : `${t('day')} ${index + 1}`}
+            </Typography>
+          </Box>
+          <CardContent sx={{ pt: 1 }}>
+            <Grid container spacing={2}>
+              {['morning', 'afternoon', 'evening'].map((timeOfDay) => (
+                <Grid item xs={12} sm={4} key={timeOfDay}>
+                  <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                    <Skeleton variant="rectangular" height={140} />
+                    <CardContent sx={{ flexGrow: 1, p: 1 }}>
+                      <Skeleton variant="text" />
+                      <Skeleton variant="text" />
+                      <Skeleton variant="text" />
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </CardContent>
+        </Card>
+      ));
+    }
+
     const daysToRender = finalPlan?.itinerary || [];
 
     return (
