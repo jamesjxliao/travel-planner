@@ -514,7 +514,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     incrementFeedbackPromptCount();
     logEvent("User Action", "Regenerated Itinerary", `Day ${day}${timeOfDay ? ` - ${timeOfDay}` : ''}`);
     setRegeneratingItinerary({ day, timeOfDay });
-    setIsLoading(true);
+    // Remove the setIsLoading(true) line here
 
     const regeneratePrompt = generatePrompt(true, day, timeOfDay);
 
@@ -546,7 +546,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
       logger.error("Error in regenerateItinerary:", error);
       setDebugInfo(prev => ({ ...prev, llmResponse: `Error: ${error.message}` }));
     } finally {
-      setIsLoading(false);
+      // Remove the setIsLoading(false) line here
       setRegeneratingItinerary({ day: null, timeOfDay: null });
     }
   };

@@ -71,15 +71,17 @@ const FinalPlanSection = ({
   };
 
   const renderItinerary = () => {
-    const daysToRender = isLoading ? Array.from({ length: numDays }, (_, i) => i + 1) : finalPlan?.itinerary || [];
+    const daysToRender = finalPlan?.itinerary || [];
 
     return (
       <Box sx={{ mt: 2 }} key={JSON.stringify(finalPlan)}>
         {daysToRender.map((day, index) => {
-          const dayNumber = isLoading ? day : day.day;
+          const dayNumber = day.day;
           const versions = dayVersions[dayNumber] || [day];
           const currentPage = currentPages[dayNumber] || 1;
           const currentVersion = versions[currentPage - 1] || day;
+
+          const isDayRegenerating = regeneratingItinerary.day === dayNumber && !regeneratingItinerary.timeOfDay;
 
           return (
             <Card key={index} elevation={3} sx={{ mb: 2, overflow: 'hidden' }}>
@@ -111,14 +113,16 @@ const FinalPlanSection = ({
               <CardContent sx={{ pt: 1 }}>
                 <Grid container spacing={2}>
                   {['morning', 'afternoon', 'evening'].map((timeOfDay) => {
-                    const content = isLoading ? '' : currentVersion[timeOfDay];
+                    const content = currentVersion[timeOfDay];
                     const imageUrl = attractionImages[dayNumber]?.[timeOfDay];
+                    const isTimeOfDayRegenerating = regeneratingItinerary.day === dayNumber && regeneratingItinerary.timeOfDay === timeOfDay;
+                    const isCardLoading = isLoading || isDayRegenerating || isTimeOfDayRegenerating;
 
                     return (
                       <Grid item xs={12} sm={4} key={timeOfDay}>
                         <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                           <Box sx={{ position: 'relative', paddingTop: '56.25%' }}>
-                            {isLoading || !imageUrl ? (
+                            {(isCardLoading || !imageUrl) ? (
                               <Skeleton 
                                 variant="rectangular" 
                                 sx={{
@@ -173,7 +177,7 @@ const FinalPlanSection = ({
                             </Box>
                           </Box>
                           <CardContent sx={{ flexGrow: 1, p: 1 }}>
-                            {isLoading ? (
+                            {isCardLoading ? (
                               <>
                                 <Skeleton variant="text" />
                                 <Skeleton variant="text" />
