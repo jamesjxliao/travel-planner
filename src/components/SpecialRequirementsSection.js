@@ -47,6 +47,9 @@ const SpecialRequirementsSection = ({
             disabled={isLoading}
             variant="outlined"
             rows={1}
+            InputLabelProps={{
+              style: { fontSize: '1.1rem' }  // Slightly increase label font size
+            }}
           />
         </Box>
       </CardContent>
