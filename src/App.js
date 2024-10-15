@@ -66,6 +66,10 @@ const TravelPlannerApp = () => {
   const [showFeedbackList, setShowFeedbackList] = useState(false);
   const [feedbackPromptCount, setFeedbackPromptCount] = useState(0);
   const [showFeedbackPrompt, setShowFeedbackPrompt] = useState(false);
+  const [summary, setSummary] = useState(null);
+  const [itineraryAndCost, setItineraryAndCost] = useState(null);
+  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+  const [isItineraryLoading, setIsItineraryLoading] = useState(false);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -251,7 +255,7 @@ const TravelPlannerApp = () => {
     }
   };
 
-  const generatePrompt = (isRegeneration = false, day = null, timeOfDay = null) => {
+  const generatePrompt = (isRegeneration = false, day = null, timeOfDay = null, isSummary = false) => {
     const travelInfo = {
       type: `${numDays}-day ${isRoundTrip ? 'round trip' : 'one-way trip'}`,
       from: homeLocation,
@@ -265,48 +269,77 @@ const TravelPlannerApp = () => {
     };
 
     let prompt = `Please respond in ${language === 'zh' ? 'Chinese' : 'English'}. `;
-    prompt += `${isRegeneration ? `Regenerate the itinerary for ${timeOfDay ? `the ${timeOfDay} of ` : ''}Day ${day} of the ` : 'Plan a '}${travelInfo.type} from ${travelInfo.from} to ${travelInfo.to} for ${travelInfo.travelers}`;
-    if (travelInfo.groupSize) prompt += ` (group of ${travelInfo.groupSize})`;
-    prompt += `. Budget: ${travelInfo.budget}.`;
-    prompt += ` Transportation: ${travelInfo.transportation === 'flexible' ? 'flexible options' : travelInfo.transportation}.`;
-    prompt += ` Accommodation: ${travelInfo.accommodation === 'flexible' ? 'flexible options' : t(`accommodations.${travelInfo.accommodation}`)}.`;
-    prompt += ` Time to visit: ${travelInfo.timeToVisit === 'flexible' ? 'flexible' : t(`timetovisit.${travelInfo.timeToVisit}`)}.`;
+    
+    if (isSummary) {
+      prompt += `Provide a summary for a ${travelInfo.type} from ${travelInfo.from} to ${travelInfo.to} for ${travelInfo.travelers}`;
+      if (travelInfo.groupSize) prompt += ` (group of ${travelInfo.groupSize})`;
+      prompt += `. Include an introduction to the destination`;
+      if (travelInfo.timeToVisit === 'flexible') prompt += `, information about the best time to visit`;
+      if (travelInfo.transportation === 'flexible') prompt += `, and information on how to get there`;
+      prompt += `.`;
 
-    if (specialRequirements) {
-      prompt += ` Special Requirements: ${specialRequirements}.`;
-    }
-
-    if (isRegeneration) {
+      prompt += `\n\nYour response must be a valid JSON object with the following structure:
+      {
+        "introduction": "Brief introduction to the destination",
+        "bestTimeToVisit": "Information about the best time to visit (only if timeToVisit is flexible)",
+        "howToGetThere": "Information on how to get to the destination (only if transportationMode is flexible)"
+      }`;
+    } else if (isRegeneration) {
       // Add regeneration-specific instructions
+      prompt += ` Regenerate the itinerary for ${timeOfDay ? `the ${timeOfDay} of ` : ''}Day ${day} of the `;
+      prompt += `${travelInfo.type} from ${travelInfo.from} to ${travelInfo.to} for ${travelInfo.travelers}`;
+      if (travelInfo.groupSize) prompt += ` (group of ${travelInfo.groupSize})`;
+      prompt += `. Budget: ${travelInfo.budget}.`;
+      prompt += ` Transportation: ${travelInfo.transportation === 'flexible' ? 'flexible options' : travelInfo.transportation}.`;
+      prompt += ` Accommodation: ${travelInfo.accommodation === 'flexible' ? 'flexible options' : t(`accommodations.${travelInfo.accommodation}`)}.`;
+      prompt += ` Time to visit: ${travelInfo.timeToVisit === 'flexible' ? 'flexible' : t(`timetovisit.${travelInfo.timeToVisit}`)}.`;
+
+      if (specialRequirements) {
+        prompt += ` Special Requirements: ${specialRequirements}.`;
+      }
+
       prompt += ` Please provide a ${timeOfDay ? '' : 'full day '}itinerary based on these choices and preferences, ensuring it complements the existing plan without duplicating activities. ${timeOfDay ? `Focus on creating a coherent plan for the ${timeOfDay} of Day ${day}, considering the other activities planned for this day.` : ''} Keep each time period description to about 30-50 words.`;
 
       // Add the rest of the itinerary as context, using active pages and removing links
-      prompt += `\n\nHere's the current itinerary for context (excluding the part to be regenerated):`;
-      finalPlan.itinerary.forEach((dayPlan, index) => {
-        const dayNumber = index + 1;
-        const activePage = currentPages[dayNumber] || 1;
-        const activeVersion = (dayVersions[dayNumber] && dayVersions[dayNumber][activePage - 1]) || dayPlan;
+      if (itineraryAndCost && itineraryAndCost.itinerary) {
+        prompt += `\n\nHere's the current itinerary for context (excluding the part to be regenerated):`;
+        itineraryAndCost.itinerary.forEach((dayPlan, index) => {
+          const dayNumber = index + 1;
+          const activePage = currentPages[dayNumber] || 1;
+          const activeVersion = (dayVersions[dayNumber] && dayVersions[dayNumber][activePage - 1]) || dayPlan;
 
-        if (dayNumber !== day) {
-          prompt += `\n\nDay ${dayNumber}:`;
-          ['morning', 'afternoon', 'evening'].forEach(tod => {
-            const content = activeVersion[tod].replace(/<a[^>]*>(.*?)<\/a>/g, '$1');
-            prompt += `\n${tod.charAt(0).toUpperCase() + tod.slice(1)}: ${content}`;
-          });
-        } else if (timeOfDay) {
-          prompt += `\n\nDay ${day}:`;
-          ['morning', 'afternoon', 'evening'].forEach(tod => {
-            if (tod !== timeOfDay) {
+          if (dayNumber !== day) {
+            prompt += `\n\nDay ${dayNumber}:`;
+            ['morning', 'afternoon', 'evening'].forEach(tod => {
               const content = activeVersion[tod].replace(/<a[^>]*>(.*?)<\/a>/g, '$1');
               prompt += `\n${tod.charAt(0).toUpperCase() + tod.slice(1)}: ${content}`;
-            }
-          });
-        }
-      });
+            });
+          } else if (timeOfDay) {
+            prompt += `\n\nDay ${day}:`;
+            ['morning', 'afternoon', 'evening'].forEach(tod => {
+              if (tod !== timeOfDay) {
+                const content = activeVersion[tod].replace(/<a[^>]*>(.*?)<\/a>/g, '$1');
+                prompt += `\n${tod.charAt(0).toUpperCase() + tod.slice(1)}: ${content}`;
+              }
+            });
+          }
+        });
 
-      prompt += `\n\nPlease ensure that your regenerated section fits well with this existing itinerary, avoiding any duplicate activities or recommendations.`;
+        prompt += `\n\nPlease ensure that your regenerated section fits well with this existing itinerary, avoiding any duplicate activities or recommendations.`;
+      }
     } else {
       // Add full plan generation instructions
+      prompt += `Plan a ${travelInfo.type} from ${travelInfo.from} to ${travelInfo.to} for ${travelInfo.travelers}`;
+      if (travelInfo.groupSize) prompt += ` (group of ${travelInfo.groupSize})`;
+      prompt += `. Budget: ${travelInfo.budget}.`;
+      prompt += ` Transportation: ${travelInfo.transportation === 'flexible' ? 'flexible options' : travelInfo.transportation}.`;
+      prompt += ` Accommodation: ${travelInfo.accommodation === 'flexible' ? 'flexible options' : t(`accommodations.${travelInfo.accommodation}`)}.`;
+      prompt += ` Time to visit: ${travelInfo.timeToVisit === 'flexible' ? 'flexible' : t(`timetovisit.${travelInfo.timeToVisit}`)}.`;
+
+      if (specialRequirements) {
+        prompt += ` Special Requirements: ${specialRequirements}.`;
+      }
+
       prompt += ` Please provide a comprehensive ${numDays}-day travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip, with a breakdown for major categories (e.g., accommodation, transportation, food, activities).`;
     }
 
@@ -330,11 +363,6 @@ Important: Please focus on recommending well-known attractions, popular restaura
     } else {
       prompt += `\n\nYour response must be a valid JSON object with the following structure:
 {
-  "summary": {
-    "introduction": "Brief introduction to the destination",
-    "bestTimeToVisit": "Information about the best time to visit (only if timeToVisit is flexible)",
-    "howToGetThere": "Information on how to get to the destination (only if transportationMode is flexible)"
-  },
   "itinerary": [
     {
       "day": 1,
@@ -362,7 +390,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     return prompt;
   };
 
-  const processLLMResponse = (response, isRegeneration = false, day = null, timeOfDay = null) => {
+  const processLLMResponse = (response, isRegeneration = false, day = null, timeOfDay = null, isSummary = false) => {
     let parsedResponse;
     try {
       parsedResponse = JSON.parse(response);
@@ -384,6 +412,10 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     if (!parsedResponse) {
       logger.error("Invalid response structure:", parsedResponse);
       return null;
+    }
+
+    if (isSummary) {
+      return parsedResponse;
     }
 
     const processTimeOfDay = (tod, dayIndex) => {
@@ -493,12 +525,15 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
 
     incrementFeedbackPromptCount();
     logEvent("User Action", "Finalized Plan", `${destination} - ${numDays} days`);
-    setIsLoading(true);
+    setIsSummaryLoading(true);
+    setIsItineraryLoading(true);
+    setSummary(null);
+    setItineraryAndCost(null);
 
     // Scroll to the plan section immediately
     setTimeout(() => {
       if (finalPlanRef.current) {
-        const yOffset = -80; // Adjust this value as needed
+        const yOffset = -80;
         const y = finalPlanRef.current.getBoundingClientRect().top + window.pageYOffset + yOffset;
         window.scrollTo({top: y, behavior: 'smooth'});
       } else {
@@ -506,29 +541,42 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
       }
     }, 100);
 
-    const finalPrompt = generatePrompt();
+    const summaryPrompt = generatePrompt(false, null, null, true);
+    const itineraryPrompt = generatePrompt();
 
-    try {
-      const response = await getLLMResponse(finalPrompt);
-      logger.debug("Raw LLM response:", response);
-      setDebugInfo({ currentPrompt: finalPrompt, llmResponse: response });
-
-      const processedResponse = processLLMResponse(response);
-      if (processedResponse) {
-        setDayVersions({});
-        setCurrentPages({});
-        setAttractionImages({});
-        setFinalPlan(processedResponse);
-      } else {
-        setFinalPlan({ error: "Failed to generate a valid itinerary. Please try again." });
+    const fetchSummary = async () => {
+      try {
+        const summaryResponse = await getLLMResponse(summaryPrompt);
+        const processedSummary = processLLMResponse(summaryResponse, false, null, null, true);
+        if (processedSummary) {
+          setSummary(processedSummary);
+        }
+      } catch (error) {
+        logger.error("Error fetching summary:", error);
+      } finally {
+        setIsSummaryLoading(false);
       }
-    } catch (error) {
-      logger.error("Error in finalizePlan:", error);
-      setFinalPlan({ error: "An error occurred while generating the travel plan. Please try again." });
-      setDebugInfo(prev => ({ ...prev, llmResponse: `Error: ${error.message}` }));
-    } finally {
-      setIsLoading(false);
-    }
+    };
+
+    const fetchItinerary = async () => {
+      try {
+        const itineraryResponse = await getLLMResponse(itineraryPrompt);
+        const processedItinerary = processLLMResponse(itineraryResponse);
+        if (processedItinerary) {
+          setDayVersions({});
+          setCurrentPages({});
+          setAttractionImages({});
+          setItineraryAndCost(processedItinerary);
+        }
+      } catch (error) {
+        logger.error("Error fetching itinerary:", error);
+      } finally {
+        setIsItineraryLoading(false);
+      }
+    };
+
+    fetchSummary();
+    fetchItinerary();
   };
 
   const regenerateItinerary = async (day, timeOfDay = null) => {
@@ -540,9 +588,8 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     incrementFeedbackPromptCount();
     logEvent("User Action", "Regenerated Itinerary", `Day ${day}${timeOfDay ? ` - ${timeOfDay}` : ''}`);
     setRegeneratingItinerary({ day, timeOfDay });
-    // Remove the setIsLoading(true) line here
 
-    const regeneratePrompt = generatePrompt(true, day, timeOfDay, finalPlan, dayVersions, currentPages);
+    const regeneratePrompt = generatePrompt(true, day, timeOfDay);
 
     try {
       const response = await getLLMResponse(regeneratePrompt);
@@ -552,7 +599,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
       const processedResponse = processLLMResponse(response, true, day, timeOfDay);
       if (processedResponse) {
         setDayVersions(prev => {
-          const currentVersions = prev[day] || [finalPlan.itinerary[day - 1]];
+          const currentVersions = prev[day] || [itineraryAndCost?.itinerary[day - 1] || {}];
           const lastVersion = { ...currentVersions[currentVersions.length - 1] };
           const newVersion = { ...lastVersion, ...processedResponse };
           const updatedVersions = [...currentVersions, newVersion];
@@ -572,7 +619,6 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
       logger.error("Error in regenerateItinerary:", error);
       setDebugInfo(prev => ({ ...prev, llmResponse: `Error: ${error.message}` }));
     } finally {
-      // Remove the setIsLoading(false) line here
       setRegeneratingItinerary({ day: null, timeOfDay: null });
     }
   };
@@ -803,14 +849,16 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
             />
           )}
 
-          {(finalPlan || isLoading) && (
+          {(summary || itineraryAndCost || isSummaryLoading || isItineraryLoading) && (
             <FinalPlanSection 
-              finalPlan={finalPlan}
+              summary={summary}
+              itineraryAndCost={itineraryAndCost}
               dayVersions={dayVersions}
               currentPages={currentPages}
               handlePageChange={handlePageChange}
               regenerateItinerary={regenerateItinerary}
-              isLoading={isLoading}
+              isSummaryLoading={isSummaryLoading}
+              isItineraryLoading={isItineraryLoading}
               regeneratingItinerary={regeneratingItinerary}
               attractionImages={attractionImages}
               finalPlanRef={finalPlanRef}
