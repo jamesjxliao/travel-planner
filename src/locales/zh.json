@@ -25,7 +25,7 @@
     "generatingTravelPlan": "正在生成您的旅行计划...",
     "yourTravelPlan": "您的旅行计划",
     "enterNumberOfTravelers": "输入旅行者人数",
-    "enterYourHomeCity": "您出发城市/国家",
+    "enterYourHomeCity": "您出发城市/��家",
     "enterNumberOfDays": "输入旅行天数",
     "enterCustomAspect": "添加自定义方面",
     "selectAtLeastOneAspect": "请至少选择一个考虑的旅行方面。",
@@ -86,10 +86,11 @@
     "cancel": "取消",
     "submit": "提交",
     "feedbackSubmitted": "感谢您的反馈！",
-    "feedbackError": "提交反馈时发生错误。请重试。",
+    "feedbackError": "提交反馈时发生错误。请重���。",
     "tripSummary": "行程摘要",
     "bestTimeToVisit": "最佳访问时间",
     "recommendedTransportation": "推荐交通方式",
     "howToGetThere": "如何到达",
-    "feedbackPrompt": "您的反馈很重要！您想分享您的想法吗？"
+    "feedbackPrompt": "您的反馈很重要！您想分享您的想法吗？",
+    "destinationRequired": "请输入目的地"
 }

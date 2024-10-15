@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Paper, Grid, FormControl, InputLabel, Select, MenuItem, FormControlLabel, Switch, Typography, Autocomplete, TextField } from '@mui/material';
 import { useLanguage } from '../contexts/LanguageContext';
 import useGooglePlacesAutocomplete from '../hooks/useGooglePlacesAutocomplete';
@@ -16,7 +16,8 @@ const TripDetailsSection = ({
   setAccommodationType,
   isRoundTrip,
   setIsRoundTrip,
-  isLoading
+  isLoading,
+  setIsDestinationValid
 }) => {
   const { t, language } = useLanguage();
   const autocompleteRef = useRef(null);
@@ -27,6 +28,8 @@ const TripDetailsSection = ({
     handleChange: handleAutocompleteChange,
     handleInputChange: handleAutocompleteInputChange,
   } = useGooglePlacesAutocomplete(destination);
+
+  const [localDestination, setLocalDestination] = useState(destination);
 
   // Load data from localStorage on component mount
   useEffect(() => {
@@ -58,8 +61,16 @@ const TripDetailsSection = ({
     localStorage.setItem('isRoundTrip', isRoundTrip.toString());
   }, [destination, numDays, timeToVisit, transportationMode, accommodationType, isRoundTrip]);
 
+  useEffect(() => {
+    const isValid = localDestination.trim().length > 0;
+    setIsDestinationValid(isValid);
+    if (isValid) {
+      setDestination(localDestination);
+    }
+  }, [localDestination, setDestination, setIsDestinationValid]);
+
   const handleDestinationChange = (event, newValue) => {
-    setDestination(newValue);
+    setLocalDestination(newValue || '');
     handleAutocompleteChange(event, newValue);
   };
 
@@ -89,7 +100,7 @@ const TripDetailsSection = ({
         <Grid item xs={8} sm={6} md={3}>
           {language === 'en' ? (
             <Autocomplete
-              value={autocompleteValue}
+              value={localDestination}
               onChange={handleDestinationChange}
               onInputChange={handleAutocompleteInputChange}
               options={autocompleteOptions}
@@ -102,6 +113,7 @@ const TripDetailsSection = ({
                   margin="normal"
                   disabled={isLoading}
                   variant="outlined"
+                  error={localDestination.trim().length === 0}
                 />
               )}
               disabled={isLoading}
@@ -110,12 +122,13 @@ const TripDetailsSection = ({
           ) : (
             <TextField
               label={t('destination')}
-              value={destination}
-              onChange={(e) => setDestination(e.target.value)}
+              value={localDestination}
+              onChange={(e) => setLocalDestination(e.target.value)}
               fullWidth
               margin="normal"
               disabled={isLoading}
               variant="outlined"
+              error={localDestination.trim().length === 0}
             />
           )}
         </Grid>
@@ -221,6 +234,11 @@ const TripDetailsSection = ({
           />
         </Grid>
       </Grid>
+      {localDestination.trim().length === 0 && (
+        <Typography color="error" sx={{ mt: 1, ml: 1 }}>
+          {t('destinationRequired')}
+        </Typography>
+      )}
     </Paper>
   );
 };

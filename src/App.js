@@ -66,6 +66,7 @@ const TravelPlannerApp = () => {
   const [showFeedbackList, setShowFeedbackList] = useState(false);
   const [feedbackPromptCount, setFeedbackPromptCount] = useState(0);
   const [showFeedbackPrompt, setShowFeedbackPrompt] = useState(false);
+  const [isDestinationValid, setIsDestinationValid] = useState(false);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -775,6 +776,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
             isRoundTrip={isRoundTrip}
             setIsRoundTrip={setIsRoundTrip}
             isLoading={isLoading}
+            setIsDestinationValid={setIsDestinationValid}
           />
           
           <SpecialRequirementsSection 
@@ -788,7 +790,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
           <FinalizePlanButton 
             onClick={finalizePlan}
             isLoading={isLoading}
-            isDisabled={isProduction && isGenerationLimitReached}
+            isDisabled={isProduction && isGenerationLimitReached || !isDestinationValid}
           />
           {isProduction && isGenerationLimitReached && (
             <Typography color="error" sx={{ mt: 2 }}>
