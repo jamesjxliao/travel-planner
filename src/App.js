@@ -280,20 +280,24 @@ const TravelPlannerApp = () => {
       // Add regeneration-specific instructions
       prompt += ` Please provide a ${timeOfDay ? '' : 'full day '}itinerary based on these choices and preferences, ensuring it complements the existing plan without duplicating activities. ${timeOfDay ? `Focus on creating a coherent plan for the ${timeOfDay} of Day ${day}, considering the other activities planned for this day.` : ''} Keep each time period description to about 30-50 words.`;
 
-      // Add the rest of the itinerary as context, removing links
+      // Add the rest of the itinerary as context, using active pages and removing links
       prompt += `\n\nHere's the current itinerary for context (excluding the part to be regenerated):`;
       finalPlan.itinerary.forEach((dayPlan, index) => {
-        if (index + 1 !== day) {
-          prompt += `\n\nDay ${index + 1}:`;
+        const dayNumber = index + 1;
+        const activePage = currentPages[dayNumber] || 1;
+        const activeVersion = (dayVersions[dayNumber] && dayVersions[dayNumber][activePage - 1]) || dayPlan;
+
+        if (dayNumber !== day) {
+          prompt += `\n\nDay ${dayNumber}:`;
           ['morning', 'afternoon', 'evening'].forEach(tod => {
-            const content = dayPlan[tod].replace(/<a[^>]*>(.*?)<\/a>/g, '$1');
+            const content = activeVersion[tod].replace(/<a[^>]*>(.*?)<\/a>/g, '$1');
             prompt += `\n${tod.charAt(0).toUpperCase() + tod.slice(1)}: ${content}`;
           });
         } else if (timeOfDay) {
           prompt += `\n\nDay ${day}:`;
           ['morning', 'afternoon', 'evening'].forEach(tod => {
             if (tod !== timeOfDay) {
-              const content = dayPlan[tod].replace(/<a[^>]*>(.*?)<\/a>/g, '$1');
+              const content = activeVersion[tod].replace(/<a[^>]*>(.*?)<\/a>/g, '$1');
               prompt += `\n${tod.charAt(0).toUpperCase() + tod.slice(1)}: ${content}`;
             }
           });
@@ -538,7 +542,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     setRegeneratingItinerary({ day, timeOfDay });
     // Remove the setIsLoading(true) line here
 
-    const regeneratePrompt = generatePrompt(true, day, timeOfDay, finalPlan);
+    const regeneratePrompt = generatePrompt(true, day, timeOfDay, finalPlan, dayVersions, currentPages);
 
     try {
       const response = await getLLMResponse(regeneratePrompt);
