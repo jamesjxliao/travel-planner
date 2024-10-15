@@ -86,7 +86,7 @@ const TripDetailsSection = ({
   return (
     <Paper elevation={3} sx={{ p: 2, mb: 3 }}>
       <Grid container spacing={2} alignItems="center">
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={8} sm={6} md={3}>
           {language === 'en' ? (
             <Autocomplete
               value={autocompleteValue}
@@ -119,6 +119,23 @@ const TripDetailsSection = ({
             />
           )}
         </Grid>
+        <Grid item xs={4} sm={3} md={2} sx={{ display: { xs: 'block', sm: 'none' } }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={isRoundTrip}
+                onChange={handleIsRoundTripChange}
+                disabled={isLoading}
+              />
+            }
+            label={
+              <Typography noWrap>
+                {t('roundTrip')}
+              </Typography>
+            }
+            sx={{ mt: 2 }}
+          />
+        </Grid>
         <Grid item xs={6} sm={3} md={1}>
           <TextField
             label={t('numberOfDays')}
@@ -132,7 +149,7 @@ const TripDetailsSection = ({
             variant="outlined"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={2}>
+        <Grid item xs={6} sm={6} md={2}>
           <FormControl fullWidth margin="normal">
             <InputLabel id="time-to-visit-label">{t('timetovisit')}</InputLabel>
             <Select
@@ -151,7 +168,7 @@ const TripDetailsSection = ({
             </Select>
           </FormControl>
         </Grid>
-        <Grid item xs={12} sm={6} md={2}>
+        <Grid item xs={6} sm={6} md={2}>
           <FormControl fullWidth margin="normal">
             <InputLabel id="transportation-label">{t('transportation')}</InputLabel>
             <Select
@@ -167,7 +184,7 @@ const TripDetailsSection = ({
             </Select>
           </FormControl>
         </Grid>
-        <Grid item xs={12} sm={6} md={2}>
+        <Grid item xs={6} sm={6} md={2}>
           <FormControl fullWidth margin="normal">
             <InputLabel id="accommodation-label">{t('accommodations')}</InputLabel>
             <Select
@@ -186,7 +203,7 @@ const TripDetailsSection = ({
             </Select>
           </FormControl>
         </Grid>
-        <Grid item xs={6} sm={3} md={2}>
+        <Grid item xs={6} sm={3} md={2} sx={{ display: { xs: 'none', sm: 'block' } }}>
           <FormControlLabel
             control={
               <Switch
