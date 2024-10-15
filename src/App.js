@@ -279,6 +279,28 @@ const TravelPlannerApp = () => {
     if (isRegeneration) {
       // Add regeneration-specific instructions
       prompt += ` Please provide a ${timeOfDay ? '' : 'full day '}itinerary based on these choices and preferences, ensuring it complements the existing plan without duplicating activities. ${timeOfDay ? `Focus on creating a coherent plan for the ${timeOfDay} of Day ${day}, considering the other activities planned for this day.` : ''} Keep each time period description to about 30-50 words.`;
+
+      // Add the rest of the itinerary as context, removing links
+      prompt += `\n\nHere's the current itinerary for context (excluding the part to be regenerated):`;
+      finalPlan.itinerary.forEach((dayPlan, index) => {
+        if (index + 1 !== day) {
+          prompt += `\n\nDay ${index + 1}:`;
+          ['morning', 'afternoon', 'evening'].forEach(tod => {
+            const content = dayPlan[tod].replace(/<a[^>]*>(.*?)<\/a>/g, '$1');
+            prompt += `\n${tod.charAt(0).toUpperCase() + tod.slice(1)}: ${content}`;
+          });
+        } else if (timeOfDay) {
+          prompt += `\n\nDay ${day}:`;
+          ['morning', 'afternoon', 'evening'].forEach(tod => {
+            if (tod !== timeOfDay) {
+              const content = dayPlan[tod].replace(/<a[^>]*>(.*?)<\/a>/g, '$1');
+              prompt += `\n${tod.charAt(0).toUpperCase() + tod.slice(1)}: ${content}`;
+            }
+          });
+        }
+      });
+
+      prompt += `\n\nPlease ensure that your regenerated section fits well with this existing itinerary, avoiding any duplicate activities or recommendations.`;
     } else {
       // Add full plan generation instructions
       prompt += ` Please provide a comprehensive ${numDays}-day travel plan based on these choices and preferences, taking into account the type of travelers. Include an estimated cost range for the trip, with a breakdown for major categories (e.g., accommodation, transportation, food, activities).`;
@@ -516,7 +538,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
     setRegeneratingItinerary({ day, timeOfDay });
     // Remove the setIsLoading(true) line here
 
-    const regeneratePrompt = generatePrompt(true, day, timeOfDay);
+    const regeneratePrompt = generatePrompt(true, day, timeOfDay, finalPlan);
 
     try {
       const response = await getLLMResponse(regeneratePrompt);
