@@ -96,6 +96,9 @@ const TripDetailsSection = ({
 
   return (
     <Paper elevation={3} sx={{ p: 2, mb: 3 }}>
+      <Typography variant="h6" gutterBottom sx={{ color: 'primary.main'}}>
+        {t('tripDetails')}
+      </Typography>
       <Grid container spacing={2} alignItems="center">
         <Grid item xs={8} sm={6} md={3}>
           {language === 'en' ? (

@@ -92,5 +92,6 @@
     "recommendedTransportation": "Recommended Transportation",
     "howToGetThere": "How to Get There",
     "feedbackPrompt": "Your feedback is valuable! Would you like to share your thoughts?",
-    "destinationRequired": "Destination is required"
+    "destinationRequired": "Destination is required",
+    "tripDetails": "Trip Details"
 }

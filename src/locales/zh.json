@@ -92,5 +92,6 @@
     "recommendedTransportation": "推荐交通方式",
     "howToGetThere": "如何到达",
     "feedbackPrompt": "您的反馈很重要！您想分享您的想法吗？",
-    "destinationRequired": "请输入目的地"
+    "destinationRequired": "请输入目的地",
+    "tripDetails": "行程详情"
 }
