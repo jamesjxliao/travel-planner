@@ -42,6 +42,7 @@ const TripDetailsSection = ({
 
     if (loadedDestination) {
       setDestination(loadedDestination);
+      setLocalDestination(loadedDestination);
       setAutocompleteValue(loadedDestination);
     }
     if (loadedNumDays) setNumDays(loadedNumDays);
@@ -53,13 +54,13 @@ const TripDetailsSection = ({
 
   // Save data to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('destination', destination);
+    localStorage.setItem('destination', localDestination);
     localStorage.setItem('numDays', numDays);
     localStorage.setItem('timeToVisit', timeToVisit);
     localStorage.setItem('transportationMode', transportationMode);
     localStorage.setItem('accommodationType', accommodationType);
     localStorage.setItem('isRoundTrip', isRoundTrip.toString());
-  }, [destination, numDays, timeToVisit, transportationMode, accommodationType, isRoundTrip]);
+  }, [localDestination, numDays, timeToVisit, transportationMode, accommodationType, isRoundTrip]);
 
   useEffect(() => {
     const isValid = localDestination.trim().length > 0;
@@ -70,7 +71,9 @@ const TripDetailsSection = ({
   }, [localDestination, setDestination, setIsDestinationValid]);
 
   const handleDestinationChange = (event, newValue) => {
-    setLocalDestination(newValue || '');
+    const updatedDestination = newValue || '';
+    setLocalDestination(updatedDestination);
+    setDestination(updatedDestination);
     handleAutocompleteChange(event, newValue);
   };
 
@@ -105,7 +108,10 @@ const TripDetailsSection = ({
             <Autocomplete
               value={localDestination}
               onChange={handleDestinationChange}
-              onInputChange={handleAutocompleteInputChange}
+              onInputChange={(event, newInputValue) => {
+                setLocalDestination(newInputValue);
+                handleAutocompleteInputChange(event, newInputValue);
+              }}
               options={autocompleteOptions}
               renderInput={(params) => (
                 <TextField
@@ -126,7 +132,10 @@ const TripDetailsSection = ({
             <TextField
               label={t('destination')}
               value={localDestination}
-              onChange={(e) => setLocalDestination(e.target.value)}
+              onChange={(e) => {
+                setLocalDestination(e.target.value);
+                setDestination(e.target.value);
+              }}
               fullWidth
               margin="normal"
               disabled={isLoading}
