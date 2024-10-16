@@ -23,7 +23,7 @@ const FinalPlanSection = ({
     return (
       <Card elevation={3} sx={{ mb: 3, bgcolor: 'background.paper' }}>
         <CardContent sx={{ '&:last-child': { pb: 2 } }}>
-          <Typography variant="h5" color="primary" sx={{ fontWeight: 'bold', mb: 1.5 }}>
+          <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold', mb: 1.5 }}>
             {t('tripSummary')}
           </Typography>
           <Box sx={{ mb: 2, p: 1.5, bgcolor: 'grey.100', borderRadius: 1 }}>
@@ -133,7 +133,7 @@ const FinalPlanSection = ({
                 justifyContent: 'space-between', 
                 alignItems: 'center' 
               }}>
-                <Typography variant="subtitle1" fontWeight="bold">
+                <Typography variant="h6" fontWeight="bold">
                   {language === 'zh' 
                     ? t('day').replace('天', `${dayNumber}天`) 
                     : `${t('day')} ${dayNumber}`}
@@ -200,7 +200,7 @@ const FinalPlanSection = ({
                                 alignItems: 'center',
                               }}
                             >
-                              <Typography variant="body2" color="white" fontWeight="medium">
+                              <Typography variant="subtitle2" color="white" fontWeight="medium">
                                 {t(timeOfDay)}
                               </Typography>
                               <Tooltip title={t('regenerateTimeOfDay')}>
@@ -264,7 +264,7 @@ const FinalPlanSection = ({
           {['accommodation', 'transportation', 'food', 'activities', 'other'].map((category) => (
             <Grid item xs={12} sm={6} md={4} key={category}>
               <Paper elevation={2} sx={{ p: 2, height: '100%', bgcolor: 'background.default' }}>
-                <Typography variant="subtitle1" color="primary" gutterBottom>
+                <Typography variant="subtitle2" color="primary" gutterBottom>
                   {t(category)}
                 </Typography>
                 {isLoading ? (
