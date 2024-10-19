@@ -48,7 +48,13 @@ const SpecialRequirementsSection = ({
             variant="outlined"
             rows={1}
             InputLabelProps={{
-              style: { fontSize: '1.1rem' }  // Slightly increase label font size
+              style: { fontSize: '1.1rem' }
+            }}
+            sx={{
+              '& .MuiInputLabel-root': {
+                backgroundColor: 'background.paper',
+                px: 1,
+              },
             }}
           />
         </Box>
