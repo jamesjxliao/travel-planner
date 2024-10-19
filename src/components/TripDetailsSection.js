@@ -14,8 +14,6 @@ const TripDetailsSection = ({
   setTransportationMode,
   accommodationType,
   setAccommodationType,
-  isRoundTrip,
-  setIsRoundTrip,
   isLoading,
   setIsDestinationValid
 }) => {
@@ -38,7 +36,6 @@ const TripDetailsSection = ({
     const loadedTimeToVisit = localStorage.getItem('timeToVisit');
     const loadedTransportationMode = localStorage.getItem('transportationMode');
     const loadedAccommodationType = localStorage.getItem('accommodationType');
-    const loadedIsRoundTrip = localStorage.getItem('isRoundTrip');
 
     if (loadedDestination) {
       setDestination(loadedDestination);
@@ -49,8 +46,7 @@ const TripDetailsSection = ({
     if (loadedTimeToVisit) setTimeToVisit(loadedTimeToVisit);
     if (loadedTransportationMode) setTransportationMode(loadedTransportationMode);
     if (loadedAccommodationType) setAccommodationType(loadedAccommodationType);
-    if (loadedIsRoundTrip !== null) setIsRoundTrip(loadedIsRoundTrip === 'true');
-  }, [setDestination, setAutocompleteValue, setNumDays, setTimeToVisit, setTransportationMode, setAccommodationType, setIsRoundTrip]);
+  }, [setDestination, setAutocompleteValue, setNumDays, setTimeToVisit, setTransportationMode, setAccommodationType]);
 
   // Save data to localStorage whenever it changes
   useEffect(() => {
@@ -59,8 +55,7 @@ const TripDetailsSection = ({
     localStorage.setItem('timeToVisit', timeToVisit);
     localStorage.setItem('transportationMode', transportationMode);
     localStorage.setItem('accommodationType', accommodationType);
-    localStorage.setItem('isRoundTrip', isRoundTrip.toString());
-  }, [localDestination, numDays, timeToVisit, transportationMode, accommodationType, isRoundTrip]);
+  }, [localDestination, numDays, timeToVisit, transportationMode, accommodationType]);
 
   useEffect(() => {
     const isValid = localDestination.trim().length > 0;
@@ -93,17 +88,13 @@ const TripDetailsSection = ({
     setAccommodationType(e.target.value);
   };
 
-  const handleIsRoundTripChange = (e) => {
-    setIsRoundTrip(e.target.checked);
-  };
-
   return (
     <Paper elevation={3} sx={{ p: 2, mb: 3, bgcolor: 'background.paper' }}>
       <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 'bold' }}>
         {t('tripDetails')}
       </Typography>
       <Grid container spacing={2} alignItems="center">
-        <Grid item xs={8} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           {language === 'en' ? (
             <Autocomplete
               value={localDestination}
@@ -146,24 +137,7 @@ const TripDetailsSection = ({
             />
           )}
         </Grid>
-        <Grid item xs={4} sm={3} md={2} sx={{ display: { xs: 'block', sm: 'none' } }}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={isRoundTrip}
-                onChange={handleIsRoundTripChange}
-                disabled={isLoading}
-              />
-            }
-            label={
-              <Typography noWrap>
-                {t('roundTrip')}
-              </Typography>
-            }
-            sx={{ mt: 2 }}
-          />
-        </Grid>
-        <Grid item xs={6} sm={3} md={1}>
+        <Grid item xs={6} sm={3} md={2}>
           <TextField
             label={t('numberOfDays')}
             value={numDays}
@@ -176,7 +150,7 @@ const TripDetailsSection = ({
             variant="outlined"
           />
         </Grid>
-        <Grid item xs={6} sm={6} md={2}>
+        <Grid item xs={6} sm={3} md={2}>
           <FormControl fullWidth margin="normal">
             <InputLabel id="time-to-visit-label">{t('timetovisit')}</InputLabel>
             <Select
@@ -195,7 +169,7 @@ const TripDetailsSection = ({
             </Select>
           </FormControl>
         </Grid>
-        <Grid item xs={6} sm={6} md={2}>
+        <Grid item xs={6} sm={6} md={2.5}>
           <FormControl fullWidth margin="normal">
             <InputLabel id="transportation-label">{t('transportation')}</InputLabel>
             <Select
@@ -211,7 +185,7 @@ const TripDetailsSection = ({
             </Select>
           </FormControl>
         </Grid>
-        <Grid item xs={6} sm={6} md={2}>
+        <Grid item xs={6} sm={6} md={2.5}>
           <FormControl fullWidth margin="normal">
             <InputLabel id="accommodation-label">{t('accommodations')}</InputLabel>
             <Select
@@ -229,23 +203,6 @@ const TripDetailsSection = ({
               <MenuItem value="camping">{t('accommodations.camping')}</MenuItem>
             </Select>
           </FormControl>
-        </Grid>
-        <Grid item xs={6} sm={3} md={2} sx={{ display: { xs: 'none', sm: 'block' } }}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={isRoundTrip}
-                onChange={handleIsRoundTripChange}
-                disabled={isLoading}
-              />
-            }
-            label={
-              <Typography noWrap>
-                {t('roundTrip')}
-              </Typography>
-            }
-            sx={{ mt: 2 }}
-          />
         </Grid>
       </Grid>
       {localDestination.trim().length === 0 && (

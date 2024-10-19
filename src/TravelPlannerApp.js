@@ -778,8 +778,6 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
             setTransportationMode={setTransportationMode}
             accommodationType={accommodationType}
             setAccommodationType={setAccommodationType}
-            isRoundTrip={isRoundTrip}
-            setIsRoundTrip={setIsRoundTrip}
             isLoading={isLoading}
             setIsDestinationValid={setIsDestinationValid}
           />
