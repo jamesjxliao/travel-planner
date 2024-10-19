@@ -12,7 +12,7 @@ import ListAltIcon from '@mui/icons-material/ListAlt';
 import CloseIcon from '@mui/icons-material/Close';
 import GoogleAnalytics from './components/GoogleAnalytics';
 import { createLogger } from './utils/logger';
-import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
+import { useLanguage } from './contexts/LanguageContext';
 import TravelerSection from './components/TravelerSection';
 import TripDetailsSection from './components/TripDetailsSection';
 import SpecialRequirementsSection from './components/SpecialRequirementsSection';
@@ -667,8 +667,8 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
   };
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="fixed">
+    <Box sx={{ flexGrow: 1, bgcolor: 'background.default', minHeight: '100vh' }}>
+      <AppBar position="fixed" sx={{ bgcolor: 'primary.main' }}>
         <Toolbar>
           {isMobile && (
             <Tooltip title={t('travelersInformation')}>
@@ -682,7 +682,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
               </IconButton>
             </Tooltip>
           )}
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
             Bon Voyage
           </Typography>
           {!isMobile && !isProduction && (
@@ -691,7 +691,7 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
                 <Switch 
                   checked={showDebug} 
                   onChange={(e) => setShowDebug(e.target.checked)}
-                  color="default"
+                  color="secondary"
                 />
               }
               label={<BugReportIcon />}
@@ -704,7 +704,12 @@ Do not include any text outside of this JSON structure. Ensure all JSON keys are
               onChange={(e) => setLanguage(e.target.value)}
               displayEmpty
               inputProps={{ 'aria-label': 'Without label' }}
-              sx={{ color: 'white', '& .MuiSvgIcon-root': { color: 'white' } }}
+              sx={{ 
+                color: 'white', 
+                '& .MuiSvgIcon-root': { color: 'white' },
+                '&:before': { borderColor: 'white' },
+                '&:after': { borderColor: 'white' },
+              }}
             >
               <MenuItem value="zh">中文</MenuItem>
               <MenuItem value="en">EN</MenuItem>

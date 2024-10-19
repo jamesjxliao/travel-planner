@@ -98,8 +98,8 @@ const TripDetailsSection = ({
   };
 
   return (
-    <Paper elevation={3} sx={{ p: 2, mb: 3 }}>
-      <Typography variant="h6" gutterBottom sx={{ color: 'primary.main'}}>
+    <Paper elevation={3} sx={{ p: 2, mb: 3, bgcolor: 'background.paper' }}>
+      <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 'bold' }}>
         {t('tripDetails')}
       </Typography>
       <Grid container spacing={2} alignItems="center">
@@ -123,6 +123,7 @@ const TripDetailsSection = ({
                   disabled={isLoading}
                   variant="outlined"
                   error={localDestination.trim().length === 0}
+                  sx={{ '& .MuiOutlinedInput-root': { '&.Mui-focused fieldset': { borderColor: 'primary.main' } } }}
                 />
               )}
               disabled={isLoading}
@@ -141,6 +142,7 @@ const TripDetailsSection = ({
               disabled={isLoading}
               variant="outlined"
               error={localDestination.trim().length === 0}
+              sx={{ '& .MuiOutlinedInput-root': { '&.Mui-focused fieldset': { borderColor: 'primary.main' } } }}
             />
           )}
         </Grid>

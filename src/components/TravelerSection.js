@@ -75,8 +75,8 @@ const TravelerSection = ({
   };
 
   return (
-    <Paper elevation={3} sx={{ p: 2, mb: 3, backgroundColor: '#f0f8ff' }}>
-      <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
+    <Paper elevation={3} sx={{ p: 2, mb: 3, bgcolor: 'background.paper' }}>
+      <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 'bold' }}>
         {t('travelersInformation')}
       </Typography>
       <Grid container spacing={2} alignItems="center">
@@ -88,6 +88,7 @@ const TravelerSection = ({
               value={travelers}
               label={t('whosTraveling')}
               onChange={handleTravelersChange}
+              sx={{ '& .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.light' } }}
             >
               <MenuItem value="Solo">{t('solo')}</MenuItem>
               <MenuItem value="Couple">{t('couple')}</MenuItem>
