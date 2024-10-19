@@ -193,14 +193,19 @@ const FinalPlanSection = ({
                                 position: 'absolute',
                                 bottom: 8,
                                 left: 8,
-                                bgcolor: 'rgba(0, 0, 0, 0.6)',
-                                borderRadius: '16px',
-                                padding: '4px 8px',
+                                bgcolor: 'rgba(0, 0, 0, 0.7)',
+                                borderRadius: '20px',
+                                padding: '6px 12px',
                                 display: 'flex',
                                 alignItems: 'center',
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                  bgcolor: 'rgba(0, 0, 0, 0.8)',
+                                  transform: 'scale(1.05)',
+                                },
                               }}
                             >
-                              <Typography variant="subtitle2" color="white" fontWeight="medium">
+                              <Typography variant="subtitle2" color="white" fontWeight="medium" sx={{ mr: 1 }}>
                                 {t(timeOfDay)}
                               </Typography>
                               <Tooltip title={t('regenerateTimeOfDay')}>
@@ -208,7 +213,13 @@ const FinalPlanSection = ({
                                   size="small"
                                   onClick={() => regenerateItinerary(dayNumber, timeOfDay)}
                                   disabled={isLoading || (regeneratingItinerary.day === dayNumber && regeneratingItinerary.timeOfDay === timeOfDay)}
-                                  sx={{ ml: 0.5, p: 0.5, color: 'white' }}
+                                  sx={{ 
+                                    p: 0.5, 
+                                    color: 'white',
+                                    '&:hover': {
+                                      bgcolor: 'rgba(255, 255, 255, 0.2)',
+                                    },
+                                  }}
                                 >
                                   <RefreshIcon fontSize="small" />
                                 </IconButton>
